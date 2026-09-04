@@ -138,6 +138,16 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Sobre 1.1.1 y 1.1.2.** El recorte que corrigieron era real, la fila de aleatorio/repetir/favorito sí estaba fuera de pantalla en la primera captura. Pero no era la única causa, y diagnostiqué la segunda captura con la hipótesis vieja en vez de mirar los píxeles. Dos versiones para llegar a la causa de fondo. La lección queda: cuando un botón responde al toque pero no se ve, no es layout, es algo dibujado encima.
 
+### 2026-09-04 — 1.2.0: tarjeta de letras dentro del reproductor
+
+**Decisión.** El reproductor a pantalla completa pasa a ser una lista desplazable de dos elementos: la vista actual, que ocupa toda la pantalla y no cambia, y debajo una tarjeta "Letras" al estilo de Spotify. La hoja del reproductor ya soportaba contenido desplazable: solo colapsa al arrastrar hacia abajo cuando la lista está en el tope.
+
+**Cómo funciona la tarjeta.** Fondo `primaryContainer`, texto `onPrimaryContainer`, esquinas de 24 dp. Cuerpo de 320 dp con las líneas: la activa en blanco pleno y negrita, las demás al 55 % de opacidad. Auto-scroll centrado en la línea activa con la misma lógica que la hoja completa. El desplazamiento manual dentro de la tarjeta está desactivado para no pelear con el scroll del reproductor; tocar una línea salta a ese momento y el botón de la esquina abre la hoja completa. Se aplica el adelanto y el tamaño de fuente de Ajustes. Con letras sin marcas de tiempo se muestra estática. Sin letras, o con episodios, la tarjeta no aparece.
+
+**Descubierto al implementar.** `PlayerViewModel` declaraba un flujo de letras que nunca se cargaba. Se agregó el cargador: al cambiar la pista, se limpian las letras y se piden al repositorio con un timeout, tragando errores como lista vacía.
+
+**Descartado.** Reutilizar `LyricsViewModel` de la hoja. Está atado al ciclo de vida del popup y a una pista elegida; el reproductor necesita seguir la pista actual.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

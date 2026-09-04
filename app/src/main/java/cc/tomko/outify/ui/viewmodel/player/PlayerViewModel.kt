@@ -21,6 +21,8 @@ import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
@@ -28,8 +30,10 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.distinctUntilChangedBy
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
@@ -62,6 +66,41 @@ class PlayerViewModel @Inject constructor(
     private val _positionMs =
         MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
     val positionMs = _positionMs.asStateFlow()
+
+    /**
+     * Lead time applied to the active lyric line; 0 when the offset is disabled.
+     */
+    private val lyricsOffsetMs: StateFlow<Long> = combine(
+        settingsRepository.lyricsOffsetEnabled,
+        settingsRepository.lyricsOffsetMs,
+    ) { enabled, offsetMs ->
+        if (enabled) offsetMs.toLong() else 0L
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /**
+     * Playback position used to pick the active lyric line in the player's lyrics card.
+     * Positive offsets highlight a line before it is actually sung.
+     */
+    val lyricsEffectivePositionMs: StateFlow<Long> = combine(
+        _positionMs,
+        lyricsOffsetMs,
+    ) { position, offset ->
+        position + offset
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /**
+     * Multiplier applied to the lyric line font size (1.0 = default).
+     */
+    val lyricsFontScale: StateFlow<Float> = settingsRepository.lyricsFontScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1.0f)
+
+    /**
+     * True when the loaded lyrics carry real timestamps, so the card can highlight
+     * and auto-scroll the active line. Lyrics with every timestamp at 0 are unsynced.
+     */
+    val hasSyncedLyrics: StateFlow<Boolean> = _lyrics
+        .map { lines -> lines.isNotEmpty() && lines.any { it.timestampMs > 0L } }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val isShuffling = settingsRepository.shuffleEnabled
         .stateIn(viewModelScope, SharingStarted.Eagerly, false)
@@ -104,6 +143,24 @@ class PlayerViewModel @Inject constructor(
             playbackStateHolder.state.collect { playback ->
                 _state.value = playback
             }
+        }
+
+        // Load lyrics for the current track; episodes and failures leave the list empty.
+        viewModelScope.launch(Dispatchers.IO) {
+            playbackStateHolder.state
+                .map { it.currentAudio }
+                .distinctUntilChangedBy { it?.id }
+                .collectLatest { audio ->
+                    _lyrics.value = emptyList()
+                    val track = audio?.takeIf { it.isTrack() }?.sourceTrack ?: return@collectLatest
+                    _lyrics.value = try {
+                        playerRepository.getLyrics(track)
+                    } catch (e: CancellationException) {
+                        throw e
+                    } catch (e: Exception) {
+                        emptyList()
+                    }
+                }
         }
     }
 

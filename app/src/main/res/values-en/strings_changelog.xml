@@ -3,6 +3,16 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.2.0 -->
+    <string name="changelog_1_2_0_date">September 4, 2026</string>
+    <string name="changelog_1_2_0_title">Lyrics inside the player</string>
+    <string-array name="changelog_1_2_0_bullets">
+        <item>The player now scrolls: swipe up and a card with the song lyrics appears.</item>
+        <item>The line being sung is highlighted and the card follows it on its own. Tap a line to jump to that moment.</item>
+        <item>The corner button opens the lyrics full screen.</item>
+        <item>The lead time and text size configured in Settings also apply to the card.</item>
+    </string-array>
+
     <!-- 1.1.3 -->
     <string name="changelog_1_1_3_date">September 4, 2026</string>
     <string name="changelog_1_1_3_title">The navigation bar no longer covers the player</string>

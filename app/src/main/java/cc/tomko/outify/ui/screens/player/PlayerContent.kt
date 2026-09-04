@@ -23,6 +23,8 @@ import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.aspectRatio
+import androidx.compose.foundation.layout.calculateEndPadding
+import androidx.compose.foundation.layout.calculateStartPadding
 import androidx.compose.foundation.layout.fillMaxHeight
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -77,6 +79,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.hapticfeedback.HapticFeedbackType
 import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.ui.platform.LocalHapticFeedback
+import androidx.compose.ui.platform.LocalLayoutDirection
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -98,6 +101,7 @@ import cc.tomko.outify.ui.components.AutoScrollingTextOnDemand
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.ToggleSegmentButton
 import cc.tomko.outify.ui.components.WavyMusicSlider
+import cc.tomko.outify.ui.components.player.LyricsCard
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import kotlinx.coroutines.launch
@@ -123,8 +127,13 @@ fun PlayerContent(
     val uiState by viewModel.uiState.collectAsState()
     val elapsedMs by viewModel.positionMs.collectAsState()
     val forwardMilliseconds by viewModel.forwardMilliseconds.collectAsState(15_000)
+    val lyrics by viewModel.lyrics.collectAsState()
+    val lyricsEffectivePositionMs by viewModel.lyricsEffectivePositionMs.collectAsState()
+    val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
+    val hasSyncedLyrics by viewModel.hasSyncedLyrics.collectAsState()
 
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
+    val layoutDirection = LocalLayoutDirection.current
     val gradientEdgeColor = MaterialTheme.colorScheme.primaryContainer
     val textColor = MaterialTheme.colorScheme.onSurface
     val artistTextColor = MaterialTheme.colorScheme.onSurfaceVariant
@@ -237,6 +246,34 @@ fun PlayerContent(
                         controlsSection = controlsSection,
                         moreActions = moreActions,
                         isEpisode = isEpisode
+                    )
+                }
+            }
+
+            // Lyrics card, revealed by scrolling the player down (Spotify-style).
+            // Only for tracks with loaded lyrics; the first item keeps its full height.
+            val lyricsTrack = audio?.takeIf { it.isTrack() }?.sourceTrack
+            if (lyricsTrack != null && lyrics.isNotEmpty()) {
+                item(key = "lyrics_card") {
+                    val horizontalPadding = if (isLandscape) 16.dp else maxWidth * 0.06f
+                    val activeIndex = lyrics
+                        .indexOfLast { it.timestampMs <= lyricsEffectivePositionMs }
+                        .coerceAtLeast(0)
+
+                    LyricsCard(
+                        lines = lyrics,
+                        activeIndex = activeIndex,
+                        isSynced = hasSyncedLyrics,
+                        fontScale = lyricsFontScale,
+                        onExpand = { GlobalPopupController.show(PopupSpec.Lyrics(lyricsTrack)) },
+                        onSeek = { viewModel.onAction(PlayerAction.SeekTo(it)) },
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(
+                                start = horizontalPadding + paddingValues.calculateStartPadding(layoutDirection),
+                                end = horizontalPadding + paddingValues.calculateEndPadding(layoutDirection),
+                                bottom = 24.dp + paddingValues.calculateBottomPadding(),
+                            )
                     )
                 }
             }

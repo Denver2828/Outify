@@ -51,6 +51,12 @@ private data class ChangelogEntry(
  */
 private val changelogEntries = listOf(
     ChangelogEntry(
+        version = R.string.changelog_1_2_0_version,
+        date = R.string.changelog_1_2_0_date,
+        title = R.string.changelog_1_2_0_title,
+        bullets = R.array.changelog_1_2_0_bullets,
+    ),
+    ChangelogEntry(
         version = R.string.changelog_1_1_3_version,
         date = R.string.changelog_1_1_3_date,
         title = R.string.changelog_1_1_3_title,

@@ -28,6 +28,10 @@
     <string name="ui_player_not_playing">Not playing</string>
     <string name="ui_player_unknown_source">Unknown source</string>
 
+    <!-- Lyrics card (fullscreen player) -->
+    <string name="ui_lyrics_card_title">Lyrics</string>
+    <string name="ui_lyrics_card_expand">Open lyrics</string>
+
     <!-- Playback speed -->
     <string name="ui_speed_custom">Custom</string>
     <string name="ui_speed_title">Playback speed</string>

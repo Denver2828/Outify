@@ -28,6 +28,10 @@
     <string name="ui_player_not_playing">Nada en reproducción</string>
     <string name="ui_player_unknown_source">Fuente desconocida</string>
 
+    <!-- Lyrics card (fullscreen player) -->
+    <string name="ui_lyrics_card_title">Letras</string>
+    <string name="ui_lyrics_card_expand">Abrir letras</string>
+
     <!-- Playback speed -->
     <string name="ui_speed_custom">Personalizada</string>
     <string name="ui_speed_title">Velocidad de reproducción</string>
