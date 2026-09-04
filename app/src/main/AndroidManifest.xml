@@ -26,6 +26,14 @@
         android:theme="@style/Theme.Material3Expressive"
         android:usesCleartextTraffic="false">
 
+        <!-- Android Auto: declare this app as a media app -->
+        <meta-data
+            android:name="com.google.android.gms.car.application"
+            android:resource="@xml/automotive_app_desc" />
+        <meta-data
+            android:name="com.google.android.gms.car.notification.SmallIcon"
+            android:resource="@drawable/ic_launcher_foreground" />
+
         <service
             android:name=".services.OAuthService"
             android:enabled="true"

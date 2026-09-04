@@ -10,8 +10,8 @@
     <string name="sys_media_liked_songs">Liked songs</string>
     <string name="sys_media_playlists">Playlists</string>
     <string name="sys_media_top_artists">Top artists</string>
-    <string name="sys_media_playlist_numbered">Playlist %1$d</string>
-    <string name="sys_media_artist">Artist</string>
+    <string name="sys_media_unknown_artist">Unknown artist</string>
+    <string name="sys_media_playlist_owner">Playlist · %1$s</string>
 
     <!-- Liked tracks sync notification -->
     <string name="sys_sync_channel_name">Sync progress</string>

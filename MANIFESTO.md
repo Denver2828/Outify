@@ -148,6 +148,21 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Descartado.** Reutilizar `LyricsViewModel` de la hoja. Está atado al ciclo de vida del popup y a una pista elegida; el reproductor necesita seguir la pista actual.
 
+### 2026-09-04 — 1.3.0: Android Auto
+
+**Aclaración de alcance.** El pedido fue "una versión para pantalla CarPlay". CarPlay es de Apple y solo ejecuta apps de iPhone; una app Android no puede aparecer ahí. El equivalente en Android es Android Auto, y en Android Auto las apps de música no dibujan su propia interfaz: publican un árbol de navegación y el auto lo renderiza con su propio diseño. Por eso no existe una "pantalla" propia que diseñar. Lo que se hizo es que Spoty sea una app de medios válida para Android Auto.
+
+**Lo que había.** El servicio ya publicaba un árbol (Recientes, Canciones que te gustan, Playlists, Artistas), pero el manifest no declaraba compatibilidad con Android Auto, así que el auto nunca lo listaba. Además las playlists aparecían como "Playlist 1, 2, 3", los artistas como "Artista", al abrirlos no había hijos, todo se cargaba bloqueando el hilo del llamador y cada canción se pedía de a una.
+
+**Lo que se hizo.**
+
+- Declaración `com.google.android.gms.car.application` con `automotive_app_desc.xml` de tipo `media`.
+- Árbol completo con nombres y portadas reales, hijos para cada playlist y artista, paginación y límites (100 me gusta, 50 recientes, 200 por playlist), carga asíncrona en IO con concurrencia acotada, y pistas de estilo de contenido (grilla para playlists y artistas).
+- Reproducción desde el auto: `onSetMediaItems` lee el contexto del ítem elegido y llama a librespot igual que la interfaz. El `Player` propio no anuncia comandos de cambio de ítems, así que la llamada posterior de Media3 es inofensiva.
+- Búsqueda por voz con el repositorio de búsqueda existente: pistas reproducibles primero, después artistas y playlists navegables.
+
+**Limitaciones.** No se pudo probar en un auto ni en el emulador Desktop Head Unit desde esta máquina; solo compila. Como la app se instala fuera de Google Play, Android Auto exige activar "Fuentes desconocidas" en sus ajustes de desarrollador. El payload de "recientes" no lo consume ninguna otra parte de la app, así que su forma quedó sin verificar.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.
