@@ -36,10 +36,12 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.core.model.Track
@@ -105,7 +107,7 @@ fun TrackSelectionBottomSheet(
                         overflow = TextOverflow.Ellipsis
                     )
                     Text(
-                        text = if (isRemoveMode) "Select tracks to remove" else "Select tracks to add",
+                        text = if (isRemoveMode) stringResource(R.string.sheet_selection_remove_title) else stringResource(R.string.sheet_selection_add_title),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -126,7 +128,7 @@ fun TrackSelectionBottomSheet(
                             .clip(RoundedCornerShape(16.dp))
                     ) {
                         Text(
-                            text = if (isRemoveMode) "Remove ${tracksToProcess.size}" else "Add ${tracksToProcess.size}",
+                            text = if (isRemoveMode) stringResource(R.string.sheet_selection_remove_count, tracksToProcess.size) else stringResource(R.string.sheet_selection_add_count, tracksToProcess.size),
                             style = MaterialTheme.typography.labelLarge,
                             color = MaterialTheme.colorScheme.onPrimary
                         )
@@ -138,7 +140,7 @@ fun TrackSelectionBottomSheet(
 
             if (alreadyPresentCount > 0) {
                 Text(
-                    text = if (isRemoveMode) "Tracks in playlist: $alreadyPresentCount" else "Already in playlist: $alreadyPresentCount",
+                    text = if (isRemoveMode) stringResource(R.string.sheet_selection_tracks_in_playlist, alreadyPresentCount) else stringResource(R.string.sheet_selection_already_in_playlist, alreadyPresentCount),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -228,7 +230,7 @@ private fun TrackSelectionRow(
             if (artworkUrl.isNotBlank()) {
                 SmartImage(
                     url = artworkUrl,
-                    contentDescription = "Artwork",
+                    contentDescription = stringResource(R.string.sheet_artwork_cd),
                     modifier = Modifier.fillMaxSize(),
                     monochrome = LocalUiSettings.current.monochromeTracks
                 )
@@ -280,7 +282,7 @@ private fun TrackSelectionRow(
 
         if (isAlreadyInPlaylist && !showCheckbox) {
             Text(
-                text = "In playlist",
+                text = stringResource(R.string.sheet_selection_in_playlist_badge),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )

@@ -41,12 +41,15 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cc.tomko.outify.R
 import cc.tomko.outify.data.repository.DEFAULT_LYRICS_OFFSET_MS
 import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.playback.model.Bitrate
-import cc.tomko.outify.playback.model.getName
+import cc.tomko.outify.playback.model.labelRes
 import cc.tomko.outify.ui.components.DropdownOption
 import cc.tomko.outify.ui.components.bottomsheet.LYRIC_LINE_BASE_FONT_SIZE_SP
 import cc.tomko.outify.ui.components.DropdownPreferenceEntry
@@ -72,8 +75,10 @@ private const val LYRICS_FONT_SCALE_STEP = 0.1f
 private fun sliderSteps(min: Float, max: Float, step: Float): Int =
     ((max - min) / step).roundToInt() - 1
 
+@Composable
 private fun formatLeadTime(offsetMs: Int): String =
-    if (offsetMs > 0) "+$offsetMs ms" else "$offsetMs ms"
+    if (offsetMs > 0) stringResource(R.string.settings_lyrics_lead_time_positive, offsetMs)
+    else stringResource(R.string.settings_lyrics_lead_time_value, offsetMs)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -94,10 +99,10 @@ fun PlaybackSettingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Playback") },
+                title = { Text(stringResource(R.string.settings_playback_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -113,28 +118,28 @@ fun PlaybackSettingScreen(
         ) {
 
             item {
-                PreferenceHeader("Audio Settings")
+                PreferenceHeader(stringResource(R.string.settings_audio_section))
 
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth()
                 ) {
                     Column {
                         DropdownPreferenceEntry(
-                            title = { Text("Bitrate (Quality)") },
-                            description = "Choose your preferred streaming quality",
+                            title = { Text(stringResource(R.string.settings_bitrate_title)) },
+                            description = stringResource(R.string.settings_bitrate_description),
                             icon = { Icon(Icons.Default.HighQuality, contentDescription = null) },
                             options = listOf(
                                 DropdownOption(
                                     Bitrate.KBPS320,
-                                    "320Kbps, ${Bitrate.KBPS320.getName()}"
+                                    stringResource(R.string.settings_bitrate_option_format, 320, stringResource(Bitrate.KBPS320.labelRes()))
                                 ),
                                 DropdownOption(
                                     Bitrate.KBPS160,
-                                    "160Kbps, ${Bitrate.KBPS160.getName()}"
+                                    stringResource(R.string.settings_bitrate_option_format, 160, stringResource(Bitrate.KBPS160.labelRes()))
                                 ),
                                 DropdownOption(
                                     Bitrate.KBPS96,
-                                    "96Kbps, ${Bitrate.KBPS96.getName()}"
+                                    stringResource(R.string.settings_bitrate_option_format, 96, stringResource(Bitrate.KBPS96.labelRes()))
                                 ),
                             ),
                             selectedValue = settings.bitrate,
@@ -142,8 +147,8 @@ fun PlaybackSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Normalize audio") },
-                            description = "Every track will be the same loudness",
+                            title = { Text(stringResource(R.string.settings_normalize_audio_title)) },
+                            description = stringResource(R.string.settings_normalize_audio_description),
                             icon = {
                                 Icon(
                                     Icons.AutoMirrored.Filled.VolumeDown,
@@ -155,8 +160,8 @@ fun PlaybackSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Gapless playback") },
-                            description = "Smooth playback without gaps",
+                            title = { Text(stringResource(R.string.settings_gapless_title)) },
+                            description = stringResource(R.string.settings_gapless_description),
                             icon = { Icon(Icons.Default.SkipNext, contentDescription = null) },
                             onCheckedChange = { viewModel.setGaplessPlayback(it) },
                             isChecked = settings.gapless
@@ -173,8 +178,8 @@ fun PlaybackSettingScreen(
                         ) {
                             Column {
                                 PreferenceEntry(
-                                    title = { Text("Restart Spirc") },
-                                    description = "Required to apply playback related settings",
+                                    title = { Text(stringResource(R.string.settings_restart_spirc_title)) },
+                                    description = stringResource(R.string.settings_restart_spirc_description),
                                     icon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                                     onClick = {
                                         viewModel.restartSpirc()
@@ -200,7 +205,7 @@ fun PlaybackSettingScreen(
             }
 
             item {
-                PreferenceHeader("Controls & Behavior")
+                PreferenceHeader(stringResource(R.string.settings_controls_section))
 
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth()
@@ -212,11 +217,11 @@ fun PlaybackSettingScreen(
 
                         Column(modifier = Modifier.padding(16.dp)) {
                             Text(
-                                text = "Fast forward duration",
+                                text = stringResource(R.string.settings_fast_forward_title),
                                 style = MaterialTheme.typography.bodyLarge
                             )
                             Text(
-                                text = "${ffSeconds.roundToInt()} seconds",
+                                text = pluralStringResource(R.plurals.settings_fast_forward_seconds, ffSeconds.roundToInt(), ffSeconds.roundToInt()),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -232,8 +237,8 @@ fun PlaybackSettingScreen(
                         }
 
                         SwitchPreferenceEntry(
-                            title = { Text("Keepalive") },
-                            description = "Allow resurrection from notification",
+                            title = { Text(stringResource(R.string.settings_keepalive_title)) },
+                            description = stringResource(R.string.settings_keepalive_description),
                             icon = {
                                 Icon(
                                     Icons.Default.Healing,
@@ -248,23 +253,23 @@ fun PlaybackSettingScreen(
             }
 
             item {
-                PreferenceHeader("Lyrics")
+                PreferenceHeader(stringResource(R.string.settings_lyrics_section))
 
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth()
                 ) {
                     Column {
                         SwitchPreferenceEntry(
-                            title = { Text("Romanize lyrics") },
-                            description = "Show romanized text beneath original lyrics",
+                            title = { Text(stringResource(R.string.settings_romanize_lyrics_title)) },
+                            description = stringResource(R.string.settings_romanize_lyrics_description),
                             icon = { Icon(Icons.Default.Translate, contentDescription = null) },
                             onCheckedChange = { viewModel.setRomanizeLyrics(it) },
                             isChecked = romanizeLyrics
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Show lyrics early") },
-                            description = "Highlight each line before it is sung",
+                            title = { Text(stringResource(R.string.settings_lyrics_early_title)) },
+                            description = stringResource(R.string.settings_lyrics_early_description),
                             icon = { Icon(Icons.Default.Timer, contentDescription = null) },
                             onCheckedChange = { viewModel.setLyricsOffsetEnabled(it) },
                             isChecked = lyricsOffsetEnabled
@@ -277,7 +282,7 @@ fun PlaybackSettingScreen(
                             }
 
                             PreferenceEntry(
-                                title = { Text("Lead time") },
+                                title = { Text(stringResource(R.string.settings_lyrics_lead_time_title)) },
                                 description = formatLeadTime(leadTimeMs.roundToInt()),
                                 content = {
                                     Slider(
@@ -304,8 +309,8 @@ fun PlaybackSettingScreen(
                         }
 
                         PreferenceEntry(
-                            title = { Text("Lyrics text size") },
-                            description = "${(fontScale * 100).roundToInt()}%",
+                            title = { Text(stringResource(R.string.settings_lyrics_text_size_title)) },
+                            description = stringResource(R.string.settings_percent_format, (fontScale * 100).roundToInt()),
                             icon = { Icon(Icons.Default.FormatSize, contentDescription = null) },
                             content = {
                                 Slider(
@@ -326,7 +331,7 @@ fun PlaybackSettingScreen(
                                 )
 
                                 Text(
-                                    text = "Lyrics will look like this",
+                                    text = stringResource(R.string.settings_lyrics_preview),
                                     style = MaterialTheme.typography.headlineSmall.copy(
                                         fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
                                     ),
@@ -342,34 +347,35 @@ fun PlaybackSettingScreen(
             }
 
             item {
-                PreferenceHeader("Spotify Connection")
+                PreferenceHeader(stringResource(R.string.settings_spotify_connection_section))
 
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth()
                 ) {
                     Column {
+                        val defaultDeviceName = stringResource(R.string.settings_app_name)
                         var deviceName by remember(settings.deviceName) {
                             mutableStateOf(settings.deviceName)
                         }
 
                         LaunchedEffect(deviceName) {
                             delay(500)
-                            val finalValue = deviceName.ifBlank { "Spoty" }
+                            val finalValue = deviceName.ifBlank { defaultDeviceName }
                             if (finalValue != settings.deviceName) {
                                 viewModel.setDeviceName(finalValue)
                             }
                         }
 
                         TextInputPreferenceEntry(
-                            title = { Text("Spotify Connect name") },
-                            placeholder = "Spoty",
+                            title = { Text(stringResource(R.string.settings_connect_name_title)) },
+                            placeholder = stringResource(R.string.settings_app_name),
                             value = deviceName,
                             onValueChange = { deviceName = it },
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Auto transfer") },
-                            description = "Make Spoty the active device to stream from",
+                            title = { Text(stringResource(R.string.settings_auto_transfer_title)) },
+                            description = stringResource(R.string.settings_auto_transfer_description),
                             icon = { Icon(Icons.Default.SkipNext, contentDescription = null) },
                             onCheckedChange = { viewModel.setAutoTransfer(it) },
                             isChecked = settings.autoTransfer
@@ -382,7 +388,7 @@ fun PlaybackSettingScreen(
                 var advancedSettings by remember { mutableStateOf(false) }
                 ElevatedCard(modifier = modifier.fillMaxWidth()) {
                     PreferenceEntry(
-                        title = { Text("Advanced settings") },
+                        title = { Text(stringResource(R.string.settings_advanced_title)) },
                         onClick = { advancedSettings = !advancedSettings }
                     )
 
@@ -410,15 +416,15 @@ fun PlaybackSettingScreen(
                             }
 
                             TextInputPreferenceEntry(
-                                title = { Text("Spotify Client Id") },
-                                placeholder = "Leave empty for default",
+                                title = { Text(stringResource(R.string.settings_client_id_title)) },
+                                placeholder = stringResource(R.string.settings_leave_empty_default),
                                 value = clientIdInput,
                                 onValueChange = { clientIdInput = it },
                             )
 
                             TextInputPreferenceEntry(
-                                title = { Text("Spotify Client Secret") },
-                                placeholder = "Leave empty for default",
+                                title = { Text(stringResource(R.string.settings_client_secret_title)) },
+                                placeholder = stringResource(R.string.settings_leave_empty_default),
                                 value = clientSecretInput,
                                 onValueChange = { clientSecretInput = it },
                             )

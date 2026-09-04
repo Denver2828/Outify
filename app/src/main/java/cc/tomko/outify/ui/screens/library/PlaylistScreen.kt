@@ -58,10 +58,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.zIndex
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
@@ -214,7 +217,7 @@ fun SharedTransitionScope.PlaylistScreen(
                                 onQueryChange = { searchQuery = it },
                                 isLoading = false,
                                 autoFocus = false,
-                                placeholderText = "Search tracks..",
+                                placeholderText = stringResource(R.string.screen_playlist_search_hint),
                             )
                         }
                     }
@@ -236,14 +239,14 @@ fun SharedTransitionScope.PlaylistScreen(
                                     )
                                     Spacer(Modifier.height(16.dp))
                                     Text(
-                                        text = "Playlist is empty",
+                                        text = stringResource(R.string.screen_playlist_empty_title),
                                         style = MaterialTheme.typography.bodyLarge,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
 
                                     Spacer(Modifier.height(16.dp))
                                     Text(
-                                        text = "Try adding some tracks into it",
+                                        text = stringResource(R.string.screen_playlist_empty_body),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     )
@@ -333,7 +336,11 @@ fun SharedTransitionScope.PlaylistScreen(
                             Spacer(modifier = Modifier.width((authors.take(showAvatarCount).size * 12).dp))
 
                             Text(
-                                text = "• ${tracks.size} songs",
+                                text = pluralStringResource(
+                                    R.plurals.screen_playlist_song_count,
+                                    tracks.size,
+                                    tracks.size
+                                ),
                                 style = MaterialTheme.typography.bodyMedium
                             )
                         }
@@ -362,13 +369,16 @@ fun SharedTransitionScope.PlaylistScreen(
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.Edit,
-                                    contentDescription = "Edit playlist"
+                                    contentDescription = stringResource(R.string.screen_playlist_edit_cd)
                                 )
                             }
                             FilledIconButton(onClick = { viewModel.toggleSave() }) {
                                 Icon(
                                     imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                    contentDescription = if (isSaved) "Unfavorite" else "Favorite"
+                                    contentDescription = stringResource(
+                                        if (isSaved) R.string.screen_unfavorite_cd
+                                        else R.string.screen_favorite_cd
+                                    )
                                 )
                             }
                             FilledIconButton(onClick = {
@@ -381,7 +391,7 @@ fun SharedTransitionScope.PlaylistScreen(
                             }) {
                                 Icon(
                                     imageVector = Icons.Default.MoreVert,
-                                    contentDescription = "More information"
+                                    contentDescription = stringResource(R.string.screen_more_info_cd)
                                 )
                             }
                         }
@@ -411,7 +421,7 @@ fun SharedTransitionScope.PlaylistScreen(
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Scroll to top"
+                                contentDescription = stringResource(R.string.screen_scroll_to_top_cd)
                             )
                         }
                     }

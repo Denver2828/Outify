@@ -1,5 +1,7 @@
 package cc.tomko.outify.ui.components
 
+import cc.tomko.outify.R
+
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.layout.Arrangement
@@ -18,6 +20,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.toArgb
@@ -121,7 +124,7 @@ fun ColorPicker(
 
         // Saturation
         NormalSlider(
-            label = "Saturation",
+            label = stringResource(R.string.ui_color_saturation),
             value = hsv.saturation,
             onChange = {
                 hsv = hsv.copy(saturation = it)
@@ -131,7 +134,7 @@ fun ColorPicker(
 
         // Value / Lightness
         NormalSlider(
-            label = "Lightness",
+            label = stringResource(R.string.ui_color_lightness),
             value = hsv.value,
             onChange = {
                 hsv = hsv.copy(value = it)

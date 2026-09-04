@@ -3,6 +3,7 @@ package cc.tomko.outify.ui.viewmodel.settings
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.R
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
@@ -87,18 +88,18 @@ class DebugViewModel @Inject constructor(
 
         viewModelScope.launch {
             _preferences.value = mapOf(
-                "Bitrate" to settingsRepository.bitrate.first().name,
-                "Gapless" to settingsRepository.gaplessPlayback.first().toString(),
-                "Keep alive" to settingsRepository.keepalive.first().toString(),
-                "Auto transfer" to settingsRepository.autoTransfer.first().toString(),
-                "Device name" to settingsRepository.deviceName.first(),
-                "Shuffle" to settingsRepository.shuffleEnabled.first().toString(),
-                "Repeat" to settingsRepository.repeatEnabled.first().toString(),
-                "Repeat track" to settingsRepository.repeatTrackEnabled.first().toString(),
-                "Romanize lyrics" to settingsRepository.romanizeLyrics.first().toString(),
-                "Show lyrics by default" to settingsRepository.showLyricsByDefault.first()
+                context.getString(R.string.settings_debug_pref_bitrate) to settingsRepository.bitrate.first().name,
+                context.getString(R.string.settings_debug_pref_gapless) to settingsRepository.gaplessPlayback.first().toString(),
+                context.getString(R.string.settings_keepalive_title) to settingsRepository.keepalive.first().toString(),
+                context.getString(R.string.settings_auto_transfer_title) to settingsRepository.autoTransfer.first().toString(),
+                context.getString(R.string.settings_debug_pref_device_name) to settingsRepository.deviceName.first(),
+                context.getString(R.string.settings_debug_pref_shuffle) to settingsRepository.shuffleEnabled.first().toString(),
+                context.getString(R.string.settings_debug_pref_repeat) to settingsRepository.repeatEnabled.first().toString(),
+                context.getString(R.string.settings_debug_pref_repeat_track) to settingsRepository.repeatTrackEnabled.first().toString(),
+                context.getString(R.string.settings_romanize_lyrics_title) to settingsRepository.romanizeLyrics.first().toString(),
+                context.getString(R.string.settings_debug_pref_show_lyrics_default) to settingsRepository.showLyricsByDefault.first()
                     .toString(),
-                "Normalize audio" to settingsRepository.normalizePlayback.first().toString(),
+                context.getString(R.string.settings_normalize_audio_title) to settingsRepository.normalizePlayback.first().toString(),
             )
         }
     }

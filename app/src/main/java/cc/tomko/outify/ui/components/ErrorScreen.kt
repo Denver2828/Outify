@@ -20,6 +20,8 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 @Composable
 fun ErrorScreen(
@@ -36,7 +38,7 @@ fun ErrorScreen(
     ) {
         Icon(
             imageVector = Icons.Default.Warning,
-            contentDescription = "Error",
+            contentDescription = stringResource(R.string.ui_error_desc),
             modifier = Modifier.size(64.dp),
             tint = MaterialTheme.colorScheme.error,
         )
@@ -44,7 +46,7 @@ fun ErrorScreen(
         Spacer(Modifier.height(16.dp))
 
         Text(
-            text = "Something went wrong",
+            text = stringResource(R.string.ui_error_something_went_wrong),
             style = MaterialTheme.typography.titleLarge,
             textAlign = TextAlign.Center,
         )
@@ -68,7 +70,7 @@ fun ErrorScreen(
                     modifier = Modifier.size(18.dp),
                 )
                 Spacer(Modifier.width(8.dp))
-                Text("Retry")
+                Text(stringResource(R.string.ui_action_retry))
             }
         }
     }

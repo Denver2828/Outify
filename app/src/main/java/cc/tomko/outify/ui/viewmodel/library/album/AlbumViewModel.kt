@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.library.album
 
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -11,7 +12,9 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.album.AlbumUiState
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -33,6 +36,7 @@ data class AlbumViewModelKey(val albumUri: String)
  */
 @HiltViewModel
 class AlbumViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -94,7 +98,7 @@ class AlbumViewModel @Inject constructor(
             if (album == null) {
                 val newState = AlbumUiState(
                     isLoading = false,
-                    error = "Album not found"
+                    error = context.getString(R.string.screen_error_album_not_found)
                 )
                 _uiState.value = newState
                 saveState(newState)
@@ -135,7 +139,7 @@ class AlbumViewModel @Inject constructor(
             if (albumId == null) {
                 val newState = AlbumUiState(
                     isLoading = false,
-                    error = "Album for track not found"
+                    error = context.getString(R.string.screen_error_album_for_track_not_found)
                 )
                 _uiState.value = newState
                 saveState(newState)

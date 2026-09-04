@@ -51,12 +51,14 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
@@ -157,7 +159,7 @@ fun SharedTransitionScope.TrackDetailScreen(
                 ) {
                     item {
                         Text(
-                            text = "Track",
+                            text = stringResource(R.string.screen_label_track),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
@@ -184,7 +186,7 @@ fun SharedTransitionScope.TrackDetailScreen(
                         item {
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
-                                text = "Lyrics",
+                                text = stringResource(R.string.screen_label_lyrics),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                             )
@@ -200,7 +202,7 @@ fun SharedTransitionScope.TrackDetailScreen(
                         item {
                             Spacer(modifier = Modifier.height(24.dp))
                             Text(
-                                text = "Artists",
+                                text = stringResource(R.string.screen_label_artists),
                                 style = MaterialTheme.typography.bodyLarge,
                                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                             )
@@ -274,8 +276,10 @@ fun SharedTransitionScope.TrackDetailScreen(
                             Icon(
                                 imageVector = if (track.id in likedTrackIds)
                                     Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = if (track.id in likedTrackIds)
-                                    "Unlike" else "Like"
+                                contentDescription = stringResource(
+                                    if (track.id in likedTrackIds) R.string.screen_track_unlike_cd
+                                    else R.string.screen_track_like_cd
+                                )
                             )
                         }
                     }
@@ -304,7 +308,7 @@ fun SharedTransitionScope.TrackDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Scroll to top"
+                                contentDescription = stringResource(R.string.screen_scroll_to_top_cd)
                             )
                         }
                     }

@@ -37,9 +37,12 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cc.tomko.outify.R
 import cc.tomko.outify.data.repository.OutifyBackup
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
@@ -75,10 +78,10 @@ fun MiscSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Misc") },
+                title = { Text(stringResource(R.string.settings_misc_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -93,7 +96,7 @@ fun MiscSettingsScreen(
             verticalArrangement = Arrangement.spacedBy(16.dp)
         ) {
             item {
-                PreferenceHeader("Sync")
+                PreferenceHeader(stringResource(R.string.settings_sync_header))
             }
 
             item {
@@ -113,20 +116,20 @@ fun MiscSettingsScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "Liked tracks",
+                                text = stringResource(R.string.settings_sync_liked_tracks_title),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         }
 
                         Text(
-                            text = "$likedCount tracks stored locally",
+                            text = pluralStringResource(R.plurals.settings_sync_tracks_stored, likedCount, likedCount),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
 
                         if (!isAuthenticated) {
                             Text(
-                                text = "Please log in to Spotify account in Settings \u2192 Accounts first",
+                                text = stringResource(R.string.settings_sync_login_required),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.error,
                             )
@@ -141,7 +144,7 @@ fun MiscSettingsScreen(
                                 ) {
                                     Icon(Icons.Default.Refresh, contentDescription = null)
                                     Text(
-                                        "Sync liked tracks",
+                                        stringResource(R.string.settings_sync_action),
                                         modifier = Modifier.padding(start = 8.dp)
                                     )
                                 }
@@ -152,7 +155,7 @@ fun MiscSettingsScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "Syncing...",
+                                        text = stringResource(R.string.settings_sync_syncing),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium,
                                     )
@@ -167,7 +170,7 @@ fun MiscSettingsScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "Syncing ${status.current}/${status.total}...",
+                                        text = stringResource(R.string.settings_sync_syncing_progress, status.current, status.total),
                                         style = MaterialTheme.typography.bodyMedium,
                                         fontWeight = FontWeight.Medium,
                                     )
@@ -184,7 +187,7 @@ fun MiscSettingsScreen(
                                     modifier = Modifier.fillMaxWidth(),
                                     enabled = false
                                 ) {
-                                    Text("Sync complete!")
+                                    Text(stringResource(R.string.settings_sync_complete))
                                 }
                             }
 
@@ -193,7 +196,7 @@ fun MiscSettingsScreen(
                                     verticalArrangement = Arrangement.spacedBy(8.dp)
                                 ) {
                                     Text(
-                                        text = "Error: ${status.message}",
+                                        text = stringResource(R.string.settings_sync_error_format, status.message),
                                         style = MaterialTheme.typography.bodyMedium,
                                         color = MaterialTheme.colorScheme.error,
                                     )
@@ -203,7 +206,7 @@ fun MiscSettingsScreen(
                                     ) {
                                         Icon(Icons.Default.Refresh, contentDescription = null)
                                         Text(
-                                            "Retry",
+                                            stringResource(R.string.settings_retry),
                                             modifier = Modifier.padding(start = 8.dp)
                                         )
                                     }
@@ -216,8 +219,7 @@ fun MiscSettingsScreen(
 
             item {
                 Text(
-                    text = "Sync fetches your liked tracks from Spotify and stores them locally. " +
-                            "Use this if tracks are missing from your library.",
+                    text = stringResource(R.string.settings_sync_explanation),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 8.dp)
@@ -225,7 +227,7 @@ fun MiscSettingsScreen(
             }
 
             item {
-                PreferenceHeader("Backup & restore")
+                PreferenceHeader(stringResource(R.string.settings_backup_restore_header))
             }
 
             item {
@@ -245,13 +247,13 @@ fun MiscSettingsScreen(
                                 modifier = Modifier.size(24.dp)
                             )
                             Text(
-                                text = "App settings",
+                                text = stringResource(R.string.settings_backup_app_settings_title),
                                 style = MaterialTheme.typography.titleMedium,
                             )
                         }
 
                         Text(
-                            text = "Backup all preferences including gestures, queues, and playback settings to a .${OutifyBackup.FILE_EXTENSION} file.",
+                            text = stringResource(R.string.settings_backup_description, OutifyBackup.FILE_EXTENSION),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -270,7 +272,7 @@ fun MiscSettingsScreen(
                                     ) {
                                         Icon(Icons.Default.Save, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Export")
+                                        Text(stringResource(R.string.settings_backup_export))
                                     }
                                     Button(
                                         onClick = {
@@ -280,7 +282,7 @@ fun MiscSettingsScreen(
                                     ) {
                                         Icon(Icons.Default.Restore, contentDescription = null)
                                         Spacer(Modifier.width(8.dp))
-                                        Text("Import")
+                                        Text(stringResource(R.string.settings_backup_import))
                                     }
                                 }
                             }
@@ -295,7 +297,7 @@ fun MiscSettingsScreen(
                                         strokeWidth = 2.dp
                                     )
                                     Text(
-                                        text = "Exporting...",
+                                        text = stringResource(R.string.settings_backup_exporting),
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
@@ -311,7 +313,7 @@ fun MiscSettingsScreen(
                                         strokeWidth = 2.dp
                                     )
                                     Text(
-                                        text = "Importing...",
+                                        text = stringResource(R.string.settings_backup_importing),
                                         style = MaterialTheme.typography.bodyMedium,
                                     )
                                 }
@@ -344,8 +346,8 @@ fun MiscSettingsScreen(
             item {
                 ElevatedCard {
                     PreferenceEntry(
-                        title = { Text("Reset to defaults") },
-                        description = "Reset preferences",
+                        title = { Text(stringResource(R.string.settings_reset_to_defaults_title)) },
+                        description = stringResource(R.string.settings_reset_preferences_description),
                         icon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                         onClick = {
                             viewModel.resetPreferences()
@@ -357,8 +359,8 @@ fun MiscSettingsScreen(
             item {
                 ElevatedCard {
                     PreferenceEntry(
-                        title = { Text("Debug") },
-                        description = "Show debug information",
+                        title = { Text(stringResource(R.string.settings_debug_title)) },
+                        description = stringResource(R.string.settings_debug_description),
                         icon = { Icon(Icons.Default.BugReport, contentDescription = null) },
                         onClick = {
                             openDebugScreen()

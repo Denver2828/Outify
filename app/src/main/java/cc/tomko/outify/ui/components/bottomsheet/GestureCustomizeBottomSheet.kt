@@ -35,15 +35,17 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.data.setting.DisplayIcon
 import cc.tomko.outify.data.setting.GestureAction
 import cc.tomko.outify.data.setting.GestureSetting
 import cc.tomko.outify.data.setting.GestureTrigger
 import cc.tomko.outify.data.setting.Side
-import cc.tomko.outify.data.setting.getDisplayName
+import cc.tomko.outify.data.setting.labelRes
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -87,12 +89,12 @@ fun GestureCustomizeBottomSheet(
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 Text(
-                    text = "Customize gesture",
+                    text = stringResource(R.string.sheet_gesture_title),
                     style = MaterialTheme.typography.headlineSmall,
                     modifier = Modifier.weight(1f)
                 )
                 Text(
-                    text = if (enabledState) "On" else "Off",
+                    text = if (enabledState) stringResource(R.string.sheet_gesture_on) else stringResource(R.string.sheet_gesture_off),
                     style = MaterialTheme.typography.labelLarge,
                     color = if (enabledState) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -105,7 +107,7 @@ fun GestureCustomizeBottomSheet(
 
             if (!enabledState) {
                 Text(
-                    text = "This gesture is disabled and won't trigger.",
+                    text = stringResource(R.string.sheet_gesture_disabled_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )
@@ -115,7 +117,7 @@ fun GestureCustomizeBottomSheet(
 
             // --- Action (What happens) ---
             Text(
-                text = "Action",
+                text = stringResource(R.string.sheet_gesture_action),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -151,14 +153,14 @@ fun GestureCustomizeBottomSheet(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column(modifier = Modifier.weight(1f)) {
                         Text(
-                            text = actionValue.getDisplayName(),
+                            text = stringResource(actionValue.labelRes()),
                             style = MaterialTheme.typography.bodyLarge,
                             fontWeight = FontWeight.Medium,
                             maxLines = 1,
                             overflow = TextOverflow.Ellipsis
                         )
                         Text(
-                            text = "Tap to change",
+                            text = stringResource(R.string.sheet_gesture_tap_to_change),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -208,7 +210,7 @@ fun GestureCustomizeBottomSheet(
                                 }
                                 Spacer(modifier = Modifier.width(12.dp))
                                 Text(
-                                    text = action.getDisplayName(),
+                                    text = stringResource(action.labelRes()),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                                     maxLines = 1,
@@ -225,7 +227,7 @@ fun GestureCustomizeBottomSheet(
 
             // --- Trigger (When does it trigger) ---
             Text(
-                text = "Trigger",
+                text = stringResource(R.string.sheet_gesture_trigger),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -252,7 +254,7 @@ fun GestureCustomizeBottomSheet(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = trigger.getDisplayName(),
+                                text = stringResource(trigger.labelRes()),
                                 style = MaterialTheme.typography.bodyLarge,
                                 fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                                 maxLines = 1,
@@ -269,7 +271,7 @@ fun GestureCustomizeBottomSheet(
                 HorizontalDivider()
 
                 Text(
-                    text = "Swipe options",
+                    text = stringResource(R.string.sheet_gesture_swipe_options),
                     style = MaterialTheme.typography.labelMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 4.dp)
@@ -277,7 +279,7 @@ fun GestureCustomizeBottomSheet(
 
                 // Direction
                 Text(
-                    text = "Direction",
+                    text = stringResource(R.string.sheet_gesture_direction),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp)
@@ -304,7 +306,7 @@ fun GestureCustomizeBottomSheet(
                                 verticalAlignment = Alignment.CenterVertically
                             ) {
                                 Text(
-                                    text = side.getDisplayName(),
+                                    text = stringResource(side.labelRes()),
                                     style = MaterialTheme.typography.bodyLarge,
                                     fontWeight = if (selected) FontWeight.Medium else FontWeight.Normal,
                                     maxLines = 1,
@@ -318,7 +320,7 @@ fun GestureCustomizeBottomSheet(
 
                 // Threshold slider
                 Text(
-                    text = "Swipe distance",
+                    text = stringResource(R.string.sheet_gesture_swipe_distance),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(start = 4.dp)
@@ -335,12 +337,12 @@ fun GestureCustomizeBottomSheet(
                         modifier = Modifier.weight(1f)
                     )
                     Text(
-                        text = "${(thresholdValue * 100).toInt()}%",
+                        text = stringResource(R.string.sheet_percent_value, (thresholdValue * 100).toInt()),
                         style = MaterialTheme.typography.bodyMedium
                     )
                 }
                 Text(
-                    text = "Smaller = triggers sooner, larger = need a longer swipe",
+                    text = stringResource(R.string.sheet_gesture_threshold_hint),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant
                 )

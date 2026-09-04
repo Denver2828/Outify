@@ -44,6 +44,9 @@ import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import cc.tomko.outify.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -129,7 +132,7 @@ fun PlaylistRow(
                 ) {
                     SmartImage(
                         url = artworkUrl,
-                        contentDescription = "Artwork",
+                        contentDescription = stringResource(R.string.ui_artwork_desc),
                         modifier = artworkModifier
                             .then(
                                 if (onArtworkClick != null) {
@@ -197,7 +200,7 @@ fun PlaylistRow(
                 Spacer(modifier = Modifier.height(2.dp))
 
                 Text(
-                    text = playlist.attributes.description.ifEmpty { "Playlist · ${playlist.contents.size} tracks" },
+                    text = playlist.attributes.description.ifEmpty { pluralStringResource(R.plurals.ui_playlist_meta, playlist.contents.size, playlist.contents.size) },
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis,
                     style = MaterialTheme.typography.bodySmall,
@@ -225,7 +228,7 @@ fun PlaylistRow(
                 if (isPlaying) {
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Playing",
+                        contentDescription = stringResource(R.string.ui_row_playing_desc),
                         modifier = Modifier.size(20.dp)
                     )
                 } else if (isSelected) {

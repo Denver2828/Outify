@@ -1,0 +1,70 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Playback service -->
+    <string name="sys_notification_loading">Loading…</string>
+    <string name="sys_playback_error_toast">Playback error: %1$s (%2$d): %3$s</string>
+    <string name="sys_player_unknown_source">Unknown source</string>
+
+    <!-- Media browser (Android Auto / media library) -->
+    <string name="sys_media_recently_played">Recently played</string>
+    <string name="sys_media_liked_songs">Liked songs</string>
+    <string name="sys_media_playlists">Playlists</string>
+    <string name="sys_media_top_artists">Top artists</string>
+    <string name="sys_media_playlist_numbered">Playlist %1$d</string>
+    <string name="sys_media_artist">Artist</string>
+
+    <!-- Liked tracks sync notification -->
+    <string name="sys_sync_channel_name">Sync progress</string>
+    <string name="sys_sync_channel_description">Shows sync progress for liked tracks</string>
+    <string name="sys_sync_title_syncing">Syncing liked tracks</string>
+    <string name="sys_sync_progress">Syncing %1$d of %2$d tracks</string>
+    <string name="sys_sync_starting">Starting sync…</string>
+    <string name="sys_sync_complete_title">Sync complete</string>
+    <plurals name="sys_sync_complete_text">
+        <item quantity="one">Synced %1$d track</item>
+        <item quantity="other">Synced %1$d tracks</item>
+    </plurals>
+    <string name="sys_sync_failed_title">Sync failed</string>
+
+    <!-- Quick settings tile -->
+    <string name="sys_tile_playing">Playing ♫</string>
+    <string name="sys_tile_error">Error</string>
+    <plurals name="sys_tile_songs_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="sys_tile_login_first">Login first</string>
+
+    <!-- OAuth foreground service -->
+    <string name="sys_oauth_notification_title">Logging in…</string>
+    <string name="sys_oauth_notification_text">Please complete authentication in the browser</string>
+    <string name="sys_oauth_channel_name">Authentication</string>
+    <string name="sys_oauth_channel_description">Keeps authentication running</string>
+
+    <!-- Application startup -->
+    <string name="sys_error_librespot_load_failed">Failed to load librespot</string>
+    <string name="sys_error_missing_credentials">No Spotify credentials were supplied during build</string>
+
+    <!-- Gesture actions -->
+    <string name="sys_gesture_action_add_to_queue">Add to queue</string>
+    <string name="sys_gesture_action_play_next">Play next</string>
+    <string name="sys_gesture_action_add_to_playlist">Add to playlist</string>
+    <string name="sys_gesture_action_add_to_favorites">Add to favorites</string>
+    <string name="sys_gesture_action_remove_from_favorites">Remove from favorites</string>
+    <string name="sys_gesture_action_show_track_info">Show track info</string>
+    <string name="sys_gesture_action_none">None</string>
+
+    <!-- Gesture triggers -->
+    <string name="sys_gesture_trigger_swipe_start">Threshold reached</string>
+    <string name="sys_gesture_trigger_swipe_end">Swiped into</string>
+    <string name="sys_gesture_trigger_long_press">Long press</string>
+
+    <!-- Gesture sides -->
+    <string name="sys_gesture_side_start">Right to left</string>
+    <string name="sys_gesture_side_end">Left to right</string>
+
+    <!-- Bitrate labels -->
+    <string name="sys_bitrate_very_high">Very high</string>
+    <string name="sys_bitrate_high">High</string>
+    <string name="sys_bitrate_normal">Normal</string>
+</resources>

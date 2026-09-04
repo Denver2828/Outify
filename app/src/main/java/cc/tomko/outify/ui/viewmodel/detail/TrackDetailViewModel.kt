@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.detail
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -14,7 +15,9 @@ import cc.tomko.outify.data.repository.PlayerRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.track.TrackUiState
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -29,6 +32,7 @@ import javax.inject.Inject
 
 @HiltViewModel
 class TrackDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -100,7 +104,7 @@ class TrackDetailViewModel @Inject constructor(
                 }
                 val track = tracks.firstOrNull()
                 if (track == null) {
-                    _uiState.value = TrackUiState(isLoading = false, error = "Track not found")
+                    _uiState.value = TrackUiState(isLoading = false, error = context.getString(R.string.screen_error_track_not_found))
                     return@launch
                 }
 

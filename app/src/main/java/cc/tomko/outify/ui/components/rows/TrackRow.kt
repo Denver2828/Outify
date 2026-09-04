@@ -38,6 +38,8 @@ import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.AudioBarsIndicator
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 enum class TrackRowDensity { Compact, Default, Spacious }
 
@@ -127,7 +129,7 @@ fun TrackRow(
             ) {
                 SmartImage(
                     url = artworkUrl,
-                    contentDescription = "Artwork",
+                    contentDescription = stringResource(R.string.ui_artwork_desc),
                     modifier = artworkModifier
                         .then(
                             if (onArtworkClick != null) {

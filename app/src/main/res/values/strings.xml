@@ -4,20 +4,21 @@
     <string name="title_activity_main" translatable="false">Spoty</string>
     <string name="title_activity_callback" translatable="false">CallbackActivity</string>
     <string name="title_activity_home_screen" translatable="false">HomeScreen</string>
-    <string name="audio_playback_attribution">This app plays audio</string>
-    <string name="media_notificationn_channel">Media playback</string>
-    <string name="media_notification_channel_description">Controls for audio playback</string>
+    <string name="audio_playback_attribution">Esta app reproduce audio</string>
+    <string name="media_notificationn_channel">Reproducción multimedia</string>
+    <string name="media_notification_channel_description">Controles de reproducción de audio</string>
 
-    <string name="search_section_tracks">Tracks</string>
-    <string name="search_section_artists">Artists</string>
-    <string name="search_section_albums">Albums</string>
+    <string name="search_section_tracks">Canciones</string>
+    <string name="search_section_artists">Artistas</string>
+    <string name="search_section_albums">Álbumes</string>
     <string name="search_section_playlists">Playlists</string>
-    <string name="search_section_episodes">Episodes</string>
-    <string name="search_section_shows">Shows</string>
-    <string name="start_radio">Start radio</string>
-    <string name="repeat_mode_all">Repeat all</string>
-    <string name="repeat_mode_one">Repeat one</string>
-    <string name="repeat_mode_off">No repeat</string>
-    <string name="like">Like</string>
-    <string name="outify_playback_widget_description">Fast way to play your favorite tracks</string>
+    <string name="search_section_episodes">Episodios</string>
+    <string name="search_section_shows">Podcasts</string>
+    <string name="start_radio">Iniciar radio</string>
+    <string name="repeat_mode_all">Repetir todo</string>
+    <string name="repeat_mode_one">Repetir una</string>
+    <string name="repeat_mode_off">Sin repetición</string>
+    <string name="like">Me gusta</string>
+    <string name="outify_playback_widget_description">Una forma rápida de reproducir tus canciones favoritas</string>
+    <string name="shortcut_play_liked_label">Reproducir canciones que te gustan</string>
 </resources>

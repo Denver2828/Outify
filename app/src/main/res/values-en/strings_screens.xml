@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels -->
+    <string name="screen_label_playlists">Playlists</string>
+    <string name="screen_label_albums">Albums</string>
+    <string name="screen_label_shows">Shows</string>
+    <string name="screen_label_episodes">Episodes</string>
+    <string name="screen_label_tracks">Tracks</string>
+    <string name="screen_label_track">Track</string>
+    <string name="screen_label_artists">Artists</string>
+    <string name="screen_label_lyrics">Lyrics</string>
+    <string name="screen_scroll_to_top_cd">Scroll to top</string>
+    <string name="screen_more_info_cd">More information</string>
+    <string name="screen_favorite_cd">Favorite</string>
+    <string name="screen_unfavorite_cd">Unfavorite</string>
+    <string name="screen_follow">Follow</string>
+    <string name="screen_unfollow">Unfollow</string>
+    <plurals name="screen_account_playlists_count">
+        <item quantity="one">Account • %1$d playlist</item>
+        <item quantity="other">Account • %1$d playlists</item>
+    </plurals>
+    <plurals name="screen_account_albums_count">
+        <item quantity="one">Account • %1$d album</item>
+        <item quantity="other">Account • %1$d albums</item>
+    </plurals>
+    <plurals name="screen_account_shows_count">
+        <item quantity="one">Account • %1$d show</item>
+        <item quantity="other">Account • %1$d shows</item>
+    </plurals>
+    <plurals name="screen_account_episodes_count">
+        <item quantity="one">Account • %1$d episode</item>
+        <item quantity="other">Account • %1$d episodes</item>
+    </plurals>
+    <plurals name="screen_account_songs_count">
+        <item quantity="one">Account • %1$d song</item>
+        <item quantity="other">Account • %1$d songs</item>
+    </plurals>
+
+    <!-- Home -->
+    <string name="screen_home_default_username">User</string>
+    <string name="screen_home_welcome">Welcome back,\n%1$s!</string>
+    <string name="screen_home_top_artists">Top artists</string>
+    <string name="screen_home_top_tracks">Top tracks</string>
+    <string name="screen_home_account_cd">Account</string>
+    <string name="screen_home_not_logged_in_cd">Not logged in</string>
+    <string name="screen_home_settings_cd">Settings</string>
+    <string name="screen_home_empty_title">No top data available</string>
+    <string name="screen_home_empty_body">API request returned nothing</string>
+    <string name="screen_home_connect_title">Connect to Spotify</string>
+    <string name="screen_home_connect_body">Link your Spotify account to see your top artists and tracks.</string>
+    <string name="screen_home_connect_action">Connect Spotify</string>
+
+    <!-- Search -->
+    <string name="screen_search_title">Search</string>
+    <string name="screen_search_recommendations_title">Recommendations</string>
+    <string name="screen_search_advanced_title">Advanced search</string>
+    <string name="screen_search_no_history_title">No history yet</string>
+    <string name="screen_search_no_history_body">Tap search results to save them here</string>
+    <string name="screen_search_history_title">Search history</string>
+    <string name="screen_search_clear_all">Clear all</string>
+    <string name="screen_search_remove_from_history_cd">Remove from history</string>
+    <string name="screen_search_logged_out_cd">Logged out</string>
+    <string name="screen_search_login_required">This feature is only available to logged in users</string>
+    <string name="screen_search_select_filters_cd">Select filters</string>
+    <string name="screen_search_nothing_found">Nothing found…</string>
+    <string name="screen_search_type_and_filter">Type the query and select filters</string>
+    <string name="screen_search_placeholder">Search Spotify</string>
+    <string name="screen_search_clear_query_cd">Clear query</string>
+    <string name="screen_search_field_title">Title</string>
+    <string name="screen_search_field_artist">Artist</string>
+    <string name="screen_search_field_album">Album</string>
+    <string name="screen_search_field_year">Year (e.g. 1978 or 1980-1985)</string>
+    <string name="screen_search_field_genre">Genre</string>
+    <string name="screen_search_field_label">Label</string>
+    <string name="screen_search_match_label">Match:</string>
+    <string name="screen_search_match_all">All (AND)</string>
+    <string name="screen_search_match_any">Any (OR)</string>
+    <string name="screen_search_clear">Clear</string>
+
+    <!-- Library -->
+    <string name="screen_library_title">Your library</string>
+    <string name="screen_library_search_playlists_hint">Search playlists…</string>
+    <string name="screen_library_search_albums_hint">Search albums…</string>
+    <string name="screen_library_search_shows_hint">Search shows…</string>
+    <string name="screen_library_search_episodes_hint">Search episodes…</string>
+    <string name="screen_library_playlists_empty">Your playlist library is empty</string>
+    <string name="screen_library_playlists_no_match">No matching playlists found</string>
+    <string name="screen_library_albums_loading">Loading albums…</string>
+    <string name="screen_library_albums_empty">No saved albums yet</string>
+    <string name="screen_library_albums_no_match">No matching albums found</string>
+    <string name="screen_library_shows_loading">Loading shows…</string>
+    <string name="screen_library_shows_empty">No saved shows yet</string>
+    <string name="screen_library_shows_no_match">No matching shows found</string>
+    <string name="screen_library_episodes_loading">Loading episodes…</string>
+    <string name="screen_library_episodes_empty">No saved episodes yet</string>
+    <string name="screen_library_episodes_no_match">No matching episodes found</string>
+    <string name="screen_library_add_playlist_cd">Add playlist</string>
+    <string name="screen_library_add_folder_cd">Add folder</string>
+    <string name="screen_library_close_menu_cd">Close menu</string>
+    <string name="screen_library_add_item_cd">Add item</string>
+    <string name="screen_library_delete_folder_title">Delete folder</string>
+    <string name="screen_library_delete_folder_message">Are you sure you want to delete \"%1$s\"? Playlists inside will remain intact but unorganized.</string>
+    <string name="screen_library_delete">Delete</string>
+    <string name="screen_library_cancel">Cancel</string>
+    <plurals name="screen_library_folder_playlist_count">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
+    </plurals>
+    <string name="screen_library_edit_folder_cd">Edit folder</string>
+    <string name="screen_library_collapse_cd">Collapse</string>
+    <string name="screen_library_expand_cd">Expand</string>
+    <string name="screen_library_move_to_folder_cd">Move to folder</string>
+
+    <!-- Liked -->
+    <string name="screen_liked_title">Your liked tracks</string>
+    <string name="screen_liked_search_hint">Search liked</string>
+    <string name="screen_liked_filter_sort_cd">Filter and sort</string>
+    <string name="screen_liked_syncing_title">Syncing tracks…</string>
+    <string name="screen_liked_syncing_progress">Syncing %1$d of %2$d</string>
+    <string name="screen_liked_syncing_progress_large">Syncing %1$d of %2$d. Larger libraries take longer.</string>
+
+    <!-- Playlist -->
+    <string name="screen_playlist_search_hint">Search tracks…</string>
+    <string name="screen_playlist_empty_title">Playlist is empty</string>
+    <string name="screen_playlist_empty_body">Try adding some tracks into it</string>
+    <plurals name="screen_playlist_song_count">
+        <item quantity="one">• %1$d song</item>
+        <item quantity="other">• %1$d songs</item>
+    </plurals>
+    <string name="screen_playlist_edit_cd">Edit playlist</string>
+
+    <!-- Profile -->
+    <string name="screen_profile_public_playlists">Public playlists</string>
+    <string name="screen_profile_followers">Followers</string>
+    <string name="screen_profile_following">Following</string>
+    <plurals name="screen_profile_playlist_followers">
+        <item quantity="one">%1$d follower</item>
+        <item quantity="other">%1$d followers</item>
+    </plurals>
+
+    <!-- Album -->
+    <plurals name="screen_album_subtitle">
+        <item quantity="one">%1$s • %2$d song</item>
+        <item quantity="other">%1$s • %2$d songs</item>
+    </plurals>
+
+    <!-- Artist -->
+    <string name="screen_artist_popular_tracks">Popular tracks</string>
+    <string name="screen_artist_see_all_albums_cd">See all albums</string>
+    <plurals name="screen_artist_subtitle">
+        <item quantity="one">Artist • %1$d liked song</item>
+        <item quantity="other">Artist • %1$d liked songs</item>
+    </plurals>
+    <string name="screen_artist_liked_artwork_cd">Liked songs artwork</string>
+    <string name="screen_artist_liked_cd">Liked</string>
+    <string name="screen_artist_liked_songs_title">Liked songs</string>
+    <plurals name="screen_artist_liked_count">
+        <item quantity="one">You have %1$d liked song</item>
+        <item quantity="other">You have %1$d liked songs</item>
+    </plurals>
+    <string name="screen_artist_preview_artwork_cd">Preview artwork</string>
+    <string name="screen_artist_open_liked_cd">Open liked songs</string>
+    <string name="screen_artist_album_artwork_cd">Album artwork</string>
+
+    <!-- Show -->
+    <plurals name="screen_show_subtitle">
+        <item quantity="one">%1$s • %2$d episode</item>
+        <item quantity="other">%1$s • %2$d episodes</item>
+    </plurals>
+    <string name="screen_show_change_order_cd">Change episode order</string>
+    <string name="screen_show_order_recommended">%1$s (Recommended)</string>
+    <string name="screen_show_order_sequential">Sequential</string>
+    <string name="screen_show_order_episodic">Episodic</string>
+    <string name="screen_show_order_recent">Recent</string>
+
+    <!-- Track -->
+    <string name="screen_track_like_cd">Like</string>
+    <string name="screen_track_unlike_cd">Unlike</string>
+
+    <!-- ViewModel errors -->
+    <string name="screen_error_track_not_found">Track not found</string>
+    <string name="screen_error_show_not_found">Show not found</string>
+    <string name="screen_error_library_load_failed">Failed to load library</string>
+    <string name="screen_error_unknown">Unknown error</string>
+    <string name="screen_error_no_playlist_to_refresh">No playlist loaded to refresh</string>
+    <string name="screen_error_profile_not_found">Profile not found</string>
+    <string name="screen_error_artist_load_failed">Could not load artist</string>
+    <string name="screen_error_sync_failed">Sync failed</string>
+    <string name="screen_error_album_not_found">Album not found</string>
+    <string name="screen_error_album_for_track_not_found">Album for track not found</string>
+</resources>

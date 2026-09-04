@@ -4,6 +4,7 @@ import android.os.Build
 import android.service.quicksettings.Tile
 import android.service.quicksettings.TileService
 import android.util.Log
+import cc.tomko.outify.R
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.OutifyUri
@@ -33,10 +34,10 @@ class LikedTileService : TileService() {
     override fun onClick() {
         super.onClick()
 
-        qsTile.label = "Play liked tracks"
+        qsTile.label = getString(R.string.shortcut_play_liked_label)
         qsTile.state = Tile.STATE_UNAVAILABLE
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            qsTile.subtitle = "Loading..."
+            qsTile.subtitle = getString(R.string.sys_notification_loading)
         }
         qsTile.updateTile()
 
@@ -46,7 +47,8 @@ class LikedTileService : TileService() {
             }
             qsTile.state = if (success) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                qsTile.subtitle = if (success) "Playing ♫" else "Error"
+                qsTile.subtitle =
+                    if (success) getString(R.string.sys_tile_playing) else getString(R.string.sys_tile_error)
             }
             if (!success) {
                 Log.w("LikedTileService", "shuffleLoad returned false")
@@ -57,13 +59,15 @@ class LikedTileService : TileService() {
 
     override fun onStartListening() {
         super.onStartListening()
-        qsTile.label = "Play liked tracks"
+        qsTile.label = getString(R.string.shortcut_play_liked_label)
         qsTile.state = if (spircWrapper.isUsable) Tile.STATE_ACTIVE else Tile.STATE_INACTIVE
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            qsTile.subtitle = if (authManager.hasCachedCredentials())
-                "${likedRepository.likedCountState.value} songs"
-            else
-                "Login first"
+            qsTile.subtitle = if (authManager.hasCachedCredentials()) {
+                val count = likedRepository.likedCountState.value
+                resources.getQuantityString(R.plurals.sys_tile_songs_count, count, count)
+            } else {
+                getString(R.string.sys_tile_login_first)
+            }
         }
         qsTile.updateTile()
     }

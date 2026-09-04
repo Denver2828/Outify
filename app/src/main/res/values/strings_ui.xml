@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared actions -->
+    <string name="ui_action_save">Guardar</string>
+    <string name="ui_action_cancel">Cancelar</string>
+    <string name="ui_action_rename">Renombrar</string>
+    <string name="ui_action_done">Listo</string>
+    <string name="ui_action_retry">Reintentar</string>
+    <string name="ui_action_back_desc">Volver</string>
+
+    <!-- Shared content descriptions -->
+    <string name="ui_artwork_desc">Portada</string>
+    <string name="ui_row_playing_desc">Reproduciendo</string>
+    <string name="ui_row_liked_desc">Me gusta</string>
+
+    <!-- Fullscreen player -->
+    <string name="ui_player_shuffle_desc">Aleatorio</string>
+    <string name="ui_player_repeat_desc">Repetir</string>
+    <string name="ui_player_favorite_desc">Me gusta</string>
+    <string name="ui_player_lyrics_desc">Letras</string>
+    <string name="ui_player_more_info_desc">Más información</string>
+    <string name="ui_player_previous_desc">Anterior</string>
+    <string name="ui_player_rewind_desc">Retroceder 15 segundos</string>
+    <string name="ui_player_pause_desc">Pausar</string>
+    <string name="ui_player_play_desc">Reproducir</string>
+    <string name="ui_player_fast_forward_desc">Avanzar 15 segundos</string>
+    <string name="ui_player_next_desc">Siguiente</string>
+    <string name="ui_player_not_playing">Nada en reproducción</string>
+    <string name="ui_player_unknown_source">Fuente desconocida</string>
+
+    <!-- Playback speed -->
+    <string name="ui_speed_custom">Personalizada</string>
+    <string name="ui_speed_title">Velocidad de reproducción</string>
+    <string name="ui_speed_field_label">Velocidad</string>
+    <string name="ui_speed_invalid_range">Ingresá un valor entre %1$s y %2$s</string>
+    <string name="ui_speed_set">Aplicar velocidad • %1$s</string>
+
+    <!-- Mini player -->
+    <string name="ui_mini_player_expand_desc">Expandir</string>
+    <string name="ui_mini_player_nothing_playing">Nada en reproducción</string>
+    <string name="ui_mini_player_see_queue_desc">Ver la cola</string>
+
+    <!-- Queue sheet -->
+    <string name="ui_queue_title">Cola</string>
+    <plurals name="ui_queue_song_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <string name="ui_queue_shuffle_desc">Mezclar la cola</string>
+    <string name="ui_queue_save">Guardar cola</string>
+    <string name="ui_queue_saved_queues">Colas guardadas</string>
+    <string name="ui_queue_loading">Cargando la cola…</string>
+    <string name="ui_queue_empty">La cola está vacía</string>
+    <string name="ui_queue_reorder_desc">Reordenar</string>
+    <string name="ui_queue_error">Error: %1$s</string>
+
+    <!-- Saved queues switcher -->
+    <plurals name="ui_queue_switcher_count">
+        <item quantity="one">%1$d cola</item>
+        <item quantity="other">%1$d colas</item>
+    </plurals>
+    <string name="ui_queue_switcher_empty">Todavía no hay colas guardadas</string>
+    <string name="ui_queue_switcher_save_current">Guardar la cola actual</string>
+    <string name="ui_queue_rename_title">Renombrar cola</string>
+    <plurals name="ui_queue_track_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <string name="ui_queue_delete_desc">Eliminar cola</string>
+    <string name="ui_queue_active_desc">Activa</string>
+    <string name="ui_queue_activate_desc">Activar cola</string>
+    <string name="ui_queue_name_label">Nombre de la cola</string>
+
+    <!-- Relative time and durations -->
+    <string name="ui_time_just_now">recién</string>
+    <string name="ui_time_minutes_ago">hace %1$d min</string>
+    <string name="ui_time_hours_ago">hace %1$d h</string>
+    <string name="ui_time_days_ago">hace %1$d d</string>
+    <plurals name="ui_time_months_ago">
+        <item quantity="one">hace %1$d mes</item>
+        <item quantity="other">hace %1$d meses</item>
+    </plurals>
+    <string name="ui_episode_today">Hoy</string>
+    <string name="ui_episode_yesterday">Ayer</string>
+    <string name="ui_duration_hours_minutes">%1$d h %2$d min</string>
+    <string name="ui_duration_minutes">%1$d min</string>
+    <string name="ui_duration_minutes_seconds">%1$d min %2$d s</string>
+    <string name="ui_duration_seconds">%1$d s</string>
+    <string name="ui_episode_resume">Continuar en %1$s</string>
+
+    <!-- Rows -->
+    <plurals name="ui_playlist_meta">
+        <item quantity="one">Playlist · %1$d canción</item>
+        <item quantity="other">Playlist · %1$d canciones</item>
+    </plurals>
+    <string name="ui_show_artwork_desc">Portada del podcast</string>
+    <plurals name="ui_show_episode_count">
+        <item quantity="one">%1$d episodio</item>
+        <item quantity="other">%1$d episodios</item>
+    </plurals>
+    <string name="ui_show_video_episodes_desc">Episodios en video disponibles</string>
+    <string name="ui_episode_artwork_desc">Portada del episodio</string>
+
+    <!-- Generic components -->
+    <string name="ui_color_picker_title">Elegí un color</string>
+    <string name="ui_skeleton_popular_tracks">Canciones populares</string>
+    <string name="ui_error_desc">Error</string>
+    <string name="ui_error_something_went_wrong">Algo salió mal</string>
+
+    <!-- Widget -->
+    <string name="ui_widget_no_items">No hay nada para mostrar</string>
+    <string name="ui_widget_play_pause_desc">Reproducir o pausar</string>
+
+    <!-- Bottom navigation -->
+    <string name="ui_nav_home">Inicio</string>
+    <string name="ui_nav_search">Buscar</string>
+    <string name="ui_nav_liked">Me gusta</string>
+    <string name="ui_nav_library">Biblioteca</string>
+    <string name="ui_nav_artist">Artista</string>
+    <string name="ui_nav_album">Álbum</string>
+    <string name="ui_nav_playlist">Playlist</string>
+    <string name="ui_nav_profile">Perfil</string>
+    <string name="ui_nav_show">Podcast</string>
+
+    <!-- In-app notifications -->
+    <string name="ui_notif_added_to_queue">Agregado a la cola</string>
+    <string name="ui_notif_inserted_to_queue">Insertado en la cola</string>
+    <string name="ui_notif_radio_started">Radio iniciada</string>
+    <string name="ui_notif_favorite_failed">No se pudo actualizar Me gusta</string>
+
+    <!-- Home top items range -->
+    <string name="ui_top_items_last_4_weeks">Últimas 4 semanas</string>
+    <string name="ui_top_items_last_6_months">Últimos 6 meses</string>
+    <string name="ui_top_items_last_year">Último año</string>
+    <string name="ui_color_saturation">Saturación</string>
+    <string name="ui_color_lightness">Luminosidad</string>
+</resources>

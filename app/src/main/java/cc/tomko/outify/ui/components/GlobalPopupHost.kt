@@ -18,6 +18,8 @@ import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.toOutifyUri
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.bottomsheet.AddToPlaylistBottomSheet
@@ -214,7 +216,9 @@ fun GlobalPopupHost(
             is PopupSpec.AuthResult -> {
                 AuthResultBottomSheet(
                     isSuccess = popup.isSuccess,
-                    message = popup.message,
+                    message = popup.message ?: stringResource(
+                        if (popup.isSuccess) R.string.sheet_auth_result_success_default else R.string.sheet_auth_result_failed_default
+                    ),
                     errorDetails = popup.errorDetails,
                     onDismiss = {
                         GlobalPopupController.dismiss(popup.id)

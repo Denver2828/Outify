@@ -69,6 +69,9 @@ import cc.tomko.outify.ui.viewmodel.player.QueueViewModel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import sh.calvin.reorderable.ReorderableItem
 import sh.calvin.reorderable.rememberReorderableLazyListState
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import cc.tomko.outify.R
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -178,7 +181,7 @@ fun SharedTransitionScope.QueueBottomSheet(
             ) {
                 Icon(
                     Icons.Default.Menu,
-                    contentDescription = "Queue",
+                    contentDescription = stringResource(R.string.ui_queue_title),
                     modifier = Modifier
                         .clip(MaterialShapes.Cookie9Sided.toShape())
                         .background(MaterialTheme.colorScheme.secondaryContainer)
@@ -190,13 +193,13 @@ fun SharedTransitionScope.QueueBottomSheet(
 
                 Column(modifier = Modifier.weight(1f)) {
                     Text(
-                        text = "Queue",
+                        text = stringResource(R.string.ui_queue_title),
                         style = MaterialTheme.typography.headlineMediumEmphasized,
                         fontWeight = FontWeight.Black,
                     )
                     if (!queueState.isLoading && queueState.totalSize > 0) {
                         Text(
-                            text = "${queueState.totalSize} songs",
+                            text = pluralStringResource(R.plurals.ui_queue_song_count, queueState.totalSize, queueState.totalSize),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -214,7 +217,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                 IconButton(onClick = { viewModel.toggleShuffle() }) {
                     Icon(
                         if(isShuffling) MyIcons.Shuffle else MyIcons.NoShuffle,
-                        contentDescription = "Shuffle queue",
+                        contentDescription = stringResource(R.string.ui_queue_shuffle_desc),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                         modifier = Modifier.size(20.dp)
                     )
@@ -223,7 +226,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                 IconButton(onClick = { showSaveDialog = true }) {
                     Icon(
                         Icons.AutoMirrored.Filled.PlaylistAdd,
-                        contentDescription = "Save queue",
+                        contentDescription = stringResource(R.string.ui_queue_save),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
                 }
@@ -231,7 +234,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                 IconButton(onClick = { showSwitcher = true }) {
                     Icon(
                         Icons.Default.LibraryMusic,
-                        contentDescription = "Saved queues",
+                        contentDescription = stringResource(R.string.ui_queue_saved_queues),
                         tint = if (activeQueueId != null)
                             MaterialTheme.colorScheme.primary
                         else
@@ -260,7 +263,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                         ) {
                             CircularProgressIndicator()
                             Text(
-                                text = "Loading queue…",
+                                text = stringResource(R.string.ui_queue_loading),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -286,7 +289,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
                             Text(
-                                text = "The queue is empty",
+                                text = stringResource(R.string.ui_queue_empty),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
@@ -359,7 +362,7 @@ fun SharedTransitionScope.QueueBottomSheet(
                                         ) {
                                             Icon(
                                                 Icons.Default.DragIndicator,
-                                                contentDescription = "Reorder",
+                                                contentDescription = stringResource(R.string.ui_queue_reorder_desc),
                                                 tint = if (isCurrentTrack)
                                                     MaterialTheme.colorScheme.primary
                                                 else
@@ -443,7 +446,7 @@ fun SharedTransitionScope.QueueBottomSheet(
 
             queueState.error?.let { error ->
                 Text(
-                    text = "Error: $error",
+                    text = stringResource(R.string.ui_queue_error, error),
                     color = MaterialTheme.colorScheme.error,
                     style = MaterialTheme.typography.bodySmall,
                 )
@@ -463,8 +466,8 @@ fun SharedTransitionScope.QueueBottomSheet(
 
     if (showSaveDialog) {
         QueueNameDialog(
-            title = "Save queue",
-            confirmLabel = "Save",
+            title = stringResource(R.string.ui_queue_save),
+            confirmLabel = stringResource(R.string.ui_action_save),
             onConfirm = { name ->
                 multiQueueViewModel.saveCurrentQueue(name, currentTrack)
                 showSaveDialog = false

@@ -35,10 +35,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cc.tomko.outify.BuildConfig
+import cc.tomko.outify.R
 
 private const val DEVELOPER = "Darius"
 
@@ -51,10 +53,10 @@ fun AboutScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("About") },
+                title = { Text(stringResource(R.string.settings_about_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -95,14 +97,14 @@ fun AboutScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.LibraryMusic,
-                                contentDescription = "Spoty",
+                                contentDescription = stringResource(R.string.settings_app_name),
                                 tint = MaterialTheme.colorScheme.onPrimary,
                                 modifier = Modifier.size(40.dp),
                             )
                         }
 
                         Text(
-                            text = "Spoty",
+                            text = stringResource(R.string.settings_app_name),
                             style = MaterialTheme.typography.displaySmall.copy(
                                 fontWeight = FontWeight.Bold,
                                 letterSpacing = (-1).sp,
@@ -122,14 +124,14 @@ fun AboutScreen(
                 ) {
                     InfoChip(
                         modifier = Modifier.weight(1f),
-                        label = "Version",
+                        label = stringResource(R.string.settings_about_version_label),
                         value = BuildConfig.VERSION_NAME,
                         icon = Icons.Default.Info,
                     )
                     InfoChip(
                         modifier = Modifier.weight(1f),
-                        label = "Build",
-                        value = "#${BuildConfig.VERSION_CODE}",
+                        label = stringResource(R.string.settings_about_build_label),
+                        value = stringResource(R.string.settings_about_build_number, BuildConfig.VERSION_CODE),
                         icon = Icons.Default.Code,
                     )
                 }
@@ -167,7 +169,7 @@ fun AboutScreen(
                             }
                             Column {
                                 Text(
-                                    text = "Made by",
+                                    text = stringResource(R.string.settings_about_made_by),
                                     style = MaterialTheme.typography.labelSmall,
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                 )

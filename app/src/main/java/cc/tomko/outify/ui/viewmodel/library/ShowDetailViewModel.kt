@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.library
 
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.EpisodeDetails
@@ -17,7 +18,9 @@ import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.show.ShowUiState
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -38,6 +41,7 @@ private const val EPISODES_PAGE_SIZE = 20
 
 @HiltViewModel
 class ShowDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -174,7 +178,7 @@ class ShowDetailViewModel @Inject constructor(
             if (show == null) {
                 val newState = ShowUiState(
                     isLoading = false,
-                    error = "Show not found",
+                    error = context.getString(R.string.screen_error_show_not_found),
                     consumptionOrder = order,
                 )
                 _uiState.value = newState

@@ -1,0 +1,137 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared actions -->
+    <string name="ui_action_save">Save</string>
+    <string name="ui_action_cancel">Cancel</string>
+    <string name="ui_action_rename">Rename</string>
+    <string name="ui_action_done">Done</string>
+    <string name="ui_action_retry">Retry</string>
+    <string name="ui_action_back_desc">Back</string>
+
+    <!-- Shared content descriptions -->
+    <string name="ui_artwork_desc">Artwork</string>
+    <string name="ui_row_playing_desc">Playing</string>
+    <string name="ui_row_liked_desc">Liked</string>
+
+    <!-- Fullscreen player -->
+    <string name="ui_player_shuffle_desc">Shuffle</string>
+    <string name="ui_player_repeat_desc">Repeat</string>
+    <string name="ui_player_favorite_desc">Favorite</string>
+    <string name="ui_player_lyrics_desc">Lyrics</string>
+    <string name="ui_player_more_info_desc">More information</string>
+    <string name="ui_player_previous_desc">Previous</string>
+    <string name="ui_player_rewind_desc">Rewind 15 seconds</string>
+    <string name="ui_player_pause_desc">Pause</string>
+    <string name="ui_player_play_desc">Play</string>
+    <string name="ui_player_fast_forward_desc">Fast forward 15 seconds</string>
+    <string name="ui_player_next_desc">Next</string>
+    <string name="ui_player_not_playing">Not playing</string>
+    <string name="ui_player_unknown_source">Unknown source</string>
+
+    <!-- Playback speed -->
+    <string name="ui_speed_custom">Custom</string>
+    <string name="ui_speed_title">Playback speed</string>
+    <string name="ui_speed_field_label">Speed</string>
+    <string name="ui_speed_invalid_range">Enter a value between %1$s and %2$s</string>
+    <string name="ui_speed_set">Set speed • %1$s</string>
+
+    <!-- Mini player -->
+    <string name="ui_mini_player_expand_desc">Expand</string>
+    <string name="ui_mini_player_nothing_playing">Nothing playing</string>
+    <string name="ui_mini_player_see_queue_desc">See queue</string>
+
+    <!-- Queue sheet -->
+    <string name="ui_queue_title">Queue</string>
+    <plurals name="ui_queue_song_count">
+        <item quantity="one">%1$d song</item>
+        <item quantity="other">%1$d songs</item>
+    </plurals>
+    <string name="ui_queue_shuffle_desc">Shuffle queue</string>
+    <string name="ui_queue_save">Save queue</string>
+    <string name="ui_queue_saved_queues">Saved queues</string>
+    <string name="ui_queue_loading">Loading queue…</string>
+    <string name="ui_queue_empty">The queue is empty</string>
+    <string name="ui_queue_reorder_desc">Reorder</string>
+    <string name="ui_queue_error">Error: %1$s</string>
+
+    <!-- Saved queues switcher -->
+    <plurals name="ui_queue_switcher_count">
+        <item quantity="one">%1$d queue</item>
+        <item quantity="other">%1$d queues</item>
+    </plurals>
+    <string name="ui_queue_switcher_empty">No saved queues yet</string>
+    <string name="ui_queue_switcher_save_current">Save current queue</string>
+    <string name="ui_queue_rename_title">Rename queue</string>
+    <plurals name="ui_queue_track_count">
+        <item quantity="one">%1$d track</item>
+        <item quantity="other">%1$d tracks</item>
+    </plurals>
+    <string name="ui_queue_delete_desc">Delete queue</string>
+    <string name="ui_queue_active_desc">Active</string>
+    <string name="ui_queue_activate_desc">Activate queue</string>
+    <string name="ui_queue_name_label">Queue name</string>
+
+    <!-- Relative time and durations -->
+    <string name="ui_time_just_now">just now</string>
+    <string name="ui_time_minutes_ago">%1$dm ago</string>
+    <string name="ui_time_hours_ago">%1$dh ago</string>
+    <string name="ui_time_days_ago">%1$dd ago</string>
+    <plurals name="ui_time_months_ago">
+        <item quantity="one">%1$dmo ago</item>
+        <item quantity="other">%1$dmo ago</item>
+    </plurals>
+    <string name="ui_episode_today">Today</string>
+    <string name="ui_episode_yesterday">Yesterday</string>
+    <string name="ui_duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="ui_duration_minutes">%1$dm</string>
+    <string name="ui_duration_minutes_seconds">%1$dm %2$ds</string>
+    <string name="ui_duration_seconds">%1$ds</string>
+    <string name="ui_episode_resume">Resume %1$s</string>
+
+    <!-- Rows -->
+    <plurals name="ui_playlist_meta">
+        <item quantity="one">Playlist · %1$d track</item>
+        <item quantity="other">Playlist · %1$d tracks</item>
+    </plurals>
+    <string name="ui_show_artwork_desc">Show artwork</string>
+    <plurals name="ui_show_episode_count">
+        <item quantity="one">%1$d episode</item>
+        <item quantity="other">%1$d episodes</item>
+    </plurals>
+    <string name="ui_show_video_episodes_desc">Video episodes available</string>
+    <string name="ui_episode_artwork_desc">Episode artwork</string>
+
+    <!-- Generic components -->
+    <string name="ui_color_picker_title">Choose color</string>
+    <string name="ui_skeleton_popular_tracks">Popular tracks</string>
+    <string name="ui_error_desc">Error</string>
+    <string name="ui_error_something_went_wrong">Something went wrong</string>
+
+    <!-- Widget -->
+    <string name="ui_widget_no_items">No items to display</string>
+    <string name="ui_widget_play_pause_desc">Play / Pause</string>
+
+    <!-- Bottom navigation -->
+    <string name="ui_nav_home">Home</string>
+    <string name="ui_nav_search">Search</string>
+    <string name="ui_nav_liked">Liked</string>
+    <string name="ui_nav_library">Library</string>
+    <string name="ui_nav_artist">Artist</string>
+    <string name="ui_nav_album">Album</string>
+    <string name="ui_nav_playlist">Playlist</string>
+    <string name="ui_nav_profile">Profile</string>
+    <string name="ui_nav_show">Show</string>
+
+    <!-- In-app notifications -->
+    <string name="ui_notif_added_to_queue">Added to queue</string>
+    <string name="ui_notif_inserted_to_queue">Inserted to queue</string>
+    <string name="ui_notif_radio_started">Radio started</string>
+    <string name="ui_notif_favorite_failed">Failed to update favorite</string>
+
+    <!-- Home top items range -->
+    <string name="ui_top_items_last_4_weeks">Last 4 weeks</string>
+    <string name="ui_top_items_last_6_months">Last 6 months</string>
+    <string name="ui_top_items_last_year">Last year</string>
+    <string name="ui_color_saturation">Saturation</string>
+    <string name="ui_color_lightness">Lightness</string>
+</resources>

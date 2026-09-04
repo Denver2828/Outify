@@ -43,11 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cc.tomko.outify.R
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.SmartImage
@@ -80,8 +82,8 @@ fun AccountsScreen(
 
     if (showPlaybackSheet) {
         AccountDetailBottomSheet(
-            title = "Playback login",
-            description = "This login is mandatory to allow for playback. It uses fake Spotify credentials to stream audio.",
+            title = stringResource(R.string.settings_accounts_playback_login_title),
+            description = stringResource(R.string.settings_accounts_playback_login_sheet_description),
             isLoggedIn = isPlaybackLoggedIn,
             onLogout = { viewModel.logoutPlayback() },
             onDismiss = { showPlaybackSheet = false }
@@ -90,8 +92,8 @@ fun AccountsScreen(
 
     if (showAccountSheet) {
         AccountDetailBottomSheet(
-            title = "Account login",
-            description = "This login allows for manipulation of your Spotify account: liking tracks, creating playlists, accessing recommendations, and managing your library.",
+            title = stringResource(R.string.settings_accounts_account_login_title),
+            description = stringResource(R.string.settings_accounts_account_login_sheet_description),
             isLoggedIn = isAccountLoggedIn,
             username = username,
             userImageUrl = userImageUrl,
@@ -103,10 +105,10 @@ fun AccountsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Accounts") },
+                title = { Text(stringResource(R.string.settings_accounts_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -163,14 +165,14 @@ fun AccountsScreen(
 
                             Column(modifier = Modifier.weight(1f)) {
                                 Text(
-                                    text = "Spotify Premium required",
+                                    text = stringResource(R.string.settings_accounts_premium_required_title),
                                     style = MaterialTheme.typography.titleMedium,
                                     fontWeight = FontWeight.Bold,
                                     color = MaterialTheme.colorScheme.onErrorContainer,
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "Spoty only works with a Spotify Premium account. Tap to learn why.",
+                                    text = stringResource(R.string.settings_accounts_premium_required_description),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                                 )
@@ -191,18 +193,18 @@ fun AccountsScreen(
                         verticalArrangement = Arrangement.spacedBy(6.dp)
                     ) {
                         Text(
-                            text = "Why two logins?",
+                            text = stringResource(R.string.settings_accounts_why_two_logins_title),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = "Spoty uses librespot to stream audio. librespot authenticates with Spotify's streaming protocol using anonymous credentials — it operates independently of your Spotify account and cannot access your personal data.",
+                            text = stringResource(R.string.settings_accounts_why_two_logins_librespot),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = "Your Spotify account login is separate and handled via OAuth. It grants access to your library, playlists, and social features — but is not involved in audio streaming.",
+                            text = stringResource(R.string.settings_accounts_why_two_logins_oauth),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -215,8 +217,8 @@ fun AccountsScreen(
                     modifier = modifier.fillMaxWidth(),
                 ) {
                     PreferenceEntry(
-                        title = { Text("Playback login") },
-                        description = "librespot · anonymous streaming credentials",
+                        title = { Text(stringResource(R.string.settings_accounts_playback_login_title)) },
+                        description = stringResource(R.string.settings_accounts_playback_login_description),
                         icon = {
                             if (isPlaybackLoggedIn) {
                                 Icon(
@@ -263,12 +265,12 @@ fun AccountsScreen(
                         verticalArrangement = Arrangement.spacedBy(4.dp)
                     ) {
                         Text(
-                            text = "Required for audio streaming.",
+                            text = stringResource(R.string.settings_accounts_playback_required),
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurface,
                         )
                         Text(
-                            text = "Uses anonymous credentials embedded in librespot to authenticate with Spotify's streaming protocol. Not linked to your personal Spotify account.",
+                            text = stringResource(R.string.settings_accounts_playback_anonymous_description),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -308,7 +310,7 @@ fun AccountsScreen(
                                     ) {
                                         SmartImage(
                                             url = userImageUrl,
-                                            contentDescription = "Profile picture",
+                                            contentDescription = stringResource(R.string.settings_accounts_profile_picture),
                                             modifier = Modifier.fillMaxSize(),
                                         )
                                     }
@@ -316,14 +318,14 @@ fun AccountsScreen(
 
                                 Column(modifier = Modifier.weight(1f)) {
                                     Text(
-                                        text = username ?: "Account",
+                                        text = username ?: stringResource(R.string.settings_accounts_account_fallback),
                                         style = MaterialTheme.typography.titleMedium,
                                         fontWeight = FontWeight.Medium,
                                         maxLines = 1,
                                         overflow = TextOverflow.Ellipsis
                                     )
                                     Text(
-                                        text = if (isPremium) "Logged in" else "Logged in (Free)",
+                                        text = if (isPremium) stringResource(R.string.settings_accounts_logged_in) else stringResource(R.string.settings_accounts_logged_in_free),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isPremium) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error
                                     )
@@ -331,7 +333,7 @@ fun AccountsScreen(
 
                                 Icon(
                                     imageVector = Icons.Default.CheckCircle,
-                                    contentDescription = "Logged in",
+                                    contentDescription = stringResource(R.string.settings_accounts_logged_in),
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
@@ -368,7 +370,7 @@ fun AccountsScreen(
                                         modifier = Modifier.size(16.dp)
                                     )
                                     Text(
-                                        text = "Spotify Premium required for playback",
+                                        text = stringResource(R.string.settings_accounts_premium_required_for_playback),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = MaterialTheme.colorScheme.error,
                                     )
@@ -376,8 +378,8 @@ fun AccountsScreen(
                             }
                         } else {
                             PreferenceEntry(
-                                title = { Text("Account login") },
-                                description = "Your Spotify account · OAuth",
+                                title = { Text(stringResource(R.string.settings_accounts_account_login_title)) },
+                                description = stringResource(R.string.settings_accounts_account_login_description),
                                 icon = {
                                     Icon(
                                         Icons.AutoMirrored.Filled.Login,
@@ -413,7 +415,7 @@ fun AccountsScreen(
                                 verticalArrangement = Arrangement.spacedBy(4.dp)
                             ) {
                                 Text(
-                                    text = "Your real Spotify account, connected via OAuth.",
+                                    text = stringResource(R.string.settings_accounts_account_oauth_description),
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onSurface,
                                 )
@@ -423,10 +425,10 @@ fun AccountsScreen(
                                 Column(
                                     verticalArrangement = Arrangement.spacedBy(6.dp)
                                 ) {
-                                    FeatureItem("Liking and unliking tracks")
-                                    FeatureItem("Creating and modifying playlists")
-                                    FeatureItem("Accessing your recommendations")
-                                    FeatureItem("Managing your library")
+                                    FeatureItem(stringResource(R.string.settings_accounts_feature_like_tracks))
+                                    FeatureItem(stringResource(R.string.settings_accounts_feature_playlists))
+                                    FeatureItem(stringResource(R.string.settings_accounts_feature_recommendations))
+                                    FeatureItem(stringResource(R.string.settings_accounts_feature_library))
                                 }
                             }
                         }
@@ -435,7 +437,7 @@ fun AccountsScreen(
             }
 
             item {
-                PreferenceHeader("Feature availability")
+                PreferenceHeader(stringResource(R.string.settings_accounts_feature_availability_header))
             }
 
             item {
@@ -449,7 +451,7 @@ fun AccountsScreen(
                         verticalArrangement = Arrangement.spacedBy(2.dp)
                     ) {
                         Text(
-                            text = "Features available based on your login status:",
+                            text = stringResource(R.string.settings_accounts_feature_availability_intro),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -457,26 +459,26 @@ fun AccountsScreen(
                         Spacer(Modifier.height(16.dp))
 
                         FeatureAvailability(
-                            "Stream tracks from Spoty",
+                            stringResource(R.string.settings_accounts_availability_stream),
                             isPlaybackLoggedIn && isPremium,
                             0
                         )
                         FeatureAvailability(
-                            "Sync your liked tracks and playlists",
+                            stringResource(R.string.settings_accounts_availability_sync_liked),
                             isPlaybackLoggedIn && isPremium,
                             0
                         )
                         FeatureAvailability(
-                            "View artists, albums, playlists",
+                            stringResource(R.string.settings_accounts_availability_view_catalog),
                             isPlaybackLoggedIn && isPremium,
                             0
                         )
 
                         Spacer(Modifier.height(12.dp))
 
-                        FeatureAvailability("Search Spotify", isAccountLoggedIn, 1)
+                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_search), isAccountLoggedIn, 1)
                         FeatureAvailability(
-                            "Modify playlists",
+                            stringResource(R.string.settings_accounts_availability_modify_playlists),
                             isAccountLoggedIn && scopes.containsAll(
                                 listOf(
                                     "playlist-modify-public",
@@ -486,7 +488,7 @@ fun AccountsScreen(
                             1
                         )
                         FeatureAvailability(
-                            "Create playlists",
+                            stringResource(R.string.settings_accounts_availability_create_playlists),
                             isAccountLoggedIn && scopes.containsAll(
                                 listOf(
                                     "playlist-modify-public",
@@ -496,7 +498,7 @@ fun AccountsScreen(
                             1
                         )
                         FeatureAvailability(
-                            "Liking and unliking tracks, playlists, artists, ..",
+                            stringResource(R.string.settings_accounts_availability_like_items),
                             isAccountLoggedIn && scopes.containsAll(
                                 listOf(
                                     "user-library-modify",
@@ -508,7 +510,7 @@ fun AccountsScreen(
                         )
 
                         FeatureAvailability(
-                            "Syncing liked albums, episodes, ..",
+                            stringResource(R.string.settings_accounts_availability_sync_albums),
                             isAccountLoggedIn && scopes.containsAll(
                                 listOf(
                                     "user-library-read",
@@ -518,16 +520,16 @@ fun AccountsScreen(
                         )
 
                         FeatureAvailability(
-                            "Navigating from episode to show",
+                            stringResource(R.string.settings_accounts_availability_episode_to_show),
                             isAccountLoggedIn,
                             1
                         )
-                        FeatureAvailability("Viewing user profiles", isPlaybackLoggedIn, 0)
+                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_user_profiles), isPlaybackLoggedIn, 0)
 
                         Spacer(Modifier.height(12.dp))
 
                         Text(
-                            text = "Available scopes:",
+                            text = stringResource(R.string.settings_accounts_available_scopes),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -575,7 +577,7 @@ private fun FeatureAvailability(text: String, available: Boolean, badgeNumber: I
     ) {
         Icon(
             imageVector = if (available) Icons.Default.CheckCircle else Icons.Outlined.Cancel,
-            contentDescription = if (available) "Available" else "Unavailable",
+            contentDescription = if (available) stringResource(R.string.settings_available) else stringResource(R.string.settings_unavailable),
             tint = if (available) MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error.copy(
                 alpha = 0.7f
             ),

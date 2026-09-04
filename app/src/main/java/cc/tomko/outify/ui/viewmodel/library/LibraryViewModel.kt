@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import android.content.Context
 import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
@@ -25,7 +26,9 @@ import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -68,6 +71,7 @@ data class LibraryState(
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val json: Json,
     private val userProfile: UserProfile,
@@ -243,7 +247,7 @@ class LibraryViewModel @Inject constructor(
                 playlistsLoaded = true
             }.onFailure { e ->
                 Log.w("LibraryViewModel", "Failed to fetch playlist URIs", e)
-                _error.value = e.message ?: "Failed to load library"
+                _error.value = e.message ?: context.getString(R.string.screen_error_library_load_failed)
             }
 
             isRefreshing.value = false

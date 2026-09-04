@@ -109,6 +109,8 @@ import kotlinx.coroutines.flow.MutableSharedFlow
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import javax.inject.Inject
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.platform.LocalContext
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
@@ -201,19 +203,19 @@ class MainActivity : ComponentActivity() {
         }
 
         val routes = listOf(
-            NavDestination("home", "Home", Route.HomeScreen) {
+            NavDestination("home", stringResource(R.string.ui_nav_home), Route.HomeScreen) {
                 Icon(
                     Icons.Default.Home,
                     contentDescription = null
                 )
             },
-            NavDestination("search", "Search", Route.SearchScreen) {
+            NavDestination("search", stringResource(R.string.ui_nav_search), Route.SearchScreen) {
                 Icon(
                     Icons.Default.Search,
                     contentDescription = null
                 )
             },
-            NavDestination("liked", "Liked", Route.LikedScreen()) {
+            NavDestination("liked", stringResource(R.string.ui_nav_liked), Route.LikedScreen()) {
                 Icon(
                     Icons.Default.Favorite,
                     contentDescription = null
@@ -221,7 +223,7 @@ class MainActivity : ComponentActivity() {
             },
             NavDestination(
                 "library",
-                "Library",
+                stringResource(R.string.ui_nav_library),
                 Route.LibraryScreen
             ) { Icon(Icons.Default.LibraryMusic, contentDescription = null) },
         )
@@ -282,15 +284,16 @@ class MainActivity : ComponentActivity() {
             }
         }
 
+        val context = LocalContext.current
         val detailDestination = remember(lastDetailRoute) {
             lastDetailRoute?.let { route ->
                 val (id, label, icon) = when (route) {
-                    is Route.ArtistScreen -> Triple("detail_artist", "Artist", Icons.Default.Person)
+                    is Route.ArtistScreen -> Triple("detail_artist", context.getString(R.string.ui_nav_artist), Icons.Default.Person)
                     is Route.AlbumScreen,
-                    is Route.TrackScreen -> Triple("detail_album", "Album", Icons.Default.Album)
-                    is Route.PlaylistScreen -> Triple("detail_playlist", "Playlist", Icons.AutoMirrored.Filled.QueueMusic)
-                    is Route.ProfileScreen -> Triple("detail_profile", "Profile", Icons.Default.AccountCircle)
-                    is Route.ShowScreen -> Triple("detail_show", "Show", Icons.Default.Podcasts)
+                    is Route.TrackScreen -> Triple("detail_album", context.getString(R.string.ui_nav_album), Icons.Default.Album)
+                    is Route.PlaylistScreen -> Triple("detail_playlist", context.getString(R.string.ui_nav_playlist), Icons.AutoMirrored.Filled.QueueMusic)
+                    is Route.ProfileScreen -> Triple("detail_profile", context.getString(R.string.ui_nav_profile), Icons.Default.AccountCircle)
+                    is Route.ShowScreen -> Triple("detail_show", context.getString(R.string.ui_nav_show), Icons.Default.Podcasts)
                     else -> return@let null
                 }
                 NavDestination(id, label, route) { Icon(icon, contentDescription = null) }

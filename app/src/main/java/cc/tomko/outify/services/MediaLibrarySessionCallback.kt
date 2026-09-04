@@ -15,6 +15,7 @@ import androidx.media3.session.SessionError
 import androidx.media3.session.SessionResult
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.MediaSessionConstants
+import cc.tomko.outify.R
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Track
@@ -98,7 +99,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Spoty")
+                    .setTitle(context.getString(R.string.app_name))
                     .build()
             )
             .build()
@@ -154,7 +155,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Recently Played")
+                    .setTitle(context.getString(R.string.sys_media_recently_played))
                     .build()
             )
             .build(),
@@ -165,7 +166,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Liked Songs")
+                    .setTitle(context.getString(R.string.sys_media_liked_songs))
                     .build()
             )
             .build(),
@@ -176,7 +177,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Playlists")
+                    .setTitle(context.getString(R.string.sys_media_playlists))
                     .build()
             )
             .build(),
@@ -187,7 +188,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Top Artists")
+                    .setTitle(context.getString(R.string.sys_media_top_artists))
                     .build()
             )
             .build(),
@@ -225,7 +226,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                             .setIsPlayable(false)
                             .setIsBrowsable(true)
                             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                            .setTitle("Playlist ${index + 1}")
+                            .setTitle(context.getString(R.string.sys_media_playlist_numbered, index + 1))
                             .build()
                     )
                     .build()
@@ -273,7 +274,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                             .setIsPlayable(false)
                             .setIsBrowsable(true)
                             .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                            .setTitle("Artist")
+                            .setTitle(context.getString(R.string.sys_media_artist))
                             .build()
                     )
                     .build()

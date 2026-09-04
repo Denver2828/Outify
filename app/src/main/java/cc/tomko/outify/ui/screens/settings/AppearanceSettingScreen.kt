@@ -36,8 +36,10 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cc.tomko.outify.R
 import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.components.ColorPreferenceEntry
@@ -48,9 +50,9 @@ import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 
 private val darkModeOptions = listOf(
-    DarkModeSetting.SYSTEM to "System",
-    DarkModeSetting.LIGHT to "Light",
-    DarkModeSetting.DARK to "Dark",
+    DarkModeSetting.SYSTEM to R.string.settings_theme_system,
+    DarkModeSetting.LIGHT to R.string.settings_theme_light,
+    DarkModeSetting.DARK to R.string.settings_theme_dark,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,10 +68,10 @@ fun AppearanceSettingScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Appearance") },
+                title = { Text(stringResource(R.string.settings_appearance_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -84,12 +86,12 @@ fun AppearanceSettingScreen(
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
             item {
-                PreferenceSectionHeader("Theme")
+                PreferenceSectionHeader(stringResource(R.string.settings_theme_title))
 
                 ElevatedCard {
                     PreferenceEntry(
-                        title = { Text("Theme") },
-                        description = "Follow the system or force light / dark",
+                        title = { Text(stringResource(R.string.settings_theme_title)) },
+                        description = stringResource(R.string.settings_theme_description),
                         icon = { Icon(Icons.Default.BrightnessMedium, contentDescription = null) },
                         content = {
                             SingleChoiceSegmentedButtonRow(
@@ -97,7 +99,7 @@ fun AppearanceSettingScreen(
                                     .fillMaxWidth()
                                     .padding(top = 12.dp)
                             ) {
-                                darkModeOptions.forEachIndexed { index, (mode, label) ->
+                                darkModeOptions.forEachIndexed { index, (mode, labelRes) ->
                                     SegmentedButton(
                                         selected = settings.darkMode == mode,
                                         onClick = { viewModel.setDarkMode(mode) },
@@ -105,7 +107,7 @@ fun AppearanceSettingScreen(
                                             index = index,
                                             count = darkModeOptions.size
                                         ),
-                                        label = { Text(label) }
+                                        label = { Text(stringResource(labelRes)) }
                                     )
                                 }
                             }
@@ -116,12 +118,12 @@ fun AppearanceSettingScreen(
             }
 
             item {
-                PreferenceSectionHeader("Dynamic")
+                PreferenceSectionHeader(stringResource(R.string.settings_dynamic_section))
 
                 ElevatedCard {
                     SwitchPreferenceEntry(
-                        title = { Text("Dynamic theme") },
-                        description = "Colorscheme will change according to current track",
+                        title = { Text(stringResource(R.string.settings_dynamic_theme_title)) },
+                        description = stringResource(R.string.settings_dynamic_theme_description),
                         icon = { Icon(Icons.Default.DesignServices, contentDescription = null) },
                         isChecked = settings.dynamicTheme,
                         onCheckedChange = { enabled ->
@@ -131,8 +133,8 @@ fun AppearanceSettingScreen(
 
                     if (!settings.dynamicTheme) {
                         SwitchPreferenceEntry(
-                            title = { Text("Dynamic system") },
-                            description = "Colorscheme will adapt to your system's colorscheme",
+                            title = { Text(stringResource(R.string.settings_dynamic_system_title)) },
+                            description = stringResource(R.string.settings_dynamic_system_description),
                             icon = { Icon(Icons.Default.SystemUpdate, contentDescription = null) },
                             isChecked = settings.dynamicSystem,
                             onCheckedChange = { enabled ->
@@ -142,8 +144,8 @@ fun AppearanceSettingScreen(
 
                         if (!settings.dynamicSystem) {
                             ColorPreferenceEntry(
-                                title = { Text("Accent color") },
-                                description = "Color of Spoty's interface",
+                                title = { Text(stringResource(R.string.settings_accent_color_title)) },
+                                description = stringResource(R.string.settings_accent_color_description),
                                 icon = { Icon(Icons.Default.Palette, contentDescription = null) },
                                 value = settings.accentColor,
                                 onValueChange = { viewModel.setAccentColor(it) }
@@ -156,8 +158,8 @@ fun AppearanceSettingScreen(
             item {
                 ElevatedCard {
                     SwitchPreferenceEntry(
-                        title = { Text("Pure black") },
-                        description = if (isDarkTheme) "Use AMOLED black" else "Use AMOLED black (dark theme only)",
+                        title = { Text(stringResource(R.string.settings_pure_black_title)) },
+                        description = if (isDarkTheme) stringResource(R.string.settings_pure_black_description) else stringResource(R.string.settings_pure_black_description_dark_only),
                         icon = { Icon(Icons.Default.DarkMode, contentDescription = null) },
                         isChecked = settings.pureBlack,
                         // Only has an effect on the dark palette
@@ -168,7 +170,7 @@ fun AppearanceSettingScreen(
                     )
 
                     SwitchPreferenceEntry(
-                        title = { Text("High contrast") },
+                        title = { Text(stringResource(R.string.settings_high_contrast_title)) },
                         icon = { Icon(Icons.Default.Contrast, contentDescription = null) },
                         isChecked = settings.highContrastCompat,
                         onCheckedChange = { enabled ->
@@ -184,8 +186,8 @@ fun AppearanceSettingScreen(
                         .fillMaxWidth(),
                 ) {
                     SwitchPreferenceEntry(
-                        title = { Text("Monochrome artwork") },
-                        description = "Every image will be black & white",
+                        title = { Text(stringResource(R.string.settings_monochrome_artwork_title)) },
+                        description = stringResource(R.string.settings_monochrome_artwork_description),
                         icon = { Icon(Icons.Default.MonochromePhotos, contentDescription = null) },
                         isChecked = settings.monochromeImages,
                         onCheckedChange = { enabled ->
@@ -197,12 +199,12 @@ fun AppearanceSettingScreen(
             }
             item {
                 if (settings.monochromeImages) {
-                    PreferenceSectionHeader("Monochrome settings")
+                    PreferenceSectionHeader(stringResource(R.string.settings_monochrome_section))
 
                     ElevatedCard {
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome albums") },
-                            description = "Album artwork in album views will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_albums_title)) },
+                            description = stringResource(R.string.settings_monochrome_albums_description),
                             icon = { Icon(Icons.Default.Album, contentDescription = null) },
                             isChecked = settings.monochromeAlbums,
                             onCheckedChange = { enabled ->
@@ -211,8 +213,8 @@ fun AppearanceSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome artists") },
-                            description = "Artist artwork in artist views will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_artists_title)) },
+                            description = stringResource(R.string.settings_monochrome_artists_description),
                             icon = { Icon(Icons.Default.Person, contentDescription = null) },
                             isChecked = settings.monochromeArtists,
                             onCheckedChange = { enabled ->
@@ -221,8 +223,8 @@ fun AppearanceSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome playlists") },
-                            description = "Playlist artwork will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_playlists_title)) },
+                            description = stringResource(R.string.settings_monochrome_playlists_description),
                             icon = {
                                 Icon(
                                     Icons.AutoMirrored.Filled.PlaylistPlay,
@@ -236,8 +238,8 @@ fun AppearanceSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome tracks") },
-                            description = "Track rows will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_tracks_title)) },
+                            description = stringResource(R.string.settings_monochrome_tracks_description),
                             icon = { Icon(Icons.Default.Audiotrack, contentDescription = null) },
                             isChecked = settings.monochromeTracks,
                             onCheckedChange = { enabled ->
@@ -246,8 +248,8 @@ fun AppearanceSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome player") },
-                            description = "Player (mini & fullscreen) will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_player_title)) },
+                            description = stringResource(R.string.settings_monochrome_player_description),
                             icon = {
                                 Icon(
                                     Icons.Default.PlayCircleOutline,
@@ -261,8 +263,8 @@ fun AppearanceSettingScreen(
                         )
 
                         SwitchPreferenceEntry(
-                            title = { Text("Monochrome headers") },
-                            description = "Page headers will be monochrome",
+                            title = { Text(stringResource(R.string.settings_monochrome_headers_title)) },
+                            description = stringResource(R.string.settings_monochrome_headers_description),
                             icon = { Icon(Icons.Default.Topic, contentDescription = null) },
                             isChecked = settings.monochromeHeaders,
                             onCheckedChange = { enabled ->
@@ -274,12 +276,12 @@ fun AppearanceSettingScreen(
             }
 
             item {
-                PreferenceSectionHeader("Font")
+                PreferenceSectionHeader(stringResource(R.string.settings_font_section))
 
                 ElevatedCard {
                     PreferenceEntry(
-                        title = { Text("Font scale") },
-                        description = "%.1f×".format(settings.fontScale),
+                        title = { Text(stringResource(R.string.settings_font_scale_title)) },
+                        description = stringResource(R.string.settings_font_scale_value, settings.fontScale),
                         icon = { Icon(Icons.Default.DesignServices, contentDescription = null) },
                         content = {
                             Slider(
@@ -296,12 +298,12 @@ fun AppearanceSettingScreen(
             }
 
             item {
-                PreferenceSectionHeader("Experimental")
+                PreferenceSectionHeader(stringResource(R.string.settings_experimental_section))
 
                 ElevatedCard {
                     SwitchPreferenceEntry(
-                        title = { Text("Floating navbar") },
-                        description = "Instead of the standard static one",
+                        title = { Text(stringResource(R.string.settings_floating_navbar_title)) },
+                        description = stringResource(R.string.settings_floating_navbar_description),
                         icon = { Icon(Icons.Default.Houseboat, contentDescription = null) },
                         isChecked = settings.experimentalFloatingNav,
                         onCheckedChange = { viewModel.setExperimentalFloatingNav(it) },
@@ -311,8 +313,8 @@ fun AppearanceSettingScreen(
                 if(settings.experimentalFloatingNav) {
                     ElevatedCard {
                         SwitchPreferenceEntry(
-                            title = { Text("Show selected label") },
-                            description = "Show name of current page",
+                            title = { Text(stringResource(R.string.settings_navbar_show_label_title)) },
+                            description = stringResource(R.string.settings_navbar_show_label_description),
                             icon = { Icon(Icons.Default.Title, contentDescription = null) },
                             isChecked = settings.navbarShowLabel,
                             onCheckedChange = { viewModel.setNavbarShowLabel(it) },

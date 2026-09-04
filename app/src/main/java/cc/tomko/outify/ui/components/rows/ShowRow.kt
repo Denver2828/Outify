@@ -40,6 +40,9 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import cc.tomko.outify.R
 
 @OptIn(ExperimentalFoundationApi::class)
 @Composable
@@ -113,7 +116,7 @@ fun ShowRow(
             ) {
                 SmartImage(
                     url = show.getCover(CoverSize.MEDIUM)?.uri?.let { ALBUM_COVER_URL + it },
-                    contentDescription = "Show artwork",
+                    contentDescription = stringResource(R.string.ui_show_artwork_desc),
                     modifier = artworkModifier,
                     monochrome = LocalUiSettings.current.monochromeTracks
                 )
@@ -165,7 +168,7 @@ fun ShowRow(
 
                     val episodeCount = show.episodes.size
                     Text(
-                        text = " · $episodeCount ${if (episodeCount == 1) "episode" else "episodes"}",
+                        text = " · " + pluralStringResource(R.plurals.ui_show_episode_count, episodeCount, episodeCount),
                         maxLines = 1,
                         overflow = TextOverflow.Ellipsis,
                         style = MaterialTheme.typography.bodySmall,
@@ -183,7 +186,7 @@ fun ShowRow(
                 if (show.mediaType == ShowMediaType.VIDEO || show.mediaType == ShowMediaType.MIXED) {
                     Icon(
                         Icons.Default.Videocam,
-                        contentDescription = "Video episodes available"
+                        contentDescription = stringResource(R.string.ui_show_video_episodes_desc)
                     )
                 }
 

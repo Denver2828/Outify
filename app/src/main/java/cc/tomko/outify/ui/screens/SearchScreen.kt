@@ -190,7 +190,7 @@ fun SharedTransitionScope.SearchScreen(
                         }
 
                         Text(
-                            text = "Recommendations",
+                            text = stringResource(R.string.screen_search_recommendations_title),
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                         )
@@ -249,7 +249,7 @@ fun SharedTransitionScope.SearchScreen(
             if (showSearchUi) {
                 item {
                     Text(
-                        text = "Search",
+                        text = stringResource(R.string.screen_search_title),
                         style = MaterialTheme.typography.headlineLarge,
                         fontWeight = FontWeight.Bold,
                         modifier = Modifier
@@ -276,7 +276,7 @@ fun SharedTransitionScope.SearchScreen(
                         IconButton(onClick = { showAdvancedSheet = true }) {
                             Icon(
                                 imageVector = Icons.Default.Tune,
-                                contentDescription = "Advanced search",
+                                contentDescription = stringResource(R.string.screen_search_advanced_title),
                                 tint = MaterialTheme.colorScheme.onSurface
                             )
                         }
@@ -304,13 +304,13 @@ fun SharedTransitionScope.SearchScreen(
                             )
                             Spacer(modifier = Modifier.height(16.dp))
                             Text(
-                                text = "No history yet",
+                                text = stringResource(R.string.screen_search_no_history_title),
                                 style = MaterialTheme.typography.titleMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                             Spacer(modifier = Modifier.height(4.dp))
                             Text(
-                                text = "Tap search results to save them here",
+                                text = stringResource(R.string.screen_search_no_history_body),
                                 style = MaterialTheme.typography.bodySmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                             )
@@ -327,12 +327,12 @@ fun SharedTransitionScope.SearchScreen(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Search History",
+                            text = stringResource(R.string.screen_search_history_title),
                             style = MaterialTheme.typography.titleMedium,
                             fontWeight = FontWeight.Bold
                         )
                         TextButton(onClick = { viewModel.clearHistory() }) {
-                            Text("Clear all")
+                            Text(stringResource(R.string.screen_search_clear_all))
                         }
                     }
                 }
@@ -345,7 +345,7 @@ fun SharedTransitionScope.SearchScreen(
                         IconButton(onClick = { viewModel.removeFromHistory(item.uri) }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Remove from history",
+                                contentDescription = stringResource(R.string.screen_search_remove_from_history_cd),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -549,14 +549,14 @@ fun SharedTransitionScope.SearchScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.NoAccounts,
-                                    contentDescription = "Logged out",
+                                    contentDescription = stringResource(R.string.screen_search_logged_out_cd),
                                     modifier = Modifier.size(64.dp)
                                 )
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Text(
-                                    text = "This feature is only available to logged in users",
+                                    text = stringResource(R.string.screen_search_login_required),
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.titleMedium,
                                 )
@@ -583,20 +583,20 @@ fun SharedTransitionScope.SearchScreen(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SearchOff,
-                                    contentDescription = "Select filters",
+                                    contentDescription = stringResource(R.string.screen_search_select_filters_cd),
                                     modifier = Modifier.size(64.dp)
                                 )
 
                                 Spacer(modifier = Modifier.height(16.dp))
 
                                 Text(
-                                    text = "Nothing found..",
+                                    text = stringResource(R.string.screen_search_nothing_found),
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.titleMedium,
                                 )
 
                                 Text(
-                                    text = "Type the query and select filters",
+                                    text = stringResource(R.string.screen_search_type_and_filter),
                                     overflow = TextOverflow.Ellipsis,
                                     style = MaterialTheme.typography.titleMedium,
                                 )
@@ -819,7 +819,7 @@ fun SharedTransitionScope.SearchScreen(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Scroll to top"
+                        contentDescription = stringResource(R.string.screen_scroll_to_top_cd)
                     )
                 }
             }
@@ -851,7 +851,7 @@ fun MaterialSearchBar(
     isLoading: Boolean,
     modifier: Modifier = Modifier,
     autoFocus: Boolean = true,
-    placeholderText: String = "Search Spotify",
+    placeholderText: String = stringResource(R.string.screen_search_placeholder),
 ) {
     val expanded = false
 
@@ -883,7 +883,10 @@ fun MaterialSearchBar(
                 onExpandedChange = { /* no-op: keep collapsed so results render below */ },
                 placeholder = { Text(text = placeholderText) },
                 leadingIcon = {
-                    Icon(imageVector = Icons.Default.Search, contentDescription = "Search")
+                    Icon(
+                        imageVector = Icons.Default.Search,
+                        contentDescription = stringResource(R.string.screen_search_title)
+                    )
                 },
                 trailingIcon = {
                     if (isLoading) {
@@ -894,7 +897,7 @@ fun MaterialSearchBar(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.Close,
-                                contentDescription = "Clear query"
+                                contentDescription = stringResource(R.string.screen_search_clear_query_cd)
                             )
                         }
                     }
@@ -1025,7 +1028,7 @@ private fun AdvancedSearchContent(
             .padding(horizontal = 24.dp, vertical = 16.dp)
     ) {
         Text(
-            text = "Advanced Search",
+            text = stringResource(R.string.screen_search_advanced_title),
             style = MaterialTheme.typography.titleLarge,
             fontWeight = FontWeight.Bold
         )
@@ -1035,7 +1038,7 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = title,
             onValueChange = { title = it },
-            label = { Text("Title") },
+            label = { Text(stringResource(R.string.screen_search_field_title)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -1044,7 +1047,7 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = artist,
             onValueChange = { artist = it },
-            label = { Text("Artist") },
+            label = { Text(stringResource(R.string.screen_search_field_artist)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -1053,7 +1056,7 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = album,
             onValueChange = { album = it },
-            label = { Text("Album") },
+            label = { Text(stringResource(R.string.screen_search_field_album)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -1062,7 +1065,7 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = year,
             onValueChange = { year = it },
-            label = { Text("Year (e.g. 1978 or 1980-1985)") },
+            label = { Text(stringResource(R.string.screen_search_field_year)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -1071,7 +1074,7 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = genre,
             onValueChange = { genre = it },
-            label = { Text("Genre") },
+            label = { Text(stringResource(R.string.screen_search_field_genre)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -1080,25 +1083,25 @@ private fun AdvancedSearchContent(
         OutlinedTextField(
             value = label,
             onValueChange = { label = it },
-            label = { Text("Label") },
+            label = { Text(stringResource(R.string.screen_search_field_label)) },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
         Spacer(Modifier.height(16.dp))
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            Text("Match:")
+            Text(stringResource(R.string.screen_search_match_label))
             Spacer(Modifier.width(12.dp))
             FilterChip(
                 selected = matchAll,
                 onClick = { matchAll = true },
-                label = { Text("All (AND)") }
+                label = { Text(stringResource(R.string.screen_search_match_all)) }
             )
             Spacer(Modifier.width(8.dp))
             FilterChip(
                 selected = !matchAll,
                 onClick = { matchAll = false },
-                label = { Text("Any (OR)") }
+                label = { Text(stringResource(R.string.screen_search_match_any)) }
             )
         }
 
@@ -1112,14 +1115,14 @@ private fun AdvancedSearchContent(
                 title = ""; artist = ""; album = ""
                 year = ""; genre = ""; label = ""
                 matchAll = true
-            }) { Text("Clear") }
+            }) { Text(stringResource(R.string.screen_search_clear)) }
             Spacer(Modifier.width(12.dp))
             Button(onClick = {
                 val advancedQuery = buildAdvancedQuery(
                     title, artist, album, year, genre, label, matchAll
                 )
                 onSearch(advancedQuery)
-            }) { Text("Search") }
+            }) { Text(stringResource(R.string.screen_search_title)) }
         }
 
         Spacer(Modifier.height(16.dp))

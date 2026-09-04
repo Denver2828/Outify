@@ -6,6 +6,7 @@ import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.BuildConfig
+import cc.tomko.outify.R
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.repository.BackupRepository
 import cc.tomko.outify.data.repository.LikedRepository
@@ -83,7 +84,7 @@ class MiscSettingsViewModel @Inject constructor(
     fun syncLikedTracks() {
         if (_syncStatus.value is SyncStatus.Syncing || _syncStatus.value is SyncStatus.Progress) return
         if (!spClient.isOAuthAuthenticated()) {
-            _syncStatus.value = SyncStatus.Error("Please log in to Spotify account first")
+            _syncStatus.value = SyncStatus.Error(context.getString(R.string.settings_sync_error_login_first))
             return
         }
 
@@ -105,12 +106,14 @@ class MiscSettingsViewModel @Inject constructor(
                     _syncStatus.value = SyncStatus.Success
                     syncNotificationManager.showComplete(totalTracks)
                 } else {
-                    _syncStatus.value = SyncStatus.Error("Failed to sync liked tracks")
-                    syncNotificationManager.showError("Failed to sync liked tracks")
+                    val message = context.getString(R.string.settings_sync_error_failed)
+                    _syncStatus.value = SyncStatus.Error(message)
+                    syncNotificationManager.showError(message)
                 }
             } catch (e: Exception) {
-                _syncStatus.value = SyncStatus.Error(e.message ?: "Unknown error")
-                syncNotificationManager.showError(e.message ?: "Unknown error")
+                val message = e.message ?: context.getString(R.string.settings_unknown_error)
+                _syncStatus.value = SyncStatus.Error(message)
+                syncNotificationManager.showError(message)
             } finally {
                 OAuthService.stop(context)
             }
@@ -152,10 +155,10 @@ class MiscSettingsViewModel @Inject constructor(
             _backupStatus.value = BackupStatus.Exporting
             backupRepository.exportBackup(uri, BuildConfig.VERSION_NAME)
                 .onSuccess {
-                    _backupStatus.value = BackupStatus.Success("Backup saved")
+                    _backupStatus.value = BackupStatus.Success(context.getString(R.string.settings_backup_saved))
                 }
                 .onFailure { e ->
-                    _backupStatus.value = BackupStatus.Error(e.message ?: "Export failed")
+                    _backupStatus.value = BackupStatus.Error(e.message ?: context.getString(R.string.settings_backup_export_failed))
                 }
             delay(3000)
             _backupStatus.value = BackupStatus.Idle
@@ -169,10 +172,10 @@ class MiscSettingsViewModel @Inject constructor(
             backupRepository.importBackup(uri)
                 .onSuccess {
                     savedQueueRepository.reload()
-                    _backupStatus.value = BackupStatus.Success("Settings restored")
+                    _backupStatus.value = BackupStatus.Success(context.getString(R.string.settings_backup_restored))
                 }
                 .onFailure { e ->
-                    _backupStatus.value = BackupStatus.Error(e.message ?: "Import failed")
+                    _backupStatus.value = BackupStatus.Error(e.message ?: context.getString(R.string.settings_backup_import_failed))
                 }
             delay(3000)
             _backupStatus.value = BackupStatus.Idle

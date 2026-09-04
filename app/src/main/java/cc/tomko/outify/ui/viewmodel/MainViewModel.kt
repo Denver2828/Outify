@@ -35,9 +35,14 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import android.content.Context
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
+import dagger.hilt.android.qualifiers.ApplicationContext
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val playbackStateHolder: PlaybackStateHolder,
     private val spirc: SpircWrapper,
     private val settingsRepository: SettingsRepository,
@@ -103,8 +108,8 @@ class MainViewModel @Inject constructor(
     fun addToQueue(uri: String) {
         spirc.addToQueue(uri)
         InAppNotificationController.show(
-            "Added to queue",
-            { Icon(Icons.Default.Queue, contentDescription = "Added to queue") },
+            context.getString(R.string.ui_notif_added_to_queue),
+            { Icon(Icons.Default.Queue, contentDescription = stringResource(R.string.ui_notif_added_to_queue)) },
             1000L
         )
     }
@@ -112,8 +117,8 @@ class MainViewModel @Inject constructor(
     fun playNext(uri: String) {
         spirc.playNext(uri)
         InAppNotificationController.show(
-            "Inserted to queue",
-            { Icon(Icons.Default.Queue, contentDescription = "Inserted to queue") },
+            context.getString(R.string.ui_notif_inserted_to_queue),
+            { Icon(Icons.Default.Queue, contentDescription = stringResource(R.string.ui_notif_inserted_to_queue)) },
             1000L
         )
     }
@@ -122,8 +127,8 @@ class MainViewModel @Inject constructor(
         spirc.startRadio(track.toSpotifyUri(), false)
         playbackStateHolder.setAudio(track.toPlayableAudio())
         InAppNotificationController.show(
-            "Radio started",
-            { Icon(Icons.Default.Radio, contentDescription = "Radio started") },
+            context.getString(R.string.ui_notif_radio_started),
+            { Icon(Icons.Default.Radio, contentDescription = stringResource(R.string.ui_notif_radio_started)) },
             1000L
         )
     }
@@ -178,7 +183,7 @@ class MainViewModel @Inject constructor(
                     if (isTrack) likedRepository.removeLiked(id) else likedRepository.removeLikedEpisode(id)
                 }
                 InAppNotificationController.show(
-                    "Failed to update favorite",
+                    context.getString(R.string.ui_notif_favorite_failed),
                     durationMillis = 2000L
                 )
             }

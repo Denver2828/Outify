@@ -1,8 +1,10 @@
 package cc.tomko.outify.ui.viewmodel.bottomsheet
 
 import android.util.Log
+import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.R
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.dao.PlaylistDao
 import cc.tomko.outify.data.database.PlaylistEntity
@@ -92,11 +94,11 @@ class CreatePlaylistViewModel @Inject constructor(
                     _result.tryEmit(Result.success(playlistId))
                 } else {
                     Log.w("CreatePlaylistViewModel", "Failed to modify with status code: $status")
-                    val message = when (status) {
-                        403 -> "You don't have permission to modify this playlist"
-                        else -> "Failed to modify playlist (status: $status)"
+                    val messageRes = when (status) {
+                        403 -> R.string.sheet_playlist_modify_forbidden
+                        else -> R.string.sheet_playlist_modify_failed
                     }
-                    _result.tryEmit(Result.failure(RuntimeException(message)))
+                    _result.tryEmit(Result.failure(PlaylistModifyException(messageRes, status)))
                 }
             } catch (e: Exception) {
                 _result.tryEmit(Result.failure(e))
@@ -104,3 +106,12 @@ class CreatePlaylistViewModel @Inject constructor(
         }
     }
 }
+
+/**
+ * Raised when Spotify rejects a playlist create/modify request. The UI resolves
+ * [messageRes] with [statusCode] as its single format argument.
+ */
+class PlaylistModifyException(
+    @StringRes val messageRes: Int,
+    val statusCode: Int,
+) : RuntimeException("Failed to modify playlist (status: $statusCode)")

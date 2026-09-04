@@ -39,6 +39,8 @@ import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.utils.SharedElementKey
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 @OptIn(ExperimentalFoundationApi::class, ExperimentalMaterial3ExpressiveApi::class)
 @Composable
@@ -105,7 +107,7 @@ fun SharedTransitionScope.AlbumRow(
         ) {
             SmartImage(
                 url = artworkUrl,
-                contentDescription = "Artwork",
+                contentDescription = stringResource(R.string.ui_artwork_desc),
                 modifier = modifierWithSharedBounds
                     .padding(start = 16.dp, top = 2.dp, bottom = 2.dp)
                     .size(imageDp),
@@ -150,7 +152,7 @@ fun SharedTransitionScope.AlbumRow(
                     // Playing indicator
                     Icon(
                         imageVector = Icons.Default.PlayArrow,
-                        contentDescription = "Playing",
+                        contentDescription = stringResource(R.string.ui_row_playing_desc),
                         modifier = Modifier.size(20.dp)
                     )
                 } else if (isSelected) {

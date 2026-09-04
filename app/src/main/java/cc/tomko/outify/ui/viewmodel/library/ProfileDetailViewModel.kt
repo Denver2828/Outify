@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.library
 
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -10,7 +11,9 @@ import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
@@ -33,6 +36,7 @@ sealed class ProfileUiState {
 
 @HiltViewModel
 class ProfileDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -84,7 +88,7 @@ class ProfileDetailViewModel @Inject constructor(
 
             val raw = userProfile.getUserProfile(username)
             if (raw == null) {
-                _uiState.value = ProfileUiState.Error("Profile not found")
+                _uiState.value = ProfileUiState.Error(context.getString(R.string.screen_error_profile_not_found))
                 return
             }
 
@@ -98,7 +102,7 @@ class ProfileDetailViewModel @Inject constructor(
             )
         } catch (e: Exception) {
             e.printStackTrace()
-            _uiState.value = ProfileUiState.Error("Profile not found")
+            _uiState.value = ProfileUiState.Error(context.getString(R.string.screen_error_profile_not_found))
         }
     }
 }

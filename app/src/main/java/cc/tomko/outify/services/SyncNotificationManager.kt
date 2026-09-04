@@ -26,10 +26,10 @@ class SyncNotificationManager @Inject constructor(
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val channel = NotificationChannel(
                 CHANNEL_ID,
-                "Sync Progress",
+                context.getString(R.string.sys_sync_channel_name),
                 NotificationManager.IMPORTANCE_LOW,
             ).apply {
-                description = "Shows sync progress for liked tracks"
+                description = context.getString(R.string.sys_sync_channel_description)
                 setShowBadge(false)
             }
             notificationManager.createNotificationChannel(channel)
@@ -39,8 +39,8 @@ class SyncNotificationManager @Inject constructor(
     fun showProgress(current: Int, total: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Syncing liked tracks")
-            .setContentText("Syncing $current of $total tracks")
+            .setContentTitle(context.getString(R.string.sys_sync_title_syncing))
+            .setContentText(context.getString(R.string.sys_sync_progress, current, total))
             .setProgress(total, current, false)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -51,8 +51,8 @@ class SyncNotificationManager @Inject constructor(
     fun showIndeterminate() {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Syncing liked tracks")
-            .setContentText("Starting sync...")
+            .setContentTitle(context.getString(R.string.sys_sync_title_syncing))
+            .setContentText(context.getString(R.string.sys_sync_starting))
             .setProgress(0, 0, true)
             .setOngoing(true)
             .setPriority(NotificationCompat.PRIORITY_LOW)
@@ -63,8 +63,10 @@ class SyncNotificationManager @Inject constructor(
     fun showComplete(count: Int) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Sync complete")
-            .setContentText("Synced $count tracks")
+            .setContentTitle(context.getString(R.string.sys_sync_complete_title))
+            .setContentText(
+                context.resources.getQuantityString(R.plurals.sys_sync_complete_text, count, count)
+            )
             .setOngoing(false)
             .setAutoCancel(true)
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
@@ -75,7 +77,7 @@ class SyncNotificationManager @Inject constructor(
     fun showError(message: String) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_launcher_foreground)
-            .setContentTitle("Sync failed")
+            .setContentTitle(context.getString(R.string.sys_sync_failed_title))
             .setContentText(message)
             .setOngoing(false)
             .setAutoCancel(true)

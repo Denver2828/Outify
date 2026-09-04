@@ -1,0 +1,19 @@
+<resources>
+    <string name="audio_playback_attribution">This app plays audio</string>
+    <string name="media_notificationn_channel">Media playback</string>
+    <string name="media_notification_channel_description">Controls for audio playback</string>
+
+    <string name="search_section_tracks">Tracks</string>
+    <string name="search_section_artists">Artists</string>
+    <string name="search_section_albums">Albums</string>
+    <string name="search_section_playlists">Playlists</string>
+    <string name="search_section_episodes">Episodes</string>
+    <string name="search_section_shows">Shows</string>
+    <string name="start_radio">Start radio</string>
+    <string name="repeat_mode_all">Repeat all</string>
+    <string name="repeat_mode_one">Repeat one</string>
+    <string name="repeat_mode_off">No repeat</string>
+    <string name="like">Like</string>
+    <string name="outify_playback_widget_description">Fast way to play your favorite tracks</string>
+    <string name="shortcut_play_liked_label">Play liked tracks</string>
+</resources>

@@ -58,6 +58,9 @@ import cc.tomko.outify.ui.components.SkeletonBox
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.rows.EpisodeRow
 import java.util.concurrent.TimeUnit
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.res.pluralStringResource
+import cc.tomko.outify.R
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -254,7 +257,7 @@ fun SharedTransitionScope.EpisodeRow(
                 ) {
                     SmartImage(
                         url = artworkUrl,
-                        contentDescription = "Episode artwork",
+                        contentDescription = stringResource(R.string.ui_episode_artwork_desc),
                         modifier = artworkModifier
                             .then(
                                 if (onArtworkClick != null) {
@@ -382,27 +385,28 @@ fun SharedTransitionScope.EpisodeRow(
     }
 }
 
+@Composable
 private fun formatEpisodeMeta(publishTimeMs: Long, durationMs: Long, fullyPlayed: Boolean, resumePositionMs: Long): String {
     val now = System.currentTimeMillis()
     val daysAgo = TimeUnit.MILLISECONDS.toDays(now - publishTimeMs)
     val whenStr = when {
-        daysAgo <= 0 -> "Today"
-        daysAgo == 1L -> "Yesterday"
-        daysAgo < 30 -> "${daysAgo}d ago"
-        else -> "${daysAgo / 30}mo ago"
+        daysAgo <= 0 -> stringResource(R.string.ui_episode_today)
+        daysAgo == 1L -> stringResource(R.string.ui_episode_yesterday)
+        daysAgo < 30 -> stringResource(R.string.ui_time_days_ago, daysAgo.toInt())
+        else -> pluralStringResource(R.plurals.ui_time_months_ago, (daysAgo / 30).toInt(), (daysAgo / 30).toInt())
     }
     val totalMinutes = TimeUnit.MILLISECONDS.toMinutes(durationMs)
     val hours = totalMinutes / 60
     val minutes = totalMinutes % 60
-    val durationStr = if (hours > 0) "${hours}h ${minutes}m" else "${minutes}m"
+    val durationStr = if (hours > 0) stringResource(R.string.ui_duration_hours_minutes, hours.toInt(), minutes.toInt()) else stringResource(R.string.ui_duration_minutes, minutes.toInt())
 
     return when {
         fullyPlayed -> "$whenStr · $durationStr"
         resumePositionMs > 0 -> {
             val resumeMin = TimeUnit.MILLISECONDS.toMinutes(resumePositionMs)
             val resumeSec = TimeUnit.MILLISECONDS.toSeconds(resumePositionMs) % 60
-            val resumeStr = if (resumeMin > 0) "${resumeMin}m ${resumeSec}s" else "${resumeSec}s"
-            "$whenStr · $durationStr · Resume $resumeStr"
+            val resumeStr = if (resumeMin > 0) stringResource(R.string.ui_duration_minutes_seconds, resumeMin.toInt(), resumeSec.toInt()) else stringResource(R.string.ui_duration_seconds, resumeSec.toInt())
+            "$whenStr · $durationStr · " + stringResource(R.string.ui_episode_resume, resumeStr)
         }
         else -> "$whenStr · $durationStr"
     }

@@ -38,8 +38,10 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.PlaylistFolder
 import cc.tomko.outify.ui.components.ColorPicker
 import kotlinx.coroutines.launch
@@ -96,7 +98,7 @@ fun CreateFolderBottomSheet(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = if (isEditMode) "Edit Folder" else "Create Folder",
+                    text = if (isEditMode) stringResource(R.string.sheet_folder_edit_title) else stringResource(R.string.sheet_folder_create_title),
                     style = MaterialTheme.typography.headlineMediumEmphasized,
                     fontWeight = FontWeight.Black,
                 )
@@ -107,13 +109,13 @@ fun CreateFolderBottomSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Folder name") },
+                label = { Text(stringResource(R.string.sheet_folder_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
 
             Text(
-                text = "Folder color",
+                text = stringResource(R.string.sheet_folder_color_label),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Medium,
             )
@@ -140,7 +142,7 @@ fun CreateFolderBottomSheet(
                     },
                     modifier = Modifier.weight(1f),
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.sheet_action_cancel))
                 }
 
                 Button(
@@ -160,7 +162,7 @@ fun CreateFolderBottomSheet(
                     modifier = Modifier.weight(1f),
                     enabled = name.isNotBlank(),
                 ) {
-                    Text(if (isEditMode) "Save" else "Create")
+                    Text(if (isEditMode) stringResource(R.string.sheet_action_save) else stringResource(R.string.sheet_action_create))
                 }
             }
 

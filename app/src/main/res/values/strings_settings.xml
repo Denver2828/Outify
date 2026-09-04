@@ -1,0 +1,243 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared -->
+    <string name="settings_app_name" translatable="false">Spoty</string>
+    <string name="settings_title">Ajustes</string>
+    <string name="settings_back">Volver</string>
+    <string name="settings_available">Disponible</string>
+    <string name="settings_unavailable">No disponible</string>
+    <string name="settings_disabled">Desactivado</string>
+    <string name="settings_delete">Eliminar</string>
+    <string name="settings_retry">Reintentar</string>
+    <string name="settings_unknown_error">Error desconocido</string>
+    <string name="settings_reset_to_defaults_title">Restablecer valores predeterminados</string>
+    <string name="settings_leave_empty_default">Dejá vacío para usar el predeterminado</string>
+    <string name="settings_percent_format" translatable="false">%1$d%%</string>
+
+    <!-- Settings hub -->
+    <string name="settings_interface_title">Interfaz</string>
+    <string name="settings_interface_description">Gestos, apariencia, …</string>
+    <string name="settings_playback_title">Reproducción</string>
+    <string name="settings_playback_description">Bitrate, Spotify Connect, gapless, …</string>
+    <string name="settings_misc_title">Varios</string>
+    <string name="settings_misc_description">Sincronización, respaldo y restauración</string>
+    <string name="settings_about_title">Acerca de</string>
+    <string name="settings_about_description">Número de compilación</string>
+    <string name="settings_accounts_title">Cuentas</string>
+    <string name="settings_accounts_description">Inicio de sesión de reproducción y cuenta</string>
+
+    <!-- About -->
+    <string name="settings_about_version_label">Versión</string>
+    <string name="settings_about_build_label">Compilación</string>
+    <string name="settings_about_build_number" translatable="false">#%1$d</string>
+    <string name="settings_about_made_by">Hecho por</string>
+
+    <!-- Accounts -->
+    <string name="settings_accounts_playback_login_title">Inicio de sesión de reproducción</string>
+    <string name="settings_accounts_playback_login_sheet_description">Este inicio de sesión es obligatorio para poder reproducir. Usa credenciales de Spotify anónimas para transmitir audio.</string>
+    <string name="settings_accounts_account_login_title">Inicio de sesión de cuenta</string>
+    <string name="settings_accounts_account_login_sheet_description">Este inicio de sesión permite operar sobre tu cuenta de Spotify: marcar canciones con Me gusta, crear playlists, acceder a recomendaciones y administrar tu biblioteca.</string>
+    <string name="settings_accounts_premium_required_title">Se requiere Spotify Premium</string>
+    <string name="settings_accounts_premium_required_description">Spoty solo funciona con una cuenta de Spotify Premium. Tocá para saber por qué.</string>
+    <string name="settings_accounts_why_two_logins_title">¿Por qué dos inicios de sesión?</string>
+    <string name="settings_accounts_why_two_logins_librespot">Spoty usa librespot para transmitir audio. librespot se autentica con el protocolo de streaming de Spotify mediante credenciales anónimas: funciona de forma independiente de tu cuenta de Spotify y no puede acceder a tus datos personales.</string>
+    <string name="settings_accounts_why_two_logins_oauth">El inicio de sesión de tu cuenta de Spotify es independiente y se gestiona mediante OAuth. Da acceso a tu biblioteca, tus playlists y las funciones sociales, pero no participa en la transmisión de audio.</string>
+    <string name="settings_accounts_playback_login_description">librespot · credenciales anónimas de streaming</string>
+    <string name="settings_accounts_playback_required">Necesario para transmitir audio.</string>
+    <string name="settings_accounts_playback_anonymous_description">Usa credenciales anónimas incluidas en librespot para autenticarse con el protocolo de streaming de Spotify. No está vinculado a tu cuenta personal de Spotify.</string>
+    <string name="settings_accounts_profile_picture">Foto de perfil</string>
+    <string name="settings_accounts_account_fallback">Cuenta</string>
+    <string name="settings_accounts_logged_in">Sesión iniciada</string>
+    <string name="settings_accounts_logged_in_free">Sesión iniciada (Free)</string>
+    <string name="settings_accounts_premium_required_for_playback">Se requiere Spotify Premium para reproducir</string>
+    <string name="settings_accounts_account_login_description">Tu cuenta de Spotify · OAuth</string>
+    <string name="settings_accounts_account_oauth_description">Tu cuenta real de Spotify, conectada mediante OAuth.</string>
+    <string name="settings_accounts_feature_like_tracks">Marcar y quitar Me gusta en canciones</string>
+    <string name="settings_accounts_feature_playlists">Crear y modificar playlists</string>
+    <string name="settings_accounts_feature_recommendations">Acceder a tus recomendaciones</string>
+    <string name="settings_accounts_feature_library">Administrar tu biblioteca</string>
+    <string name="settings_accounts_feature_availability_header">Disponibilidad de funciones</string>
+    <string name="settings_accounts_feature_availability_intro">Funciones disponibles según tu estado de sesión:</string>
+    <string name="settings_accounts_availability_stream">Reproducir canciones desde Spoty</string>
+    <string name="settings_accounts_availability_sync_liked">Sincronizar tus canciones que te gustan y playlists</string>
+    <string name="settings_accounts_availability_view_catalog">Ver artistas, álbumes y playlists</string>
+    <string name="settings_accounts_availability_search">Buscar en Spotify</string>
+    <string name="settings_accounts_availability_modify_playlists">Modificar playlists</string>
+    <string name="settings_accounts_availability_create_playlists">Crear playlists</string>
+    <string name="settings_accounts_availability_like_items">Marcar y quitar Me gusta en canciones, playlists, artistas, …</string>
+    <string name="settings_accounts_availability_sync_albums">Sincronizar álbumes, episodios, … que te gustan</string>
+    <string name="settings_accounts_availability_episode_to_show">Ir de un episodio a su podcast</string>
+    <string name="settings_accounts_availability_user_profiles">Ver perfiles de usuario</string>
+    <string name="settings_accounts_available_scopes">Permisos (scopes) disponibles:</string>
+
+    <!-- Appearance -->
+    <string name="settings_appearance_title">Apariencia</string>
+    <string name="settings_appearance_description">Personalizá el diseño</string>
+    <string name="settings_theme_title">Tema</string>
+    <string name="settings_theme_description">Seguí el sistema o forzá claro / oscuro</string>
+    <string name="settings_theme_system">Sistema</string>
+    <string name="settings_theme_light">Claro</string>
+    <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_dynamic_section">Dinámico</string>
+    <string name="settings_dynamic_theme_title">Tema dinámico</string>
+    <string name="settings_dynamic_theme_description">Los colores cambian según la canción actual</string>
+    <string name="settings_dynamic_system_title">Colores del sistema</string>
+    <string name="settings_dynamic_system_description">Los colores se adaptan a los de tu sistema</string>
+    <string name="settings_accent_color_title">Color de acento</string>
+    <string name="settings_accent_color_description">Color de la interfaz de Spoty</string>
+    <string name="settings_pure_black_title">Negro puro</string>
+    <string name="settings_pure_black_description">Usar negro AMOLED</string>
+    <string name="settings_pure_black_description_dark_only">Usar negro AMOLED (solo con tema oscuro)</string>
+    <string name="settings_high_contrast_title">Alto contraste</string>
+    <string name="settings_monochrome_artwork_title">Imágenes monocromas</string>
+    <string name="settings_monochrome_artwork_description">Todas las imágenes se muestran en blanco y negro</string>
+    <string name="settings_monochrome_section">Ajustes de monocromo</string>
+    <string name="settings_monochrome_albums_title">Álbumes monocromos</string>
+    <string name="settings_monochrome_albums_description">Las portadas en las vistas de álbum se muestran en monocromo</string>
+    <string name="settings_monochrome_artists_title">Artistas monocromos</string>
+    <string name="settings_monochrome_artists_description">Las imágenes en las vistas de artista se muestran en monocromo</string>
+    <string name="settings_monochrome_playlists_title">Playlists monocromas</string>
+    <string name="settings_monochrome_playlists_description">Las portadas de playlists se muestran en monocromo</string>
+    <string name="settings_monochrome_tracks_title">Canciones monocromas</string>
+    <string name="settings_monochrome_tracks_description">Las filas de canciones se muestran en monocromo</string>
+    <string name="settings_monochrome_player_title">Reproductor monocromo</string>
+    <string name="settings_monochrome_player_description">El reproductor (mini y pantalla completa) se muestra en monocromo</string>
+    <string name="settings_monochrome_headers_title">Encabezados monocromos</string>
+    <string name="settings_monochrome_headers_description">Los encabezados de página se muestran en monocromo</string>
+    <string name="settings_font_section">Fuente</string>
+    <string name="settings_font_scale_title">Escala de fuente</string>
+    <string name="settings_font_scale_value" translatable="false">%1$.1f×</string>
+    <string name="settings_experimental_section">Experimental</string>
+    <string name="settings_floating_navbar_title">Barra de navegación flotante</string>
+    <string name="settings_floating_navbar_description">En lugar de la barra estática estándar</string>
+    <string name="settings_navbar_show_label_title">Mostrar etiqueta seleccionada</string>
+    <string name="settings_navbar_show_label_description">Mostrar el nombre de la página actual</string>
+
+    <!-- Interface -->
+    <string name="settings_gestures_title">Gestos</string>
+    <string name="settings_gestures_description">Personalizá los gestos</string>
+    <string name="settings_navigation_history_title">Historial de navegación</string>
+    <string name="settings_navigation_history_description">Mostrar la última pantalla de detalle vista en la barra de navegación</string>
+    <string name="settings_navbar_history_right_title">Mostrar a la derecha</string>
+    <string name="settings_navbar_history_right_description">Si está activado se muestra a la derecha; si no, a la izquierda</string>
+
+    <!-- Gestures -->
+    <string name="settings_flip_queue_gestures_title">Invertir gestos de la cola</string>
+    <string name="settings_flip_queue_gestures_description">Deslizá a la derecha para reproducir a continuación y a la izquierda para eliminar</string>
+    <string name="settings_swipe_gestures_title">Activar gestos de deslizamiento</string>
+    <string name="settings_swipe_gestures_description">Acción rápida en la fila de canción</string>
+    <string name="settings_gesture_description_format" translatable="false">%1$s • %2$s</string>
+    <string name="settings_gesture_off">Off</string>
+    <string name="settings_add_gesture_title">Agregar gesto</string>
+    <string name="settings_gesture_try_it_out">Probalo</string>
+
+    <!-- Misc -->
+    <string name="settings_sync_header">Sincronización</string>
+    <string name="settings_sync_liked_tracks_title">Canciones que te gustan</string>
+    <plurals name="settings_sync_tracks_stored">
+        <item quantity="one">%1$d canción guardada localmente</item>
+        <item quantity="other">%1$d canciones guardadas localmente</item>
+    </plurals>
+    <string name="settings_sync_login_required">Primero iniciá sesión en tu cuenta de Spotify en Ajustes → Cuentas</string>
+    <string name="settings_sync_action">Sincronizar canciones que te gustan</string>
+    <string name="settings_sync_syncing">Sincronizando…</string>
+    <string name="settings_sync_syncing_progress">Sincronizando %1$d/%2$d…</string>
+    <string name="settings_sync_complete">Sincronización completa</string>
+    <string name="settings_sync_error_format" translatable="false">Error: %1$s</string>
+    <string name="settings_sync_explanation">La sincronización trae tus canciones que te gustan desde Spotify y las guarda localmente. Usala si faltan canciones en tu biblioteca.</string>
+    <string name="settings_sync_error_login_first">Primero iniciá sesión en tu cuenta de Spotify</string>
+    <string name="settings_sync_error_failed">No se pudieron sincronizar las canciones que te gustan</string>
+    <string name="settings_backup_restore_header">Respaldo y restauración</string>
+    <string name="settings_backup_app_settings_title">Ajustes de la app</string>
+    <string name="settings_backup_description">Respaldá todas las preferencias, incluidos gestos, colas y ajustes de reproducción, en un archivo .%1$s.</string>
+    <string name="settings_backup_export">Exportar</string>
+    <string name="settings_backup_import">Importar</string>
+    <string name="settings_backup_exporting">Exportando…</string>
+    <string name="settings_backup_importing">Importando…</string>
+    <string name="settings_backup_saved">Respaldo guardado</string>
+    <string name="settings_backup_export_failed">Falló la exportación</string>
+    <string name="settings_backup_restored">Ajustes restaurados</string>
+    <string name="settings_backup_import_failed">Falló la importación</string>
+    <string name="settings_reset_preferences_description">Restablecer preferencias</string>
+    <string name="settings_debug_title">Depuración</string>
+    <string name="settings_debug_description">Mostrar información de depuración</string>
+
+    <!-- Playback -->
+    <string name="settings_audio_section">Ajustes de audio</string>
+    <string name="settings_bitrate_title">Bitrate (calidad)</string>
+    <string name="settings_bitrate_description">Elegí tu calidad de streaming preferida</string>
+    <string name="settings_bitrate_option_format" translatable="false">%1$dKbps, %2$s</string>
+    <string name="settings_normalize_audio_title">Normalizar audio</string>
+    <string name="settings_normalize_audio_description">Todas las canciones suenan con el mismo volumen</string>
+    <string name="settings_gapless_title">Reproducción gapless</string>
+    <string name="settings_gapless_description">Reproducción continua sin pausas entre canciones</string>
+    <string name="settings_restart_spirc_title">Reiniciar Spirc</string>
+    <string name="settings_restart_spirc_description">Necesario para aplicar los ajustes de reproducción</string>
+    <string name="settings_controls_section">Controles y comportamiento</string>
+    <string name="settings_fast_forward_title">Duración del avance rápido</string>
+    <plurals name="settings_fast_forward_seconds">
+        <item quantity="one">%1$d segundo</item>
+        <item quantity="other">%1$d segundos</item>
+    </plurals>
+    <string name="settings_keepalive_title">Mantener activo</string>
+    <string name="settings_keepalive_description">Permitir reanudar desde la notificación</string>
+    <string name="settings_lyrics_section">Letras</string>
+    <string name="settings_romanize_lyrics_title">Romanizar letras</string>
+    <string name="settings_romanize_lyrics_description">Mostrar el texto romanizado debajo de la letra original</string>
+    <string name="settings_lyrics_early_title">Mostrar letras antes</string>
+    <string name="settings_lyrics_early_description">Resaltar cada línea antes de que se cante</string>
+    <string name="settings_lyrics_lead_time_title">Anticipación</string>
+    <string name="settings_lyrics_lead_time_positive" translatable="false">+%1$d ms</string>
+    <string name="settings_lyrics_lead_time_value" translatable="false">%1$d ms</string>
+    <string name="settings_lyrics_text_size_title">Tamaño del texto de las letras</string>
+    <string name="settings_lyrics_preview">Las letras se van a ver así</string>
+    <string name="settings_spotify_connection_section">Conexión con Spotify</string>
+    <string name="settings_connect_name_title">Nombre en Spotify Connect</string>
+    <string name="settings_auto_transfer_title">Transferencia automática</string>
+    <string name="settings_auto_transfer_description">Hacer que Spoty sea el dispositivo activo para reproducir</string>
+    <string name="settings_advanced_title">Ajustes avanzados</string>
+    <string name="settings_client_id_title">Client ID de Spotify</string>
+    <string name="settings_client_secret_title">Client Secret de Spotify</string>
+
+    <!-- Debug -->
+    <string name="settings_debug_general_header">General</string>
+    <string name="settings_debug_build">Compilación #</string>
+    <string name="settings_debug_display_density">Densidad de pantalla</string>
+    <string name="settings_debug_display_dpi">DPI de pantalla</string>
+    <string name="settings_debug_android_version">Versión de Android</string>
+    <string name="settings_debug_playback_logged_in">Sesión de reproducción iniciada</string>
+    <string name="settings_debug_accounts_logged_in">Sesión de cuenta iniciada</string>
+    <string name="settings_debug_playback_credentials_file">Existe el archivo de credenciales de reproducción</string>
+    <string name="settings_debug_account_credentials_file">Existe el archivo de credenciales de cuenta</string>
+    <string name="settings_debug_user_id">ID de usuario</string>
+    <string name="settings_debug_username">Nombre de usuario</string>
+    <string name="settings_debug_spotify_premium" translatable="false">Spotify Premium</string>
+    <string name="settings_debug_spirc_header" translatable="false">Spirc</string>
+    <string name="settings_debug_spirc_usable">Spirc utilizable</string>
+    <string name="settings_debug_active_device">Dispositivo activo</string>
+    <string name="settings_debug_playing">Reproduciendo</string>
+    <string name="settings_debug_buffering">Almacenando en búfer</string>
+    <string name="settings_debug_current_track">Canción actual</string>
+    <string name="settings_debug_queue_size">Tamaño de la cola</string>
+    <string name="settings_debug_preferences_header">Preferencias</string>
+    <string name="settings_debug_exceptions_header">Excepciones (%1$d)</string>
+    <string name="settings_debug_no_exceptions">Sin excepciones</string>
+    <string name="settings_debug_exception_entry" translatable="false">#%1$d %2$s</string>
+    <string name="settings_debug_thread">Hilo</string>
+    <string name="settings_debug_system_header">Sistema</string>
+    <string name="settings_debug_used_memory">Memoria usada (MB)</string>
+    <string name="settings_debug_max_memory">Memoria máxima (MB)</string>
+    <string name="settings_debug_pss" translatable="false">PSS (KB)</string>
+    <string name="settings_debug_private_dirty" translatable="false">Private dirty (KB)</string>
+    <string name="settings_debug_shared_dirty" translatable="false">Shared dirty (KB)</string>
+    <string name="settings_debug_thread_count">Cantidad de hilos</string>
+    <string name="settings_debug_cpu_time">Tiempo de CPU (ns)</string>
+    <string name="settings_debug_null_value" translatable="false">null</string>
+    <string name="settings_debug_pref_bitrate" translatable="false">Bitrate</string>
+    <string name="settings_debug_pref_gapless" translatable="false">Gapless</string>
+    <string name="settings_debug_pref_device_name">Nombre del dispositivo</string>
+    <string name="settings_debug_pref_shuffle">Aleatorio</string>
+    <string name="settings_debug_pref_repeat">Repetir</string>
+    <string name="settings_debug_pref_repeat_track">Repetir canción</string>
+    <string name="settings_debug_pref_show_lyrics_default">Mostrar letras por defecto</string>
+</resources>

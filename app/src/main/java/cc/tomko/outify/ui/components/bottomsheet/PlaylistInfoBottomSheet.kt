@@ -47,9 +47,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.SmartImage
@@ -80,17 +83,17 @@ fun PlaylistInfoBottomSheet(
             putExtra(Intent.EXTRA_TEXT, "https://open.spotify.com/playlist/${playlist.id}")
             type = "text/plain"
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share playlist"))
+        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.sheet_playlist_share_chooser)))
     }
 
     val defaultCopy: () -> Unit = {
         scope.launch {
             val clipData = ClipData.newPlainText(
-                "${playlist.attributes.name} - Spoty",
+                context.getString(R.string.sheet_share_clip_label, playlist.attributes.name),
                 "https://open.spotify.com/playlist/${playlist.id}"
             )
             clipboardManager.setClipEntry(ClipEntry(clipData))
-            InAppNotificationController.show("Copied to clipboard")
+            InAppNotificationController.show(context.getString(R.string.sheet_copied_to_clipboard))
         }
     }
 
@@ -122,7 +125,7 @@ fun PlaylistInfoBottomSheet(
                 ) {
                     SmartImage(
                         url = artworkUrl,
-                        contentDescription = "Artwork",
+                        contentDescription = stringResource(R.string.sheet_artwork_cd),
                         modifier = Modifier.fillMaxSize(),
                         monochrome = LocalUiSettings.current.monochromePlaylists
                     )
@@ -140,7 +143,7 @@ fun PlaylistInfoBottomSheet(
                     )
 
                     Text(
-                        text = "${playlist.length} tracks",
+                        text = pluralStringResource(R.plurals.sheet_track_count, playlist.length, playlist.length),
                         style = MaterialTheme.typography.bodyMedium.copy(
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         ),
@@ -159,7 +162,7 @@ fun PlaylistInfoBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Filled.Favorite,
-                            contentDescription = "Like",
+                            contentDescription = stringResource(R.string.sheet_like_cd),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -168,14 +171,14 @@ fun PlaylistInfoBottomSheet(
                         onClick = { defaultShare() },
                         modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
+                        Icon(Icons.Default.Share, contentDescription = stringResource(R.string.sheet_action_share))
                     }
 
                     IconButton(
                         onClick = { defaultCopy() },
                         modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy link")
+                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.sheet_action_copy_link))
                     }
                 }
             }
@@ -183,7 +186,7 @@ fun PlaylistInfoBottomSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Text(
-                text = "Open",
+                text = stringResource(R.string.sheet_action_open),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -195,8 +198,8 @@ fun PlaylistInfoBottomSheet(
             ) {
                 ActionCard(
                     icon = Icons.Default.PlayArrow,
-                    title = "Open Playlist",
-                    subtitle = "Browse tracks",
+                    title = stringResource(R.string.sheet_playlist_open_title),
+                    subtitle = stringResource(R.string.sheet_playlist_open_subtitle),
                     onClick = {
                         onOpenPlaylist?.invoke()
                         onDismiss()
@@ -206,8 +209,8 @@ fun PlaylistInfoBottomSheet(
 
                 ActionCard(
                     icon = Icons.Default.Person,
-                    title = "Creator",
-                    subtitle = "Click to open profile",
+                    title = stringResource(R.string.sheet_playlist_creator_title),
+                    subtitle = stringResource(R.string.sheet_playlist_creator_subtitle),
                     onClick = {
                         onOpenCreator?.invoke()
                         onDismiss()
@@ -219,7 +222,7 @@ fun PlaylistInfoBottomSheet(
             HorizontalDivider(color = MaterialTheme.colorScheme.outlineVariant)
 
             Text(
-                text = "Queue",
+                text = stringResource(R.string.sheet_queue_section),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -231,8 +234,8 @@ fun PlaylistInfoBottomSheet(
             ) {
                 ActionCard(
                     icon = Icons.Default.Queue,
-                    title = "Add to Queue",
-                    subtitle = "End of queue",
+                    title = stringResource(R.string.sheet_queue_add_title),
+                    subtitle = stringResource(R.string.sheet_queue_add_subtitle),
                     onClick = {
                         onAddToQueue?.invoke()
                         onDismiss()
@@ -242,8 +245,8 @@ fun PlaylistInfoBottomSheet(
 
                 ActionCard(
                     icon = Icons.AutoMirrored.Filled.QueueMusic,
-                    title = "Play Next",
-                    subtitle = "Up next",
+                    title = stringResource(R.string.sheet_queue_play_next_title),
+                    subtitle = stringResource(R.string.sheet_queue_play_next_subtitle),
                     onClick = {
                         onPlayNext?.invoke()
                         onDismiss()

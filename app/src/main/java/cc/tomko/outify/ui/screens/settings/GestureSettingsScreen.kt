@@ -35,11 +35,13 @@ import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.setting.DisplayIcon
 import cc.tomko.outify.data.setting.GestureSetting
-import cc.tomko.outify.data.setting.getDisplayName
+import cc.tomko.outify.data.setting.labelRes
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
 import cc.tomko.outify.ui.components.bottomsheet.GestureCustomizeBottomSheet
@@ -64,10 +66,10 @@ fun SharedTransitionScope.GestureSettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Gestures") },
+                title = { Text(stringResource(R.string.settings_gestures_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -87,8 +89,8 @@ fun SharedTransitionScope.GestureSettingsScreen(
                         .fillMaxWidth()
                 ) {
                     SwitchPreferenceEntry(
-                        title = { Text("Flip queue gestures") },
-                        description = "Right swipe to play next, left swipe to delete",
+                        title = { Text(stringResource(R.string.settings_flip_queue_gestures_title)) },
+                        description = stringResource(R.string.settings_flip_queue_gestures_description),
                         icon = { Icon(Icons.Default.Flip, contentDescription = null) },
                         onCheckedChange = { viewModel.setFlipQueueGestures(it) },
                         isChecked = flipQueueGestures
@@ -102,8 +104,8 @@ fun SharedTransitionScope.GestureSettingsScreen(
                         .fillMaxWidth()
                 ) {
                     SwitchPreferenceEntry(
-                        title = { Text("Enable swipe gestures") },
-                        description = "Quick action on track row",
+                        title = { Text(stringResource(R.string.settings_swipe_gestures_title)) },
+                        description = stringResource(R.string.settings_swipe_gestures_description),
                         icon = { Icon(Icons.Default.Gesture, contentDescription = null) },
                         onCheckedChange = { viewModel.setGesturesEnabled(it) },
                         isChecked = swipeEnabled
@@ -113,13 +115,13 @@ fun SharedTransitionScope.GestureSettingsScreen(
 
             // gestures list
             itemsIndexed(gestures) { index, gesture ->
-                val triggerLabel = gesture.trigger.getDisplayName()
-                val actionLabel = gesture.action.getDisplayName()
-                val directionLabel = gesture.side?.getDisplayName() ?: ""
+                val triggerLabel = stringResource(gesture.trigger.labelRes())
+                val actionLabel = stringResource(gesture.action.labelRes())
+                val directionLabel = gesture.side?.let { stringResource(it.labelRes()) } ?: ""
 
                 PreferenceEntry(
                     title = { Text(actionLabel) },
-                    description = if (gesture.enabled) "$triggerLabel • $directionLabel" else "Disabled",
+                    description = if (gesture.enabled) stringResource(R.string.settings_gesture_description_format, triggerLabel, directionLabel) else stringResource(R.string.settings_disabled),
                     icon = {
                         Box(
                             modifier = Modifier.size(24.dp),
@@ -133,7 +135,7 @@ fun SharedTransitionScope.GestureSettingsScreen(
                     trailingContent = {
                         if (!gesture.enabled) {
                             Text(
-                                "Off",
+                                stringResource(R.string.settings_gesture_off),
                                 style = MaterialTheme.typography.labelSmall,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
                             )
@@ -143,7 +145,7 @@ fun SharedTransitionScope.GestureSettingsScreen(
                         ) {
                             Icon(
                                 imageVector = Icons.Default.Delete,
-                                contentDescription = "Delete",
+                                contentDescription = stringResource(R.string.settings_delete),
                                 tint = MaterialTheme.colorScheme.error
                             )
                         }
@@ -158,7 +160,7 @@ fun SharedTransitionScope.GestureSettingsScreen(
                             .fillMaxWidth()
                     ) {
                         PreferenceEntry(
-                            title = { Text("Add gesture") },
+                            title = { Text(stringResource(R.string.settings_add_gesture_title)) },
                             icon = { Icon(Icons.Default.Add, contentDescription = null) },
                             onClick = {
                                 viewModel.addGesture()
@@ -166,7 +168,7 @@ fun SharedTransitionScope.GestureSettingsScreen(
                         )
 
                         PreferenceEntry(
-                            title = { Text("Reset to defaults") },
+                            title = { Text(stringResource(R.string.settings_reset_to_defaults_title)) },
                             icon = { Icon(Icons.Default.RestartAlt, contentDescription = null) },
                             onClick = {
                                 viewModel.resetToDefaults()
@@ -180,7 +182,7 @@ fun SharedTransitionScope.GestureSettingsScreen(
                 Spacer(modifier = Modifier.height(32.dp))
 
                 Text(
-                    text = "Try it out"
+                    text = stringResource(R.string.settings_gesture_try_it_out)
                 )
 
                 SwipeableTrackRowConfigured(

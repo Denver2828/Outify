@@ -39,10 +39,14 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.ui.notifications.InAppNotificationController
 import cc.tomko.outify.ui.viewmodel.bottomsheet.CreatePlaylistViewModel
+import cc.tomko.outify.ui.viewmodel.bottomsheet.PlaylistModifyException
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class, ExperimentalMaterial3ExpressiveApi::class)
@@ -60,6 +64,7 @@ fun CreatePlaylistBottomSheet(
 ) {
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = false)
     val coroutineScope = rememberCoroutineScope()
+    val context = LocalContext.current
     val isEditMode = playlistId != null
 
     var name by remember(playlistId) { mutableStateOf(initialName) }
@@ -74,13 +79,16 @@ fun CreatePlaylistBottomSheet(
             result.fold(
                 onSuccess = { id ->
                     if (isEditMode) {
-                        InAppNotificationController.show("Playlist updated", durationMillis = 2000L)
+                        InAppNotificationController.show(context.getString(R.string.sheet_playlist_updated), durationMillis = 2000L)
                     }
                     onDismiss()
                     onCreated(id)
                 },
                 onFailure = { error ->
-                    val message = error.message ?: "Unknown error"
+                    val message = when (error) {
+                        is PlaylistModifyException -> context.getString(error.messageRes, error.statusCode)
+                        else -> error.message ?: context.getString(R.string.sheet_error_unknown)
+                    }
                     InAppNotificationController.show(message, durationMillis = 3000L)
                 }
             )
@@ -125,7 +133,7 @@ fun CreatePlaylistBottomSheet(
                 Spacer(modifier = Modifier.width(12.dp))
 
                 Text(
-                    text = if (isEditMode) "Edit Playlist" else "Create Playlist",
+                    text = if (isEditMode) stringResource(R.string.sheet_playlist_edit_title) else stringResource(R.string.sheet_playlist_create_title),
                     style = MaterialTheme.typography.headlineMediumEmphasized,
                     fontWeight = FontWeight.Black,
                 )
@@ -136,7 +144,7 @@ fun CreatePlaylistBottomSheet(
             OutlinedTextField(
                 value = name,
                 onValueChange = { name = it },
-                label = { Text("Name") },
+                label = { Text(stringResource(R.string.sheet_playlist_name_label)) },
                 singleLine = true,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -144,7 +152,7 @@ fun CreatePlaylistBottomSheet(
             OutlinedTextField(
                 value = description,
                 onValueChange = { description = it },
-                label = { Text("Description (optional)") },
+                label = { Text(stringResource(R.string.sheet_playlist_description_label)) },
                 maxLines = 3,
                 modifier = Modifier.fillMaxWidth(),
             )
@@ -158,12 +166,12 @@ fun CreatePlaylistBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Public",
+                        text = stringResource(R.string.sheet_playlist_public_title),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
-                        text = if (isPublic) "Anyone can see this playlist" else "Only you can see this playlist",
+                        text = if (isPublic) stringResource(R.string.sheet_playlist_public_on) else stringResource(R.string.sheet_playlist_public_off),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -182,12 +190,12 @@ fun CreatePlaylistBottomSheet(
             ) {
                 Column {
                     Text(
-                        text = "Collaborative",
+                        text = stringResource(R.string.sheet_playlist_collaborative_title),
                         style = MaterialTheme.typography.bodyLarge,
                         fontWeight = FontWeight.Medium,
                     )
                     Text(
-                        text = "Others can add and remove tracks",
+                        text = stringResource(R.string.sheet_playlist_collaborative_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -217,7 +225,7 @@ fun CreatePlaylistBottomSheet(
                     modifier = Modifier.weight(1f),
                     enabled = !isSaving,
                 ) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.sheet_action_cancel))
                 }
 
                 Button(
@@ -245,10 +253,10 @@ fun CreatePlaylistBottomSheet(
                 ) {
                     Text(
                         when {
-                            isSaving && isEditMode -> "Saving..."
-                            isSaving -> "Creating..."
-                            isEditMode -> "Save"
-                            else -> "Create"
+                            isSaving && isEditMode -> stringResource(R.string.sheet_playlist_saving)
+                            isSaving -> stringResource(R.string.sheet_playlist_creating)
+                            isEditMode -> stringResource(R.string.sheet_action_save)
+                            else -> stringResource(R.string.sheet_action_create)
                         }
                     )
                 }

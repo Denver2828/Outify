@@ -57,9 +57,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.OutifyUri
@@ -215,7 +218,7 @@ fun SharedTransitionScope.LikedScreen(
                         },
                         isLoading = false,
                         autoFocus = false,
-                        placeholderText = "Search liked",
+                        placeholderText = stringResource(R.string.screen_liked_search_hint),
                         modifier = Modifier.weight(1f)
                     )
 
@@ -223,7 +226,10 @@ fun SharedTransitionScope.LikedScreen(
                         onClick = { showFilterSheet = true },
                         modifier = Modifier.size(40.dp)
                     ) {
-                        Icon(Icons.Default.FilterAlt, contentDescription = "Filter and Sort")
+                        Icon(
+                            Icons.Default.FilterAlt,
+                            contentDescription = stringResource(R.string.screen_liked_filter_sort_cd)
+                        )
                     }
                 }
             }
@@ -288,13 +294,17 @@ fun SharedTransitionScope.LikedScreen(
             },
             titleContent = {
                 Text(
-                    text = "Your liked tracks",
+                    text = stringResource(R.string.screen_liked_title),
                     style = MaterialTheme.typography.headlineMedium,
                     fontWeight = FontWeight.Bold
                 )
 
                 Text(
-                    text = "Account • $totalCount songs",
+                    text = pluralStringResource(
+                        R.plurals.screen_account_songs_count,
+                        totalCount,
+                        totalCount
+                    ),
                     style = MaterialTheme.typography.bodyMedium
                 )
             },
@@ -333,7 +343,7 @@ fun SharedTransitionScope.LikedScreen(
                 ) {
                     Icon(
                         Icons.Default.KeyboardArrowUp,
-                        contentDescription = "Scroll to top"
+                        contentDescription = stringResource(R.string.screen_scroll_to_top_cd)
                     )
                 }
             }
@@ -383,15 +393,23 @@ private fun SyncProgressBanner(
             )
             Column(modifier = Modifier.weight(1f)) {
                 Text(
-                    text = "Syncing tracks...",
+                    text = stringResource(R.string.screen_liked_syncing_title),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSecondaryContainer
                 )
                 Text(
                     text = if (totalCount > 50) {
-                        "Syncing $fetchedCount of $totalCount. Larger libraries take longer."
+                        stringResource(
+                            R.string.screen_liked_syncing_progress_large,
+                            fetchedCount,
+                            totalCount
+                        )
                     } else {
-                        "Syncing $fetchedCount of $totalCount"
+                        stringResource(
+                            R.string.screen_liked_syncing_progress,
+                            fetchedCount,
+                            totalCount
+                        )
                     },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSecondaryContainer.copy(alpha = 0.7f)

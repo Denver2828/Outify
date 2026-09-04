@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.spirc.SpircWrapper
@@ -12,7 +13,9 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.async
@@ -33,6 +36,7 @@ import kotlinx.serialization.json.Json
 
 @HiltViewModel
 class PlaylistViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
@@ -92,7 +96,7 @@ class PlaylistViewModel @Inject constructor(
                 _uiState.value = PlaylistUiState.Success(playlist)
             }.onFailure { e ->
                 isRefreshing.value = false
-                _uiState.value = PlaylistUiState.Error(e.message ?: "Unknown error")
+                _uiState.value = PlaylistUiState.Error(e.message ?: context.getString(R.string.screen_error_unknown))
             }
         }
     }
@@ -106,7 +110,7 @@ class PlaylistViewModel @Inject constructor(
         currentPlaylistUri?.let { uri ->
             loadPlaylist(uri, true)
         } ?: run {
-            _uiState.value = PlaylistUiState.Error("No playlist loaded to refresh")
+            _uiState.value = PlaylistUiState.Error(context.getString(R.string.screen_error_no_playlist_to_refresh))
         }
     }
 

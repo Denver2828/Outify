@@ -52,10 +52,12 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.ClipEntry
 import androidx.compose.ui.platform.LocalClipboard
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Track
@@ -103,17 +105,17 @@ fun TrackInfoBottomSheet(
             putExtra(Intent.EXTRA_TEXT, "https://open.spotify.com/track/${track.id}")
             type = "text/plain"
         }
-        context.startActivity(Intent.createChooser(shareIntent, "Share track"))
+        context.startActivity(Intent.createChooser(shareIntent, context.getString(R.string.sheet_track_share_chooser)))
     }
 
     val defaultCopy: () -> Unit = {
         scope.launch {
             val clipData = ClipData.newPlainText(
-                "${track.name} - Spoty",
+                context.getString(R.string.sheet_share_clip_label, track.name),
                 "https://open.spotify.com/track/${track.id}"
             )
             clipboardManager.setClipEntry(ClipEntry(clipData))
-            InAppNotificationController.show("Copied to clipboard")
+            InAppNotificationController.show(context.getString(R.string.sheet_copied_to_clipboard))
         }
     }
 
@@ -146,7 +148,7 @@ fun TrackInfoBottomSheet(
                 ) {
                     SmartImage(
                         url = artworkUrl,
-                        contentDescription = "Artwork",
+                        contentDescription = stringResource(R.string.sheet_artwork_cd),
                         modifier = Modifier.fillMaxSize(),
                         monochrome = LocalUiSettings.current.monochromeTracks
                     )
@@ -202,7 +204,7 @@ fun TrackInfoBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.Default.Widgets,
-                            contentDescription = "Add to widget"
+                            contentDescription = stringResource(R.string.sheet_track_add_to_widget_cd)
                         )
                     }
 
@@ -215,7 +217,7 @@ fun TrackInfoBottomSheet(
                     ) {
                         Icon(
                             imageVector = if (isLiked) Icons.Filled.Favorite else Icons.Filled.FavoriteBorder,
-                            contentDescription = "Like",
+                            contentDescription = stringResource(R.string.sheet_like_cd),
                             tint = if (isLiked) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -224,14 +226,14 @@ fun TrackInfoBottomSheet(
                         onClick = { onShare?.invoke() ?: defaultShare() },
                         modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.Share, contentDescription = "Share")
+                        Icon(Icons.Default.Share, contentDescription = stringResource(R.string.sheet_action_share))
                     }
 
                     IconButton(
                         onClick = { onCopyUri?.invoke() ?: defaultCopy() },
                         modifier = Modifier.size(44.dp)
                     ) {
-                        Icon(Icons.Default.ContentCopy, contentDescription = "Copy link")
+                        Icon(Icons.Default.ContentCopy, contentDescription = stringResource(R.string.sheet_action_copy_link))
                     }
                 }
             }
@@ -240,7 +242,7 @@ fun TrackInfoBottomSheet(
 
             // Open section
             Text(
-                text = "Open",
+                text = stringResource(R.string.sheet_action_open),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -248,7 +250,7 @@ fun TrackInfoBottomSheet(
 
             ActionCard(
                 icon = Icons.Default.Album,
-                title = "Album",
+                title = stringResource(R.string.sheet_track_album_title),
                 subtitle = track.album?.name ?: "",
                 onClick = {
                     onOpenAlbum?.invoke()
@@ -258,7 +260,7 @@ fun TrackInfoBottomSheet(
 
             ActionCard(
                 icon = Icons.Default.Person,
-                title = "Artist",
+                title = stringResource(R.string.sheet_artist_label),
                 subtitle = track.artists.joinToString { it.name },
                 onClick = {
                     onOpenArtist?.invoke()
@@ -270,7 +272,7 @@ fun TrackInfoBottomSheet(
 
             // Queue section
             Text(
-                text = "Queue",
+                text = stringResource(R.string.sheet_queue_section),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -282,8 +284,8 @@ fun TrackInfoBottomSheet(
             ) {
                 ActionCard(
                     icon = Icons.Default.Queue,
-                    title = "Add to Queue",
-                    subtitle = "End of queue",
+                    title = stringResource(R.string.sheet_queue_add_title),
+                    subtitle = stringResource(R.string.sheet_queue_add_subtitle),
                     onClick = {
                         onAddToQueue?.invoke()
                         onDismiss()
@@ -293,8 +295,8 @@ fun TrackInfoBottomSheet(
 
                 ActionCard(
                     icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-                    title = "Play Next",
-                    subtitle = "Up next",
+                    title = stringResource(R.string.sheet_queue_play_next_title),
+                    subtitle = stringResource(R.string.sheet_queue_play_next_subtitle),
                     onClick = {
                         onPlayNext?.invoke()
                         onDismiss()
@@ -305,8 +307,8 @@ fun TrackInfoBottomSheet(
 
             ActionCard(
                 icon = Icons.AutoMirrored.Filled.PlaylistAdd,
-                title = "Add to Playlist",
-                subtitle = "Save to a playlist",
+                title = stringResource(R.string.sheet_track_add_to_playlist_title),
+                subtitle = stringResource(R.string.sheet_track_add_to_playlist_subtitle),
                 onClick = {
                     onAddToPlaylist?.invoke()
                     onDismiss()
@@ -317,7 +319,7 @@ fun TrackInfoBottomSheet(
 
             // Playback section
             Text(
-                text = "Playback",
+                text = stringResource(R.string.sheet_playback_section),
                 style = MaterialTheme.typography.labelMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.padding(horizontal = 4.dp)
@@ -329,8 +331,8 @@ fun TrackInfoBottomSheet(
             ) {
                 ActionCard(
                     icon = Icons.Default.Favorite,
-                    title = "Like",
-                    subtitle = if (likedTrackIndex != null && likedTrackIndex >= 0) "In liked songs" else "Add to liked",
+                    title = stringResource(R.string.sheet_like_cd),
+                    subtitle = if (likedTrackIndex != null && likedTrackIndex >= 0) stringResource(R.string.sheet_track_in_liked_songs) else stringResource(R.string.sheet_track_add_to_liked_subtitle),
                     onClick = {
                         onToggleLike?.invoke()
                         onDismiss()
@@ -342,8 +344,8 @@ fun TrackInfoBottomSheet(
 
                 ActionCard(
                     icon = Icons.Default.Radio,
-                    title = "Start Radio",
-                    subtitle = "Play similar tracks",
+                    title = stringResource(R.string.sheet_track_start_radio_title),
+                    subtitle = stringResource(R.string.sheet_track_start_radio_subtitle),
                     onClick = {
                         onStartRadio?.invoke()
                         onDismiss()
@@ -356,8 +358,8 @@ fun TrackInfoBottomSheet(
 
             ActionCard(
                 icon = Icons.Default.AutoAwesome,
-                title = "Use as Recommendation Seed",
-                subtitle = "Discover tracks using this song",
+                title = stringResource(R.string.sheet_track_seed_title),
+                subtitle = stringResource(R.string.sheet_track_seed_subtitle),
                 onClick = {
                     onUseAsRecommendationSeed?.invoke()
                     onDismiss()
@@ -366,8 +368,8 @@ fun TrackInfoBottomSheet(
 
             ActionCard(
                 icon = Icons.Default.Radio,
-                title = "Open Radio",
-                subtitle = "View radio playlist",
+                title = stringResource(R.string.sheet_track_open_radio_title),
+                subtitle = stringResource(R.string.sheet_track_open_radio_subtitle),
                 onClick = {
                     onOpenRadio?.invoke()
                     onDismiss()
@@ -380,8 +382,8 @@ fun TrackInfoBottomSheet(
 
                 ActionCard(
                     icon = Icons.Default.Favorite,
-                    title = "In Liked Songs",
-                    subtitle = "Position #${likedTrackIndex + 1}",
+                    title = stringResource(R.string.sheet_track_in_liked_songs),
+                    subtitle = stringResource(R.string.sheet_track_liked_position, likedTrackIndex + 1),
                     onClick = {
                         onScrollToLiked?.invoke()
                         onDismiss()

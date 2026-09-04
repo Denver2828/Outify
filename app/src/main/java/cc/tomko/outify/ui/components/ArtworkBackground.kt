@@ -13,6 +13,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.data.setting.LocalUiSettings
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 @Composable
 fun ArtworkBackground(
@@ -27,7 +29,7 @@ fun ArtworkBackground(
             SmartImage(
                 url = artworkUrl,
                 modifier = Modifier.fillMaxSize(),
-                contentDescription = "Artwork",
+                contentDescription = stringResource(R.string.ui_artwork_desc),
                 monochrome = LocalUiSettings.current.monochromeHeaders
             )
         } else {

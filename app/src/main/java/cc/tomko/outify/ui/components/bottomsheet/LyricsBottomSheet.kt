@@ -53,10 +53,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
@@ -151,7 +153,7 @@ fun LyricsBottomSheet(
                     ) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Close",
+                            contentDescription = stringResource(R.string.sheet_action_close),
                             tint = MaterialTheme.colorScheme.onSurface
                         )
                     }
@@ -161,7 +163,7 @@ fun LyricsBottomSheet(
                         modifier = Modifier.padding(horizontal = 56.dp)
                     ) {
                         Text(
-                            text = displayedTrack?.name ?: "Unknown Track",
+                            text = displayedTrack?.name ?: stringResource(R.string.sheet_lyrics_unknown_track),
                             style = MaterialTheme.typography.titleLarge.copy(
                                 fontWeight = FontWeight.Bold,
                                 fontSize = 22.sp
@@ -169,7 +171,7 @@ fun LyricsBottomSheet(
                             color = MaterialTheme.colorScheme.onSurface
                         )
                         Text(
-                            text = displayedTrack?.artists?.joinToString { it.name } ?: "Unknown Artist",
+                            text = displayedTrack?.artists?.joinToString { it.name } ?: stringResource(R.string.sheet_lyrics_unknown_artist),
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                             maxLines = 1
@@ -187,7 +189,7 @@ fun LyricsBottomSheet(
                             .padding(horizontal = 12.dp),
                         horizontalArrangement = Arrangement.spacedBy(12.dp)
                     ) {
-                        val tabs = listOf("Synced", "Static")
+                        val tabs = listOf(stringResource(R.string.sheet_lyrics_tab_synced), stringResource(R.string.sheet_lyrics_tab_static))
                         tabs.forEachIndexed { index, text ->
                             val isSelected = selectedTab == index
                             val tabBgColor by animateColorAsState(
@@ -233,7 +235,7 @@ fun LyricsBottomSheet(
                         contentAlignment = Alignment.Center
                     ) {
                         Text(
-                            text = "No lyrics for episodes",
+                            text = stringResource(R.string.sheet_lyrics_no_lyrics_episodes),
                             style = MaterialTheme.typography.bodyLarge,
                             color = inactiveTextColor,
                             textAlign = TextAlign.Center
@@ -282,7 +284,7 @@ fun LyricsBottomSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SkipPrevious,
-                                    contentDescription = "Previous",
+                                    contentDescription = stringResource(R.string.sheet_previous_cd),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(32.dp)
                                 )
@@ -299,7 +301,7 @@ fun LyricsBottomSheet(
                         ) {
                             Icon(
                                 imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                                contentDescription = if (isPlaying) "Pause" else "Play",
+                                contentDescription = if (isPlaying) stringResource(R.string.sheet_pause_cd) else stringResource(R.string.sheet_play_cd),
                                 tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                 modifier = Modifier.size(32.dp)
                             )
@@ -317,7 +319,7 @@ fun LyricsBottomSheet(
                             ) {
                                 Icon(
                                     imageVector = Icons.Default.SkipNext,
-                                    contentDescription = "Next",
+                                    contentDescription = stringResource(R.string.sheet_next_cd),
                                     tint = MaterialTheme.colorScheme.onSecondaryContainer,
                                     modifier = Modifier.size(32.dp)
                                 )

@@ -1,6 +1,7 @@
 package cc.tomko.outify.playback
 
 import android.app.Application
+import android.content.Context
 import androidx.core.graphics.scale
 import androidx.core.net.toUri
 import androidx.media3.common.C
@@ -13,6 +14,7 @@ import androidx.media3.common.audio.AudioFocusManager
 import androidx.media3.common.util.Log
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Episode
@@ -51,6 +53,8 @@ class Player @Inject constructor(
     val json: Json,
     val imageLoader: ImageLoader,
 ) : SimpleBasePlayer(application.mainLooper) {
+
+    private val appContext: Context = application.applicationContext
 
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
     @Volatile
@@ -253,7 +257,7 @@ class Player @Inject constructor(
 
         val subtitle = audio.artists?.joinToString { it.name }
             ?: audio.showName
-            ?: "Unknown source"
+            ?: appContext.getString(R.string.sys_player_unknown_source)
 
         val mediaMetadata = MediaMetadata.Builder()
             .setTitle(audio.name)

@@ -33,6 +33,8 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import androidx.annotation.StringRes
+import cc.tomko.outify.R
 
 sealed class HomeUiState {
     data object Loading : HomeUiState()
@@ -54,10 +56,10 @@ data class TopArtist(
     val rank: Int = 0,
 )
 
-enum class TopItemsDuration(val value: String, val label: String) {
-    SHORT_TERM("short_term", "Last 4 weeks"),
-    MEDIUM_TERM("medium_term", "Last 6 months"),
-    LONG_TERM("long_term", "Last year"),
+enum class TopItemsDuration(val value: String, @StringRes val labelRes: Int) {
+    SHORT_TERM("short_term", R.string.ui_top_items_last_4_weeks),
+    MEDIUM_TERM("medium_term", R.string.ui_top_items_last_6_months),
+    LONG_TERM("long_term", R.string.ui_top_items_last_year),
 }
 
 @Serializable

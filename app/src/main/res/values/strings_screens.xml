@@ -1,0 +1,191 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared labels -->
+    <string name="screen_label_playlists">Playlists</string>
+    <string name="screen_label_albums">Álbumes</string>
+    <string name="screen_label_shows">Podcasts</string>
+    <string name="screen_label_episodes">Episodios</string>
+    <string name="screen_label_tracks">Canciones</string>
+    <string name="screen_label_track">Canción</string>
+    <string name="screen_label_artists">Artistas</string>
+    <string name="screen_label_lyrics">Letras</string>
+    <string name="screen_scroll_to_top_cd">Volver arriba</string>
+    <string name="screen_more_info_cd">Más información</string>
+    <string name="screen_favorite_cd">Guardar en favoritos</string>
+    <string name="screen_unfavorite_cd">Quitar de favoritos</string>
+    <string name="screen_follow">Seguir</string>
+    <string name="screen_unfollow">Dejar de seguir</string>
+    <plurals name="screen_account_playlists_count">
+        <item quantity="one">Cuenta • %1$d playlist</item>
+        <item quantity="other">Cuenta • %1$d playlists</item>
+    </plurals>
+    <plurals name="screen_account_albums_count">
+        <item quantity="one">Cuenta • %1$d álbum</item>
+        <item quantity="other">Cuenta • %1$d álbumes</item>
+    </plurals>
+    <plurals name="screen_account_shows_count">
+        <item quantity="one">Cuenta • %1$d podcast</item>
+        <item quantity="other">Cuenta • %1$d podcasts</item>
+    </plurals>
+    <plurals name="screen_account_episodes_count">
+        <item quantity="one">Cuenta • %1$d episodio</item>
+        <item quantity="other">Cuenta • %1$d episodios</item>
+    </plurals>
+    <plurals name="screen_account_songs_count">
+        <item quantity="one">Cuenta • %1$d canción</item>
+        <item quantity="other">Cuenta • %1$d canciones</item>
+    </plurals>
+
+    <!-- Home -->
+    <string name="screen_home_default_username">Usuario</string>
+    <string name="screen_home_welcome">Hola de nuevo,\n%1$s</string>
+    <string name="screen_home_top_artists">Artistas más escuchados</string>
+    <string name="screen_home_top_tracks">Canciones más escuchadas</string>
+    <string name="screen_home_account_cd">Cuenta</string>
+    <string name="screen_home_not_logged_in_cd">Sin iniciar sesión</string>
+    <string name="screen_home_settings_cd">Ajustes</string>
+    <string name="screen_home_empty_title">No hay datos de escucha</string>
+    <string name="screen_home_empty_body">La API no devolvió resultados</string>
+    <string name="screen_home_connect_title">Conectá tu cuenta de Spotify</string>
+    <string name="screen_home_connect_body">Vinculá tu cuenta de Spotify para ver tus artistas y canciones más escuchados.</string>
+    <string name="screen_home_connect_action">Conectar Spotify</string>
+
+    <!-- Search -->
+    <string name="screen_search_title">Buscar</string>
+    <string name="screen_search_recommendations_title">Recomendaciones</string>
+    <string name="screen_search_advanced_title">Búsqueda avanzada</string>
+    <string name="screen_search_no_history_title">Todavía no hay historial</string>
+    <string name="screen_search_no_history_body">Tocá un resultado para guardarlo acá</string>
+    <string name="screen_search_history_title">Historial de búsqueda</string>
+    <string name="screen_search_clear_all">Borrar todo</string>
+    <string name="screen_search_remove_from_history_cd">Quitar del historial</string>
+    <string name="screen_search_logged_out_cd">Sesión cerrada</string>
+    <string name="screen_search_login_required">Esta función solo está disponible si iniciás sesión</string>
+    <string name="screen_search_select_filters_cd">Elegí filtros</string>
+    <string name="screen_search_nothing_found">No encontramos nada…</string>
+    <string name="screen_search_type_and_filter">Escribí algo y elegí filtros</string>
+    <string name="screen_search_placeholder">Buscar en Spotify</string>
+    <string name="screen_search_clear_query_cd">Borrar búsqueda</string>
+    <string name="screen_search_field_title">Título</string>
+    <string name="screen_search_field_artist">Artista</string>
+    <string name="screen_search_field_album">Álbum</string>
+    <string name="screen_search_field_year">Año (p. ej. 1978 o 1980-1985)</string>
+    <string name="screen_search_field_genre">Género</string>
+    <string name="screen_search_field_label">Sello</string>
+    <string name="screen_search_match_label">Coincidir:</string>
+    <string name="screen_search_match_all">Todos (AND)</string>
+    <string name="screen_search_match_any">Cualquiera (OR)</string>
+    <string name="screen_search_clear">Limpiar</string>
+
+    <!-- Library -->
+    <string name="screen_library_title">Tu biblioteca</string>
+    <string name="screen_library_search_playlists_hint">Buscar playlists…</string>
+    <string name="screen_library_search_albums_hint">Buscar álbumes…</string>
+    <string name="screen_library_search_shows_hint">Buscar podcasts…</string>
+    <string name="screen_library_search_episodes_hint">Buscar episodios…</string>
+    <string name="screen_library_playlists_empty">Tu biblioteca de playlists está vacía</string>
+    <string name="screen_library_playlists_no_match">No hay playlists que coincidan</string>
+    <string name="screen_library_albums_loading">Cargando álbumes…</string>
+    <string name="screen_library_albums_empty">Todavía no guardaste álbumes</string>
+    <string name="screen_library_albums_no_match">No hay álbumes que coincidan</string>
+    <string name="screen_library_shows_loading">Cargando podcasts…</string>
+    <string name="screen_library_shows_empty">Todavía no guardaste podcasts</string>
+    <string name="screen_library_shows_no_match">No hay podcasts que coincidan</string>
+    <string name="screen_library_episodes_loading">Cargando episodios…</string>
+    <string name="screen_library_episodes_empty">Todavía no guardaste episodios</string>
+    <string name="screen_library_episodes_no_match">No hay episodios que coincidan</string>
+    <string name="screen_library_add_playlist_cd">Agregar playlist</string>
+    <string name="screen_library_add_folder_cd">Agregar carpeta</string>
+    <string name="screen_library_close_menu_cd">Cerrar menú</string>
+    <string name="screen_library_add_item_cd">Agregar</string>
+    <string name="screen_library_delete_folder_title">Eliminar carpeta</string>
+    <string name="screen_library_delete_folder_message">¿Querés eliminar \"%1$s\"? Las playlists que contiene se conservan, pero quedan sin organizar.</string>
+    <string name="screen_library_delete">Eliminar</string>
+    <string name="screen_library_cancel">Cancelar</string>
+    <plurals name="screen_library_folder_playlist_count">
+        <item quantity="one">%1$d playlist</item>
+        <item quantity="other">%1$d playlists</item>
+    </plurals>
+    <string name="screen_library_edit_folder_cd">Editar carpeta</string>
+    <string name="screen_library_collapse_cd">Contraer</string>
+    <string name="screen_library_expand_cd">Expandir</string>
+    <string name="screen_library_move_to_folder_cd">Mover a una carpeta</string>
+
+    <!-- Liked -->
+    <string name="screen_liked_title">Canciones que te gustan</string>
+    <string name="screen_liked_search_hint">Buscar en Me gusta</string>
+    <string name="screen_liked_filter_sort_cd">Filtrar y ordenar</string>
+    <string name="screen_liked_syncing_title">Sincronizando canciones…</string>
+    <string name="screen_liked_syncing_progress">Sincronizando %1$d de %2$d</string>
+    <string name="screen_liked_syncing_progress_large">Sincronizando %1$d de %2$d. Las bibliotecas grandes tardan más.</string>
+
+    <!-- Playlist -->
+    <string name="screen_playlist_search_hint">Buscar canciones…</string>
+    <string name="screen_playlist_empty_title">La playlist está vacía</string>
+    <string name="screen_playlist_empty_body">Probá agregarle algunas canciones</string>
+    <plurals name="screen_playlist_song_count">
+        <item quantity="one">• %1$d canción</item>
+        <item quantity="other">• %1$d canciones</item>
+    </plurals>
+    <string name="screen_playlist_edit_cd">Editar playlist</string>
+
+    <!-- Profile -->
+    <string name="screen_profile_public_playlists">Playlists públicas</string>
+    <string name="screen_profile_followers">Seguidores</string>
+    <string name="screen_profile_following">Siguiendo</string>
+    <plurals name="screen_profile_playlist_followers">
+        <item quantity="one">%1$d seguidor</item>
+        <item quantity="other">%1$d seguidores</item>
+    </plurals>
+
+    <!-- Album -->
+    <plurals name="screen_album_subtitle">
+        <item quantity="one">%1$s • %2$d canción</item>
+        <item quantity="other">%1$s • %2$d canciones</item>
+    </plurals>
+
+    <!-- Artist -->
+    <string name="screen_artist_popular_tracks">Canciones populares</string>
+    <string name="screen_artist_see_all_albums_cd">Ver todos los álbumes</string>
+    <plurals name="screen_artist_subtitle">
+        <item quantity="one">Artista • %1$d canción que te gusta</item>
+        <item quantity="other">Artista • %1$d canciones que te gustan</item>
+    </plurals>
+    <string name="screen_artist_liked_artwork_cd">Portada de Canciones que te gustan</string>
+    <string name="screen_artist_liked_cd">Me gusta</string>
+    <string name="screen_artist_liked_songs_title">Canciones que te gustan</string>
+    <plurals name="screen_artist_liked_count">
+        <item quantity="one">Tenés %1$d canción que te gusta</item>
+        <item quantity="other">Tenés %1$d canciones que te gustan</item>
+    </plurals>
+    <string name="screen_artist_preview_artwork_cd">Vista previa de la portada</string>
+    <string name="screen_artist_open_liked_cd">Abrir Canciones que te gustan</string>
+    <string name="screen_artist_album_artwork_cd">Portada del álbum</string>
+
+    <!-- Show -->
+    <plurals name="screen_show_subtitle">
+        <item quantity="one">%1$s • %2$d episodio</item>
+        <item quantity="other">%1$s • %2$d episodios</item>
+    </plurals>
+    <string name="screen_show_change_order_cd">Cambiar el orden de los episodios</string>
+    <string name="screen_show_order_recommended">%1$s (Recomendado)</string>
+    <string name="screen_show_order_sequential">Secuencial</string>
+    <string name="screen_show_order_episodic">Episódico</string>
+    <string name="screen_show_order_recent">Recientes</string>
+
+    <!-- Track -->
+    <string name="screen_track_like_cd">Me gusta</string>
+    <string name="screen_track_unlike_cd">Quitar de Me gusta</string>
+
+    <!-- ViewModel errors -->
+    <string name="screen_error_track_not_found">No se encontró la canción</string>
+    <string name="screen_error_show_not_found">No se encontró el podcast</string>
+    <string name="screen_error_library_load_failed">No se pudo cargar la biblioteca</string>
+    <string name="screen_error_unknown">Error desconocido</string>
+    <string name="screen_error_no_playlist_to_refresh">No hay ninguna playlist cargada para actualizar</string>
+    <string name="screen_error_profile_not_found">No se encontró el perfil</string>
+    <string name="screen_error_artist_load_failed">No se pudo cargar el artista</string>
+    <string name="screen_error_sync_failed">Falló la sincronización</string>
+    <string name="screen_error_album_not_found">No se encontró el álbum</string>
+    <string name="screen_error_album_for_track_not_found">No se encontró el álbum de la canción</string>
+</resources>

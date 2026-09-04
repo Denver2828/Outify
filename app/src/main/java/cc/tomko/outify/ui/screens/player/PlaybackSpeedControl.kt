@@ -56,6 +56,8 @@ import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.launch
 import java.util.Locale
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 private val SPEED_PRESETS = listOf(0.5f, 1f, 1.25f, 1.5f, 1.75f, 2f, 3f, 4f)
 private const val MIN_SPEED = 0.25f
@@ -241,7 +243,7 @@ private fun CustomPill(
             )
             Spacer(Modifier.width(4.dp))
             Text(
-                text = "Custom",
+                text = stringResource(R.string.ui_speed_custom),
                 style = TextStyle(fontSize = 13.sp, fontWeight = FontWeight.Medium),
                 color = content,
             )
@@ -289,7 +291,7 @@ fun CustomSpeedBottomSheet(
                 .padding(horizontal = 24.dp, vertical = 8.dp),
         ) {
             Text(
-                text = "Playback speed",
+                text = stringResource(R.string.ui_speed_title),
                 style = TextStyle(fontSize = 20.sp, fontWeight = FontWeight.SemiBold),
                 color = MaterialTheme.colorScheme.onSurface,
             )
@@ -306,13 +308,13 @@ fun CustomSpeedBottomSheet(
                         sliderValue = parsed
                     }
                 },
-                label = { Text("Speed") },
+                label = { Text(stringResource(R.string.ui_speed_field_label)) },
                 suffix = { Text("x") },
                 singleLine = true,
                 isError = textIsInvalid,
                 supportingText = {
                     if (textIsInvalid) {
-                        Text("Enter a value between ${MIN_SPEED}x and ${MAX_SPEED.roundToInt()}x")
+                        Text(stringResource(R.string.ui_speed_invalid_range, "${MIN_SPEED}x", "${MAX_SPEED.roundToInt()}x"))
                     }
                 },
                 keyboardOptions = KeyboardOptions(
@@ -360,7 +362,7 @@ fun CustomSpeedBottomSheet(
                     .fillMaxWidth()
                     .height(52.dp),
             ) {
-                Text("Set speed \u2022 ${sliderValue.speedLabel()}")
+                Text(stringResource(R.string.ui_speed_set, sliderValue.speedLabel()))
             }
 
             Spacer(Modifier.height(8.dp))

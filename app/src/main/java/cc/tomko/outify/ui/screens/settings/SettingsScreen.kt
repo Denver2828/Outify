@@ -44,10 +44,10 @@ fun SettingsScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Settings") },
+                title = { Text(stringResource(R.string.settings_title)) },
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
                 }
             )
@@ -67,8 +67,8 @@ fun SettingsScreen(
                         .fillMaxWidth()
                 ) {
                     PreferenceEntry(
-                        title = { Text("Interface") },
-                        description = "Gestures, Appearance, ..",
+                        title = { Text(stringResource(R.string.settings_interface_title)) },
+                        description = stringResource(R.string.settings_interface_description),
                         icon = { Icon(Icons.Default.Interests, contentDescription = null) },
                         onClick = openInterfaceSettings,
                     )
@@ -81,8 +81,8 @@ fun SettingsScreen(
                         .fillMaxWidth()
                 ) {
                     PreferenceEntry(
-                        title = { Text("Playback") },
-                        description = "Bitrate, Spotify Connect, Gapless, ..",
+                        title = { Text(stringResource(R.string.settings_playback_title)) },
+                        description = stringResource(R.string.settings_playback_description),
                         icon = { Icon(Icons.Default.Headphones, contentDescription = null) },
                         onClick = openPlaybackSettings,
                     )
@@ -95,8 +95,8 @@ fun SettingsScreen(
                         .fillMaxWidth()
                 ) {
                     PreferenceEntry(
-                        title = { Text("Misc") },
-                        description = "Sync, Backup & restore",
+                        title = { Text(stringResource(R.string.settings_misc_title)) },
+                        description = stringResource(R.string.settings_misc_description),
                         icon = { Icon(Icons.Default.DeveloperMode, contentDescription = null) },
                         onClick = openMiscSettings,
                     )
@@ -109,8 +109,8 @@ fun SettingsScreen(
                     )
 
                     PreferenceEntry(
-                        title = { Text("About") },
-                        description = "Build number",
+                        title = { Text(stringResource(R.string.settings_about_title)) },
+                        description = stringResource(R.string.settings_about_description),
                         icon = { Icon(Icons.Default.Info, contentDescription = null) },
                         onClick = openAboutSettings,
                     )
@@ -123,8 +123,8 @@ fun SettingsScreen(
                         .fillMaxWidth()
                 ) {
                     PreferenceEntry(
-                        title = { Text("Accounts") },
-                        description = "Playback & Account login",
+                        title = { Text(stringResource(R.string.settings_accounts_title)) },
+                        description = stringResource(R.string.settings_accounts_description),
                         icon = { Icon(Icons.Default.AccountCircle, contentDescription = null) },
                         onClick = openAccountSettings,
                     )

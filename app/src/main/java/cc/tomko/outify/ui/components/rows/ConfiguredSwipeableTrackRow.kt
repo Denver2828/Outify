@@ -35,6 +35,8 @@ import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.buildLongPressAction
 import cc.tomko.outify.data.setting.buildSwipeGesturesForTrack
 import cc.tomko.outify.ui.components.SkeletonBox
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 @SuppressLint("UnusedBoxWithConstraintsScope")
 @Composable
@@ -153,7 +155,7 @@ fun SharedTransitionScope.SwipeableTrackRowConfigured(
                     if (isLiked) {
                         Icon(
                             Icons.Default.Favorite,
-                            contentDescription = "Liked"
+                            contentDescription = stringResource(R.string.ui_row_liked_desc)
                         )
                     }
 

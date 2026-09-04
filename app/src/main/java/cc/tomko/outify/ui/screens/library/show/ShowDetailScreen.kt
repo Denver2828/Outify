@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.screens.library.show
 
+import androidx.annotation.StringRes
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
@@ -52,10 +53,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.ConsumptionOrder
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.getCover
@@ -185,7 +189,7 @@ fun SharedTransitionScope.ShowDetailScreen(
                                 .padding(start = 16.dp, end = 8.dp, bottom = 8.dp)
                         ) {
                             Text(
-                                text = "Episodes",
+                                text = stringResource(R.string.screen_label_episodes),
                                 style = MaterialTheme.typography.bodyLarge,
                             )
                             ConsumptionOrderMenu(
@@ -244,7 +248,12 @@ fun SharedTransitionScope.ShowDetailScreen(
                         )
 
                         Text(
-                            text = "${show.publisher} • $totalEpisodes episodes",
+                            text = pluralStringResource(
+                                R.plurals.screen_show_subtitle,
+                                totalEpisodes,
+                                show.publisher,
+                                totalEpisodes
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
@@ -270,7 +279,9 @@ fun SharedTransitionScope.ShowDetailScreen(
                         FilledIconButton(onClick = { viewModel.toggleSave() }) {
                             Icon(
                                 imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = if (isSaved) "Unfollow" else "Follow"
+                                contentDescription = stringResource(
+                                    if (isSaved) R.string.screen_unfollow else R.string.screen_follow
+                                )
                             )
                         }
                     }
@@ -299,7 +310,7 @@ fun SharedTransitionScope.ShowDetailScreen(
                         ) {
                             Icon(
                                 Icons.Default.KeyboardArrowUp,
-                                contentDescription = "Scroll to top"
+                                contentDescription = stringResource(R.string.screen_scroll_to_top_cd)
                             )
                         }
                     }
@@ -319,13 +330,23 @@ private fun ConsumptionOrderMenu(
 
     Box {
         IconButton(onClick = { expanded = true }) {
-            Icon(Icons.AutoMirrored.Filled.Sort, contentDescription = "Change episode order")
+            Icon(
+                Icons.AutoMirrored.Filled.Sort,
+                contentDescription = stringResource(R.string.screen_show_change_order_cd)
+            )
         }
         DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
             ConsumptionOrder.entries.forEach { order ->
                 DropdownMenuItem(
                     text = {
-                        Text(order.label() + if (order == recommended) " (Recommended)" else "")
+                        val label = stringResource(order.labelRes())
+                        Text(
+                            if (order == recommended) {
+                                stringResource(R.string.screen_show_order_recommended, label)
+                            } else {
+                                label
+                            }
+                        )
                     },
                     leadingIcon = if (order == selected) {
                         { Icon(Icons.Filled.Check, contentDescription = null) }
@@ -340,8 +361,9 @@ private fun ConsumptionOrderMenu(
     }
 }
 
-private fun ConsumptionOrder.label() = when (this) {
-    ConsumptionOrder.SEQUENTIAL -> "Sequential"
-    ConsumptionOrder.EPISODIC -> "Episodic"
-    ConsumptionOrder.RECENT -> "Recent"
+@StringRes
+private fun ConsumptionOrder.labelRes(): Int = when (this) {
+    ConsumptionOrder.SEQUENTIAL -> R.string.screen_show_order_sequential
+    ConsumptionOrder.EPISODIC -> R.string.screen_show_order_episodic
+    ConsumptionOrder.RECENT -> R.string.screen_show_order_recent
 }

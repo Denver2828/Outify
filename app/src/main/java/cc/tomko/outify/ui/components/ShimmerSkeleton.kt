@@ -35,6 +35,8 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 @Composable
 fun Modifier.shimmerEffect(): Modifier {
@@ -237,7 +239,7 @@ fun ArtistDetailSkeleton(
     ) {
         item {
             Text(
-                text = "Popular tracks",
+                text = stringResource(R.string.ui_skeleton_popular_tracks),
                 style = MaterialTheme.typography.bodyLarge,
                 modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
             )

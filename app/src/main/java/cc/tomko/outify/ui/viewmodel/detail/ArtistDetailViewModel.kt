@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel.detail
 
 import androidx.lifecycle.SavedStateHandle
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.SpClient
@@ -13,7 +14,9 @@ import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -45,6 +48,7 @@ sealed class ArtistUiState {
 
 @HiltViewModel
 class ArtistDetailViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     private val metadata: Metadata,
     private val spClient: SpClient,
     private val playbackStateHolder: PlaybackStateHolder,
@@ -195,7 +199,7 @@ class ArtistDetailViewModel @Inject constructor(
         }
 
         if (artist == null) {
-            _uiState.value = ArtistUiState.Error("Artist failed to fetch")
+            _uiState.value = ArtistUiState.Error(context.getString(R.string.screen_error_artist_load_failed))
             saveState()
             return
         }

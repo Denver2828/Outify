@@ -37,9 +37,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.ProfilePlaylist
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.ui.components.ArtworkBackground
@@ -137,14 +140,17 @@ fun ProfileDetailScreen(
                             )
                             Spacer(modifier = Modifier.width(8.dp))
                             Text(
-                                text = if (state.isFollowing) "Unfollow" else "Follow"
+                                text = stringResource(
+                                    if (state.isFollowing) R.string.screen_unfollow
+                                    else R.string.screen_follow
+                                )
                             )
                         }
                     }
 
                     item {
                         Text(
-                            text = "Public Playlists",
+                            text = stringResource(R.string.screen_profile_public_playlists),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp, top = 16.dp)
                         )
@@ -177,7 +183,11 @@ fun ProfileDetailScreen(
                         )
 
                         Text(
-                            text = "Account • ${playlists.size} playlists",
+                            text = pluralStringResource(
+                                R.plurals.screen_account_playlists_count,
+                                playlists.size,
+                                playlists.size
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     }
@@ -211,7 +221,7 @@ private fun ProfileStatsRow(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Followers",
+                text = stringResource(R.string.screen_profile_followers),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -227,7 +237,7 @@ private fun ProfileStatsRow(
                 fontWeight = FontWeight.Bold
             )
             Text(
-                text = "Following",
+                text = stringResource(R.string.screen_profile_following),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
@@ -278,7 +288,11 @@ private fun ProfilePlaylistRow(
                     overflow = TextOverflow.Ellipsis
                 )
                 Text(
-                    text = "${playlist.followersCount} followers",
+                    text = pluralStringResource(
+                        R.plurals.screen_profile_playlist_followers,
+                        playlist.followersCount,
+                        playlist.followersCount
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1

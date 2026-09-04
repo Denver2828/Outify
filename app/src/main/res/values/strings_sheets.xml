@@ -1,0 +1,216 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Shared actions / labels -->
+    <string name="sheet_action_cancel">Cancelar</string>
+    <string name="sheet_action_save">Guardar</string>
+    <string name="sheet_action_create">Crear</string>
+    <string name="sheet_action_add">Agregar</string>
+    <string name="sheet_action_remove">Quitar</string>
+    <string name="sheet_action_share">Compartir</string>
+    <string name="sheet_action_copy_link">Copiar enlace</string>
+    <string name="sheet_action_close">Cerrar</string>
+    <string name="sheet_action_open">Abrir</string>
+    <string name="sheet_action_not_now">Ahora no</string>
+    <string name="sheet_copied_to_clipboard">Copiado al portapapeles</string>
+    <string name="sheet_error_title">Error</string>
+    <string name="sheet_error_unknown">Error desconocido</string>
+    <string name="sheet_artwork_cd">Portada</string>
+    <string name="sheet_artist_artwork_cd">Imagen del artista</string>
+    <string name="sheet_like_cd">Me gusta</string>
+    <string name="sheet_play_cd">Reproducir</string>
+    <string name="sheet_pause_cd">Pausar</string>
+    <string name="sheet_previous_cd">Anterior</string>
+    <string name="sheet_next_cd">Siguiente</string>
+    <string name="sheet_shuffle_cd">Aleatorio</string>
+    <string name="sheet_play_in_order_cd">Reproducir en orden</string>
+    <plurals name="sheet_track_count">
+        <item quantity="one">%1$d canción</item>
+        <item quantity="other">%1$d canciones</item>
+    </plurals>
+    <!-- Non-translatable helpers (only in values/) -->
+    <string name="sheet_share_clip_label" translatable="false">%1$s - Spoty</string>
+    <string name="sheet_percent_value" translatable="false">%1$d%%</string>
+
+    <!-- Account -->
+    <string name="sheet_account_profile_picture_cd">Foto de perfil</string>
+    <string name="sheet_account_logged_in_cd">Sesión iniciada</string>
+    <string name="sheet_account_log_out">Cerrar sesión</string>
+    <string name="sheet_account_login_in_progress">Ahora deberías estar iniciando sesión…</string>
+
+    <!-- Battery permission -->
+    <string name="sheet_battery_title">Que la música no se corte</string>
+    <string name="sheet_battery_description">Excluí a Spoty de la optimización de batería para que la reproducción y las sincronizaciones no se corten en segundo plano.</string>
+    <string name="sheet_battery_disable_optimization">Desactivar optimización de batería</string>
+
+    <!-- Notification permission -->
+    <string name="sheet_notification_title">Mantenete al tanto</string>
+    <string name="sheet_notification_description">Recibí un aviso cuando tu biblioteca termine de sincronizar las canciones.</string>
+    <string name="sheet_notification_allow">Permitir notificaciones</string>
+
+    <!-- Folders -->
+    <string name="sheet_folder_edit_title">Editar carpeta</string>
+    <string name="sheet_folder_create_title">Crear carpeta</string>
+    <string name="sheet_folder_name_label">Nombre de la carpeta</string>
+    <string name="sheet_folder_color_label">Color de la carpeta</string>
+    <string name="sheet_folder_move_title">Mover a una carpeta</string>
+    <string name="sheet_folder_none">Sin carpeta (sin organizar)</string>
+
+    <!-- Add to playlist -->
+    <string name="sheet_add_to_playlist_your_playlists">Tus playlists</string>
+    <plurals name="sheet_tracks_selected">
+        <item quantity="one">%1$d canción seleccionada</item>
+        <item quantity="other">%1$d canciones seleccionadas</item>
+    </plurals>
+    <plurals name="sheet_tracks_in_playlist">
+        <item quantity="one">%1$d canción en la playlist</item>
+        <item quantity="other">%1$d canciones en la playlist</item>
+    </plurals>
+
+    <!-- Add to widget -->
+    <string name="sheet_widget_pin_title">Fijar en un widget</string>
+    <string name="sheet_widget_pin_description">Elegí a qué widget de la pantalla de inicio agregar esta canción</string>
+    <string name="sheet_widget_adding_badge">Agregando</string>
+    <string name="sheet_widget_your_widgets">TUS WIDGETS</string>
+    <string name="sheet_widget_empty_title">No hay widgets en tu pantalla de inicio</string>
+    <string name="sheet_widget_empty_description">Mantené presionada la pantalla de inicio y agregá primero un widget de Spoty.</string>
+    <string name="sheet_widget_slot_empty">Vacío</string>
+    <string name="sheet_widget_label">Widget</string>
+    <string name="sheet_widget_add_here">Agregar acá</string>
+    <string name="sheet_widget_current_tracks">Canciones actuales — tocá para quitar</string>
+    <string name="sheet_widget_remove_track_cd">Quitar canción</string>
+    <string name="sheet_track_add_to_widget_cd">Agregar a un widget</string>
+
+    <!-- Queue / playback sections (track, artist, playlist sheets) -->
+    <string name="sheet_queue_section">Cola</string>
+    <string name="sheet_queue_add_title">Agregar a la cola</string>
+    <string name="sheet_queue_add_subtitle">Al final de la cola</string>
+    <string name="sheet_queue_play_next_title">Reproducir a continuación</string>
+    <string name="sheet_queue_play_next_subtitle">A continuación</string>
+    <string name="sheet_playback_section">Reproducción</string>
+
+    <!-- Artist info -->
+    <string name="sheet_artist_share_chooser">Compartir artista</string>
+    <string name="sheet_artist_label">Artista</string>
+    <string name="sheet_artist_follow">Seguir</string>
+    <string name="sheet_artist_unfollow">Dejar de seguir</string>
+    <string name="sheet_artist_view_page">Ver la página del artista</string>
+    <string name="sheet_artist_following">Siguiendo al artista</string>
+    <string name="sheet_artist_follow_this">Seguir a este artista</string>
+    <plurals name="sheet_liked_songs_count">
+        <item quantity="one">• %1$d canción que te gusta</item>
+        <item quantity="other">• %1$d canciones que te gustan</item>
+    </plurals>
+
+    <!-- Create / edit playlist -->
+    <string name="sheet_playlist_updated">Playlist actualizada</string>
+    <string name="sheet_playlist_edit_title">Editar playlist</string>
+    <string name="sheet_playlist_create_title">Crear playlist</string>
+    <string name="sheet_playlist_name_label">Nombre</string>
+    <string name="sheet_playlist_description_label">Descripción (opcional)</string>
+    <string name="sheet_playlist_public_title">Pública</string>
+    <string name="sheet_playlist_public_on">Cualquiera puede ver esta playlist</string>
+    <string name="sheet_playlist_public_off">Solo vos podés ver esta playlist</string>
+    <string name="sheet_playlist_collaborative_title">Colaborativa</string>
+    <string name="sheet_playlist_collaborative_description">Otras personas pueden agregar y quitar canciones</string>
+    <string name="sheet_playlist_saving">Guardando…</string>
+    <string name="sheet_playlist_creating">Creando…</string>
+    <string name="sheet_playlist_modify_forbidden">No tenés permiso para modificar esta playlist</string>
+    <string name="sheet_playlist_modify_failed">No se pudo modificar la playlist (estado: %1$d)</string>
+
+    <!-- Filter & sort -->
+    <string name="sheet_filter_sort_title">Filtrar y ordenar</string>
+    <string name="sheet_filter_section">FILTROS</string>
+    <string name="sheet_filter_explicit_title">Contenido explícito</string>
+    <string name="sheet_filter_explicit_all">Mostrar todo</string>
+    <string name="sheet_filter_explicit_only">Solo explícito</string>
+    <string name="sheet_filter_non_explicit_only">Solo no explícito</string>
+    <string name="sheet_filter_artist_name">Filtrar por nombre de artista</string>
+    <string name="sheet_filter_track_name">Filtrar por nombre de canción</string>
+    <string name="sheet_sort_section">ORDENAR POR</string>
+    <string name="sheet_sort_position">Agregado (orden predeterminado)</string>
+    <string name="sheet_sort_artist_name">Nombre del artista</string>
+    <string name="sheet_sort_track_name">Nombre de la canción</string>
+    <string name="sheet_sort_duration">Duración</string>
+    <string name="sheet_sort_ascending">Ascendente</string>
+    <string name="sheet_sort_descending">Descendente</string>
+
+    <!-- Gesture customization -->
+    <string name="sheet_gesture_title">Personalizar gesto</string>
+    <string name="sheet_gesture_on">Activado</string>
+    <string name="sheet_gesture_off">Desactivado</string>
+    <string name="sheet_gesture_disabled_hint">Este gesto está desactivado y no se va a activar.</string>
+    <string name="sheet_gesture_action">Acción</string>
+    <string name="sheet_gesture_tap_to_change">Tocá para cambiar</string>
+    <string name="sheet_gesture_trigger">Disparador</string>
+    <string name="sheet_gesture_swipe_options">Opciones de deslizamiento</string>
+    <string name="sheet_gesture_direction">Dirección</string>
+    <string name="sheet_gesture_swipe_distance">Distancia de deslizamiento</string>
+    <string name="sheet_gesture_threshold_hint">Menor = se activa antes, mayor = requiere un deslizamiento más largo</string>
+
+    <!-- Lyrics -->
+    <string name="sheet_lyrics_unknown_track">Canción desconocida</string>
+    <string name="sheet_lyrics_unknown_artist">Artista desconocido</string>
+    <string name="sheet_lyrics_tab_synced">Sincronizadas</string>
+    <string name="sheet_lyrics_tab_static">Estáticas</string>
+    <string name="sheet_lyrics_no_lyrics_episodes">Los episodios no tienen letras</string>
+
+    <!-- Playback devices -->
+    <string name="sheet_devices_cd">Dispositivos</string>
+    <string name="sheet_devices_title">Dispositivos de reproducción</string>
+    <plurals name="sheet_devices_count">
+        <item quantity="one">%1$d dispositivo</item>
+        <item quantity="other">%1$d dispositivos</item>
+    </plurals>
+    <string name="sheet_devices_transfer_cd">Transferir reproducción</string>
+    <string name="sheet_devices_refresh_cd">Actualizar dispositivos</string>
+    <string name="sheet_devices_none">No se encontraron dispositivos…</string>
+    <string name="sheet_devices_restricted">Restringido</string>
+    <string name="sheet_devices_private">Privado</string>
+
+    <!-- Playlist info -->
+    <string name="sheet_playlist_share_chooser">Compartir playlist</string>
+    <string name="sheet_playlist_open_title">Abrir playlist</string>
+    <string name="sheet_playlist_open_subtitle">Ver canciones</string>
+    <string name="sheet_playlist_creator_title">Creador</string>
+    <string name="sheet_playlist_creator_subtitle">Tocá para abrir el perfil</string>
+
+    <!-- Recommendation tuning -->
+    <string name="sheet_reco_title">Ajustar recomendaciones</string>
+    <string name="sheet_reco_apply">Aplicar</string>
+    <string name="sheet_reco_acousticness">Acústica</string>
+    <string name="sheet_reco_danceability">Bailabilidad</string>
+    <string name="sheet_reco_energy">Energía</string>
+    <string name="sheet_reco_instrumentalness">Instrumentalidad</string>
+    <string name="sheet_reco_liveness">En vivo</string>
+    <string name="sheet_reco_loudness">Volumen</string>
+    <string name="sheet_reco_speechiness">Voz hablada</string>
+    <string name="sheet_reco_tempo">Tempo</string>
+    <string name="sheet_reco_valence">Valencia (ánimo)</string>
+    <string name="sheet_reco_feature_weight">Peso de las características</string>
+
+    <!-- Track info -->
+    <string name="sheet_track_share_chooser">Compartir canción</string>
+    <string name="sheet_track_album_title">Álbum</string>
+    <string name="sheet_track_add_to_playlist_title">Agregar a una playlist</string>
+    <string name="sheet_track_add_to_playlist_subtitle">Guardar en una playlist</string>
+    <string name="sheet_track_in_liked_songs">En Canciones que te gustan</string>
+    <string name="sheet_track_add_to_liked_subtitle">Agregar a Me gusta</string>
+    <string name="sheet_track_start_radio_title">Iniciar radio</string>
+    <string name="sheet_track_start_radio_subtitle">Reproducir canciones similares</string>
+    <string name="sheet_track_seed_title">Usar como semilla de recomendaciones</string>
+    <string name="sheet_track_seed_subtitle">Descubrí canciones a partir de esta</string>
+    <string name="sheet_track_open_radio_title">Abrir radio</string>
+    <string name="sheet_track_open_radio_subtitle">Ver la playlist de la radio</string>
+    <string name="sheet_track_liked_position">Posición #%1$d</string>
+
+    <!-- Track selection -->
+    <string name="sheet_selection_remove_title">Elegí las canciones a quitar</string>
+    <string name="sheet_selection_add_title">Elegí las canciones a agregar</string>
+    <string name="sheet_selection_remove_count">Quitar %1$d</string>
+    <string name="sheet_selection_add_count">Agregar %1$d</string>
+    <string name="sheet_selection_tracks_in_playlist">Canciones en la playlist: %1$d</string>
+    <string name="sheet_selection_already_in_playlist">Ya están en la playlist: %1$d</string>
+    <string name="sheet_selection_in_playlist_badge">En la playlist</string>
+    <string name="sheet_auth_result_success_default">Iniciaste sesión correctamente</string>
+    <string name="sheet_auth_result_failed_default">No se pudo iniciar sesión</string>
+</resources>

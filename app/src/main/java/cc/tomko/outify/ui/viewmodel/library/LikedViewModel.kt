@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.library
 
+import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -13,7 +14,9 @@ import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.SyncNotificationManager
 import coil3.ImageLoader
+import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.FlowPreview
@@ -49,6 +52,7 @@ enum class ExplicitFilter {
 
 @HiltViewModel
 class LikedViewModel @Inject constructor(
+    @ApplicationContext private val context: Context,
     val spirc: SpircWrapper,
     val imageLoader: ImageLoader,
     private val likedRepository: LikedRepository,
@@ -150,7 +154,7 @@ class LikedViewModel @Inject constructor(
 
                     isRefreshing.value = false
                 }.onFailure {
-                    syncNotificationManager.showError(it.message ?: "Sync failed")
+                    syncNotificationManager.showError(it.message ?: context.getString(R.string.screen_error_sync_failed))
 
                     isRefreshing.value = false
                 }

@@ -65,6 +65,8 @@ import cc.tomko.outify.utils.SharedElementKey
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.roundToInt
+import androidx.compose.ui.res.stringResource
+import cc.tomko.outify.R
 
 private val TAB_HEIGHT = 20.dp
 
@@ -174,7 +176,7 @@ fun MiniPlayer(
                 ) {
                     Icon(
                         imageVector = Icons.Default.ExpandLess,
-                        contentDescription = "Expand",
+                        contentDescription = stringResource(R.string.ui_mini_player_expand_desc),
                         modifier = Modifier.size(14.dp),
                         tint = MaterialTheme.colorScheme.onSurfaceVariant,
                     )
@@ -214,7 +216,7 @@ fun MiniPlayer(
                     ) {
                         SmartImage(
                             url = artworkUrl,
-                            contentDescription = "Artwork",
+                            contentDescription = stringResource(R.string.ui_artwork_desc),
                             modifier = Modifier
                                 .fillMaxSize(),
                             monochrome = LocalUiSettings.current.monochromePlayer
@@ -238,7 +240,7 @@ fun MiniPlayer(
                     modifier = Modifier.weight(1f)
                 ) {
                     Text(
-                        text = currentAudio?.name ?: "Nothing playing",
+                        text = currentAudio?.name ?: stringResource(R.string.ui_mini_player_nothing_playing),
                         style = MaterialTheme.typography.bodyLargeEmphasized,
                         fontWeight = FontWeight.Medium,
                         maxLines = 1,
@@ -249,7 +251,7 @@ fun MiniPlayer(
 
                     val subtitle = currentAudio?.artists?.joinToString { it.name }
                         ?: currentAudio?.showName
-                        ?: "Unknown source"
+                        ?: stringResource(R.string.ui_player_unknown_source)
 
                     Text(
                         text = buildString {
@@ -291,7 +293,7 @@ fun MiniPlayer(
                     ) {
                         Icon(
                             Icons.Default.Menu,
-                            contentDescription = "See queue",
+                            contentDescription = stringResource(R.string.ui_mini_player_see_queue_desc),
                             modifier = Modifier.size(20.dp),
                         )
                     }

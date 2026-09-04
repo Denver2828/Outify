@@ -56,12 +56,15 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.navigation3.ui.LocalNavAnimatedContentScope
 import cc.tomko.outify.ALBUM_COVER_URL
+import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
@@ -185,7 +188,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                 ) {
                     item {
                         Text(
-                            text = "Popular tracks",
+                            text = stringResource(R.string.screen_artist_popular_tracks),
                             style = MaterialTheme.typography.bodyLarge,
                             modifier = Modifier.padding(start = 16.dp, bottom = 8.dp)
                         )
@@ -235,13 +238,13 @@ fun SharedTransitionScope.ArtistDetailScreen(
                                 horizontalArrangement = Arrangement.SpaceBetween
                             ) {
                                 Text(
-                                    text = "Albums",
+                                    text = stringResource(R.string.screen_label_albums),
                                     style = MaterialTheme.typography.bodyLarge
                                 )
 
                                 Icon(
                                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                                    contentDescription = "See all albums",
+                                    contentDescription = stringResource(R.string.screen_artist_see_all_albums_cd),
                                     modifier = Modifier
                                         .clickable {
                                         }
@@ -300,7 +303,11 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         )
 
                         Text(
-                            text = "Artist • $likedTrackCount liked songs",
+                            text = pluralStringResource(
+                                R.plurals.screen_artist_subtitle,
+                                likedTrackCount,
+                                likedTrackCount
+                            ),
                             style = MaterialTheme.typography.bodyMedium
                         )
                     },
@@ -318,7 +325,9 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         FilledIconButton(onClick = { viewModel.toggleSave() }) {
                             Icon(
                                 imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = if (isSaved) "Unfollow" else "Follow"
+                                contentDescription = stringResource(
+                                    if (isSaved) R.string.screen_unfollow else R.string.screen_follow
+                                )
                             )
                         }
                         FilledIconButton(onClick = {
@@ -332,7 +341,7 @@ fun SharedTransitionScope.ArtistDetailScreen(
                         }) {
                             Icon(
                                 imageVector = Icons.Default.MoreVert,
-                                contentDescription = "More information"
+                                contentDescription = stringResource(R.string.screen_more_info_cd)
                             )
                         }
                     }
@@ -377,7 +386,7 @@ fun ArtistTracksHeader(
                 if (!artworkUrl.isNullOrBlank()) {
                     SmartImage(
                         url = artworkUrl,
-                        contentDescription = "Liked songs artwork",
+                        contentDescription = stringResource(R.string.screen_artist_liked_artwork_cd),
                         modifier = Modifier.fillMaxSize(),
                         monochrome = LocalUiSettings.current.monochromeTracks
                     )
@@ -405,7 +414,7 @@ fun ArtistTracksHeader(
                 // Centered heart icon
                 Icon(
                     imageVector = Icons.Filled.Favorite,
-                    contentDescription = "Liked",
+                    contentDescription = stringResource(R.string.screen_artist_liked_cd),
                     tint = Color.White,
                     modifier = Modifier.size(28.dp)
                 )
@@ -420,7 +429,7 @@ fun ArtistTracksHeader(
                     .padding(end = 8.dp)
             ) {
                 Text(
-                    text = "Liked Songs",
+                    text = stringResource(R.string.screen_artist_liked_songs_title),
                     style = MaterialTheme.typography.headlineSmall,
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
@@ -429,7 +438,11 @@ fun ArtistTracksHeader(
                 Spacer(modifier = Modifier.height(4.dp))
 
                 Text(
-                    text = "You have $likedCount liked songs",
+                    text = pluralStringResource(
+                        R.plurals.screen_artist_liked_count,
+                        likedCount,
+                        likedCount
+                    ),
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1,
@@ -452,7 +465,7 @@ fun ArtistTracksHeader(
                             if (previewArtwork.isNotBlank()) {
                                 AsyncImage(
                                     model = previewArtwork,
-                                    contentDescription = "Preview artwork",
+                                    contentDescription = stringResource(R.string.screen_artist_preview_artwork_cd),
                                     modifier = Modifier.fillMaxSize(),
                                     contentScale = ContentScale.Crop
                                 )
@@ -479,7 +492,7 @@ fun ArtistTracksHeader(
             IconButton(onClick = onClick) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowForward,
-                    contentDescription = "Open liked songs"
+                    contentDescription = stringResource(R.string.screen_artist_open_liked_cd)
                 )
             }
         }
@@ -514,7 +527,7 @@ fun SharedTransitionScope.AlbumCard(
                 if (artworkUri.isNotBlank()) {
                     SmartImage(
                         url = artworkUri,
-                        contentDescription = "Album artwork",
+                        contentDescription = stringResource(R.string.screen_artist_album_artwork_cd),
                         modifier = Modifier
                             .fillMaxSize()
                             .clip(RoundedCornerShape(8.dp))

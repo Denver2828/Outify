@@ -73,7 +73,6 @@ class PlaybackService : MediaLibraryService(),
 
         const val NOTIFICATION_ID = 4894
         const val CHANNEL_ID = "outify_channel_01"
-        const val CHANNEL_NAME = "Media Playback"
 
         val TAG = PlaybackService::class.simpleName.toString()
 
@@ -86,10 +85,10 @@ class PlaybackService : MediaLibraryService(),
     private fun createNotificationChannel() {
         val channel = NotificationChannel(
             CHANNEL_ID,
-            CHANNEL_NAME,
+            getString(R.string.media_notificationn_channel),
             NotificationManager.IMPORTANCE_LOW
         ).apply {
-            description = "Media playback controls"
+            description = getString(R.string.media_notification_channel_description)
             setShowBadge(false)
         }
         val notificationManager = getSystemService(NotificationManager::class.java)
@@ -157,8 +156,8 @@ class PlaybackService : MediaLibraryService(),
         startForeground(
             NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Spoty")
-                .setContentText("Loading...")
+                .setContentTitle(getString(R.string.app_name))
+                .setContentText(getString(R.string.sys_notification_loading))
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .build()
         )
@@ -359,7 +358,12 @@ class PlaybackService : MediaLibraryService(),
 
         Toast.makeText(
             this@PlaybackService,
-            "plr: ${error.message} (${error.errorCode}): ${error.cause?.message ?: ""}",
+            getString(
+                R.string.sys_playback_error_toast,
+                error.message ?: "",
+                error.errorCode,
+                error.cause?.message ?: ""
+            ),
             Toast.LENGTH_LONG
         ).show()
     }

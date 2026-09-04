@@ -26,8 +26,10 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.ui.components.SmartImage
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -66,7 +68,7 @@ fun AccountDetailBottomSheet(
                     ) {
                         SmartImage(
                             url = userImageUrl,
-                            contentDescription = "Profile picture",
+                            contentDescription = stringResource(R.string.sheet_account_profile_picture_cd),
                             modifier = Modifier.fillMaxWidth(),
                         )
                     }
@@ -91,7 +93,7 @@ fun AccountDetailBottomSheet(
                 if (isLoggedIn) {
                     Icon(
                         imageVector = Icons.Default.CheckCircle,
-                        contentDescription = "Logged in",
+                        contentDescription = stringResource(R.string.sheet_account_logged_in_cd),
                         tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(24.dp)
                     )
@@ -122,11 +124,11 @@ fun AccountDetailBottomSheet(
                         contentDescription = null
                     )
                     Spacer(modifier = Modifier.width(8.dp))
-                    Text("Log out")
+                    Text(stringResource(R.string.sheet_account_log_out))
                 }
             } else {
                 Text(
-                    text = "You should be in login process now..",
+                    text = stringResource(R.string.sheet_account_login_in_progress),
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.align(Alignment.CenterHorizontally)
