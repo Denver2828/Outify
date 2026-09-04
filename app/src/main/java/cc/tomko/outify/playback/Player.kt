@@ -202,9 +202,38 @@ class Player @Inject constructor(
                 scope.launch {
                     stateHolder.setPlaying(playing)
                     invalidateState()
+                    syncAudioFocus(playing)
                 }
             }
         }, stateHolder)
+
+    /**
+     * Keeps Android audio focus in step with what librespot reports.
+     *
+     * Playback started through `spirc.load()` (the UI, Android Auto, the tile) never goes
+     * through [handleSetPlayWhenReady], so without this the app plays without holding focus.
+     * Besides being bad citizenship, some car head units and Android boxes only open their
+     * media audio channel for the app that holds focus, which surfaces as silent playback
+     * with a moving progress bar.
+     */
+    private fun syncAudioFocus(playing: Boolean) {
+        val command = audioFocusManager.updateAudioFocus(playing, STATE_READY)
+        if (!playing) return
+
+        when (command) {
+            AudioFocusManager.PLAYER_COMMAND_PLAY_WHEN_READY -> Unit
+
+            AudioFocusManager.PLAYER_COMMAND_WAIT_FOR_CALLBACK -> {
+                Log.i("Player", "Audio focus delayed, pausing until it is granted")
+                scope.launch(Dispatchers.IO) { spirc.playerPause() }
+            }
+
+            AudioFocusManager.PLAYER_COMMAND_DO_NOT_PLAY -> {
+                Log.w("Player", "Audio focus denied, pausing")
+                scope.launch(Dispatchers.IO) { spirc.playerPause() }
+            }
+        }
+    }
 
     private val audioFocusManager = AudioFocusManager(
         application.applicationContext,

@@ -163,6 +163,21 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Limitaciones.** No se pudo probar en un auto ni en el emulador Desktop Head Unit desde esta máquina; solo compila. Como la app se instala fuera de Google Play, Android Auto exige activar "Fuentes desconocidas" en sus ajustes de desarrollador. El payload de "recientes" no lo consume ninguna otra parte de la app, así que su forma quedó sin verificar.
 
+### 2026-09-04 — 1.3.1: sonido en una caja iCarPlay y avisos compactos
+
+**El síntoma.** En una caja iCarPlay (Android 12 conectado por USB al auto, con internet compartida desde el teléfono) la canción "reproduce": la barra avanza, los segundos corren, pero no se escucha nada. En el teléfono la misma versión suena. El primer diagnóstico apuntó a Android Auto; no aplica: la caja es un Android completo que manda su pantalla y su audio al estéreo por el protocolo CarPlay, y Spoty corre ahí como en un teléfono.
+
+**Lo que la barra en movimiento demuestra.** librespot decodifica y entrega PCM. El silencio está en la última milla: entre el `AudioTrack` de la app y el hardware de la caja. Dos formas de que eso pase sin que nada falle a la vista:
+
+1. **Foco de audio.** La reproducción que arranca por `spirc.load()` (la interfaz, el auto, el mosaico) nunca pasaba por el camino de Media3 que pide foco; la app sonaba sin tenerlo. El servicio lo pedía una sola vez al crearse y, si otra app se lo quitaba, nunca lo recuperaba (los manejadores estaban comentados). Spotify y YouTube lo piden al momento de dar play, y esas cajas usan justamente esa señal para abrir el canal de audio hacia el estéreo. Ahora el `Player` sincroniza el foco con lo que librespot reporta: al empezar a sonar lo pide; si se lo niegan, pausa; si se lo devuelven, reanuda. Se quitó el pedido manual del servicio para que haya un solo dueño del foco: dos pedidos desde la misma app se pisan entre sí, y al reiniciarse el servicio el segundo pedido le quitaba el foco al primero.
+2. **AudioTrack que no se crea.** Si la caja rechaza el formato, cada cuadro se descarta con un log y la barra sigue. Ahora la app lo dice en pantalla una vez por racha, con el motivo, y registra el dispositivo de salida al que quedó enrutado el track.
+
+También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas que espejan el audio capturándolo en vez de enrutarlo.
+
+**Lo que no se pudo verificar.** No hay forma de sacar logs de la caja desde acá. El foco es la causa más probable por diferencia con las apps que sí suenan; la segunda hipótesis queda cubierta por el aviso. Si 1.3.1 sigue en silencio y no aparece ningún aviso, el problema está en el enrutado de la propia caja y hay que mirar sus ajustes de salida de audio.
+
+**Avisos compactos.** Las hojas de "Permitir notificaciones" y "Optimización de batería" tenían un ícono de 112 dp, título grande y dos botones de 58 dp apilados: en una pantalla apaisada y baja cubrían casi todo. Se unificaron en un componente compacto de ancho máximo 400 dp: ícono de 36 dp junto al título, cuerpo corto y los dos botones en una fila.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

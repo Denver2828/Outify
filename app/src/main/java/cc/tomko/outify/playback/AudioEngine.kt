@@ -5,7 +5,12 @@ import android.media.AudioAttributes
 import android.media.AudioFormat
 import android.media.AudioManager
 import android.media.AudioTrack
+import android.os.Build
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
+import android.widget.Toast
+import cc.tomko.outify.R
 import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -48,6 +53,12 @@ class AudioEngine(
 
     private val writeLock = ReentrantLock()
 
+    private val mainHandler = Handler(Looper.getMainLooper())
+
+    /** True while the last AudioTrack creation failed, so the user is warned once per streak. */
+    @Volatile
+    private var outputFailureReported = false
+
     init {
         // Registers this class as the PCM callback.
         // Rust stores the GlobalRef and calls the onPcm method
@@ -89,6 +100,7 @@ class AudioEngine(
             val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelMask, encoding)
             if (minBufferSize <= 0) {
                 Log.e(TAG, "Invalid min buffer size: $minBufferSize")
+                reportOutputFailure("minBufferSize=$minBufferSize")
                 return false
             }
 
@@ -123,6 +135,7 @@ class AudioEngine(
                 if (newTrack.state != AudioTrack.STATE_INITIALIZED) {
                     Log.e(TAG, "Failed to initialize AudioTrack: state=${newTrack.state}")
                     newTrack.release()
+                    reportOutputFailure("state=${newTrack.state}")
                     return false
                 }
 
@@ -133,16 +146,41 @@ class AudioEngine(
                 currentChannels = channels
                 currentFormat = format
 
-                Log.d(
+                outputFailureReported = false
+                Log.i(
                     TAG,
-                    "AudioTrack created: sampleRate=$sampleRate, channels=$channels, encoding=$encoding, buffer=$bufferSize"
+                    "AudioTrack created: sampleRate=$sampleRate, channels=$channels, encoding=$encoding, " +
+                        "buffer=$bufferSize, route=${describeRoute(newTrack)}"
                 )
                 return true
             } catch (t: Throwable) {
                 Log.e(TAG, "Exception while creating AudioTrack", t)
+                reportOutputFailure(t.javaClass.simpleName + ": " + (t.message ?: ""))
                 return false
             }
         }
+    }
+
+    /**
+     * Silence with a moving progress bar is the worst failure mode: librespot keeps decoding
+     * while every frame is dropped here. Tell the user once per failure streak.
+     */
+    private fun reportOutputFailure(reason: String) {
+        if (outputFailureReported) return
+        outputFailureReported = true
+        mainHandler.post {
+            Toast.makeText(
+                context,
+                context.getString(R.string.sys_audio_output_failed, reason),
+                Toast.LENGTH_LONG,
+            ).show()
+        }
+    }
+
+    private fun describeRoute(track: AudioTrack): String {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.N) return "unknown"
+        val device = track.routedDevice ?: return "none"
+        return "${device.productName} (type=${device.type})"
     }
 
     fun releaseAudioTrack() {

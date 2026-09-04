@@ -2,6 +2,7 @@
 <resources>
     <!-- Playback service -->
     <string name="sys_notification_loading">Cargando…</string>
+    <string name="sys_audio_output_failed">Spoty no pudo abrir la salida de audio de este dispositivo: %1$s</string>
     <string name="sys_playback_error_toast">Error de reproducción: %1$s (%2$d): %3$s</string>
     <string name="sys_player_unknown_source">Fuente desconocida</string>
 
