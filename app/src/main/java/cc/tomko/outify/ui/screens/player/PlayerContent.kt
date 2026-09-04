@@ -30,6 +30,7 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -911,6 +912,10 @@ private fun FullPlayerLandscapeContent(
                 Spacer(Modifier.weight(0.25f))
 
                 controlsSection(50.dp)
+
+                if (!isEpisode) {
+                    moreActions()
+                }
             }
         }
     }
@@ -940,6 +945,18 @@ private fun FullPlayerPortraitContent(
         val playbackControlsHeight = maxHeight * 0.105f
         val segmentedControlsHeight = maxHeight * 0.09f
 
+        // The cover must leave room for everything below it. On short or wide
+        // screens a full-width cover pushes the last rows (shuffle/repeat and
+        // lyrics/queue/more) past the bottom edge, where they get clipped.
+        val metadataEstimate = 130.dp
+        val actionsRowHeight = if (isEpisode) 0.dp else 72.dp
+        val fixedBelowCover =
+            metadataEstimate + playbackControlsHeight + segmentedControlsHeight + actionsRowHeight
+        val coverHeightBudget =
+            maxHeight - outerVerticalPadding * 2 - topPadding * 1.5f - fixedBelowCover
+        val coverWidthBudget = maxWidth - horizontalPadding * 2 - horizontalPadding * 1.3f
+        val coverSize = minOf(coverWidthBudget, coverHeightBudget).coerceAtLeast(140.dp)
+
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -953,8 +970,7 @@ private fun FullPlayerPortraitContent(
             ) {
                 albumCoverSection(
                     Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = horizontalPadding * 0.65f)
+                        .width(coverSize)
                         .padding(top = topPadding * 0.5f)
                 )
             }

@@ -116,9 +116,16 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Números:** 869 entradas de texto en total, con paridad exacta entre español e inglés en los siete archivos.
 
+### 2026-09-04 — 1.1.1: el botón de letras no se veía
+
+**Problema.** En el teléfono del mantenedor el reproductor mostraba la tapa, el título, la barra y los controles, y debajo un hueco negro. Faltaban la fila de aleatorio/repetir/favorito y la fila de letras/cola/más.
+
+**Causa.** La hoja del reproductor se ubica con un margen inferior reservado para la barra de navegación, y adentro `PlayerContent` vuelve a aplicar el padding interno del Scaffold, que ya incluye esa barra. El alto se descuenta dos veces. La tapa ocupaba el ancho completo sin mirar el alto disponible, el contenido fijo excedía la columna y las dos últimas filas se dibujaban fuera del área visible.
+
+**Solución.** La tapa se dimensiona con el menor valor entre el ancho disponible y el alto que sobra después de reservar lo que va debajo (metadatos, controles, filas de acciones). En pantallas altas no cambia nada visible. En pantallas cortas o con doble padding la tapa se achica y todo entra. Además el layout horizontal ahora dibuja la fila de acciones, que recibía pero nunca renderizaba.
+
+**Descartado.** Quitar el doble padding en `MainActivity`. Es la causa de fondo, pero el margen se comparte con la animación del mini reproductor y tocarlo sin probar en varios dispositivos era más riesgo que beneficio. Queda anotado como deuda.
+
 ## Problemas conocidos heredados
 
-- **Fila de acciones ausente en horizontal.** En `PlayerContent.kt` el layout apaisado recibe la fila con los botones de letras, cola y más, pero nunca la dibuja.
-- **Fila de acciones recortada en vertical.** La columna del reproductor tiene altura fija y la tapa del álbum ocupa el ancho completo. En pantallas 16:9 o con escalado grande, la fila de acciones queda fuera del borde inferior y el botón de letras no se ve.
-
-Ambos quedan fuera de las siete etapas iniciales hasta que se decida abordarlos.
+- **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1. Mitigado por el dimensionado de la tapa, no corregido en su origen.
