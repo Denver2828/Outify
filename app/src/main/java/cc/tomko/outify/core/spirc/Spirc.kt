@@ -48,7 +48,7 @@ interface SpircDeviceCallback {
 object Spirc {
     /**
      * Initializes the SpircRuntime
-     * @param deviceName The device name shown in Spotify Connect (default "Outify")
+     * @param deviceName The device name shown in Spotify Connect (default "Spoty")
      */
     @JvmStatic
     external fun initializeSpirc(
@@ -56,7 +56,7 @@ object Spirc {
         gapless: Boolean,
         normalisation: Boolean,
         bitrateSpeed: Int = Bitrate.KBPS320.getSpeed(),
-        deviceName: String = "Outify"
+        deviceName: String = "Spoty"
     ): Boolean
 
     /**

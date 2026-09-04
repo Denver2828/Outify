@@ -99,7 +99,7 @@ private fun BatteryOptimizationSheetContent(
         Spacer(Modifier.height(10.dp))
 
         Text(
-            text = "Exempt Outify from battery optimization so playback and " +
+            text = "Exempt Spoty from battery optimization so playback and " +
                     "syncs don't get cut off in the background.",
             style = MaterialTheme.typography.bodyLarge,
             color = MaterialTheme.colorScheme.onSurfaceVariant,

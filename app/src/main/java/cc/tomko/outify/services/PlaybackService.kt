@@ -157,7 +157,7 @@ class PlaybackService : MediaLibraryService(),
         startForeground(
             NOTIFICATION_ID,
             NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle("Outify")
+                .setContentTitle("Spoty")
                 .setContentText("Loading...")
                 .setSmallIcon(R.drawable.ic_launcher_foreground)
                 .build()

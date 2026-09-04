@@ -251,7 +251,7 @@ fun PlaybackSettingScreen(
 
                         LaunchedEffect(deviceName) {
                             delay(500)
-                            val finalValue = deviceName.ifBlank { "Outify" }
+                            val finalValue = deviceName.ifBlank { "Spoty" }
                             if (finalValue != settings.deviceName) {
                                 viewModel.setDeviceName(finalValue)
                             }
@@ -259,14 +259,14 @@ fun PlaybackSettingScreen(
 
                         TextInputPreferenceEntry(
                             title = { Text("Spotify Connect name") },
-                            placeholder = "Outify",
+                            placeholder = "Spoty",
                             value = deviceName,
                             onValueChange = { deviceName = it },
                         )
 
                         SwitchPreferenceEntry(
                             title = { Text("Auto transfer") },
-                            description = "Make Outify the active device to stream from",
+                            description = "Make Spoty the active device to stream from",
                             icon = { Icon(Icons.Default.SkipNext, contentDescription = null) },
                             onCheckedChange = { viewModel.setAutoTransfer(it) },
                             isChecked = settings.autoTransfer

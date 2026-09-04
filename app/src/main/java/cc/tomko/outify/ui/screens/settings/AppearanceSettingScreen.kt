@@ -98,7 +98,7 @@ fun AppearanceSettingScreen(
                         if (!settings.dynamicSystem) {
                             ColorPreferenceEntry(
                                 title = { Text("Accent color") },
-                                description = "Color of Outify's interface",
+                                description = "Color of Spoty's interface",
                                 icon = { Icon(Icons.Default.Palette, contentDescription = null) },
                                 value = settings.accentColor,
                                 onValueChange = { viewModel.setAccentColor(it) }

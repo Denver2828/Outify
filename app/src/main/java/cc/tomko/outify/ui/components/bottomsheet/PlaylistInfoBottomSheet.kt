@@ -86,7 +86,7 @@ fun PlaylistInfoBottomSheet(
     val defaultCopy: () -> Unit = {
         scope.launch {
             val clipData = ClipData.newPlainText(
-                "${playlist.attributes.name} - Outify",
+                "${playlist.attributes.name} - Spoty",
                 "https://open.spotify.com/playlist/${playlist.id}"
             )
             clipboardManager.setClipEntry(ClipEntry(clipData))

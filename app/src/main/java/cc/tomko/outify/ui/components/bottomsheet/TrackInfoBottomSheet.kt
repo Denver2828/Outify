@@ -109,7 +109,7 @@ fun TrackInfoBottomSheet(
     val defaultCopy: () -> Unit = {
         scope.launch {
             val clipData = ClipData.newPlainText(
-                "${track.name} - Outify",
+                "${track.name} - Spoty",
                 "https://open.spotify.com/track/${track.id}"
             )
             clipboardManager.setClipEntry(ClipEntry(clipData))

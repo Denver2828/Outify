@@ -92,7 +92,7 @@ fun ArtistInfoBottomSheet(
     val defaultCopy: () -> Unit = {
         scope.launch {
             val clipData = ClipData.newPlainText(
-                "${artist.name} - Outify",
+                "${artist.name} - Spoty",
                 "https://open.spotify.com/artist/${artist.id}"
             )
             clipboardManager.setClipEntry(ClipEntry(clipData))

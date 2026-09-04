@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.components.navigation
 
-import android.content.Intent
 import androidx.compose.animation.SharedTransitionScope
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -14,10 +13,8 @@ import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
-import androidx.core.net.toUri
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
@@ -70,8 +67,6 @@ fun SharedTransitionScope.NavigationRoot(
     modifier: Modifier = Modifier,
     bottomPadding: Dp = 0.dp
 ) {
-    val context = LocalContext.current
-
     NavDisplay(
         backStack = backStack,
         modifier = modifier.padding(bottom = bottomPadding),
@@ -363,11 +358,6 @@ fun SharedTransitionScope.NavigationRoot(
             entry<Route.AboutScreen> {
                 AboutScreen(
                     onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
-                    onOpenUrl = {
-                        context.startActivity(
-                            Intent(Intent.ACTION_VIEW, it.toUri())
-                        )
-                    }
                 )
             }
 

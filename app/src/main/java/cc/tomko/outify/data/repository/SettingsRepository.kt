@@ -266,7 +266,7 @@ class SettingsRepository @Inject constructor(
     }
 
     val deviceName = dataStore.data.map {
-        it[Keys.DEVICE_NAME] ?: "Outify"
+        it[Keys.DEVICE_NAME] ?: "Spoty"
     }
 
     val showLyricsByDefault = dataStore.data.map {
@@ -609,7 +609,7 @@ data class PlaybackSettings(
     val keepalive: Boolean = true,
     val autoTransfer: Boolean = true,
     val bitrate: Bitrate = Bitrate.KBPS320,
-    val deviceName: String = "Outify",
+    val deviceName: String = "Spoty",
 
     val forwardMilliseconds: Long = 15_000
 ) {

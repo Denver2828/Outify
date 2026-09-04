@@ -170,7 +170,7 @@ fun AccountsScreen(
                                 )
                                 Spacer(Modifier.height(4.dp))
                                 Text(
-                                    text = "Outify only works with a Spotify Premium account. Tap to learn why.",
+                                    text = "Spoty only works with a Spotify Premium account. Tap to learn why.",
                                     style = MaterialTheme.typography.bodyMedium,
                                     color = MaterialTheme.colorScheme.onErrorContainer.copy(alpha = 0.8f),
                                 )
@@ -197,7 +197,7 @@ fun AccountsScreen(
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
                         Text(
-                            text = "Outify uses librespot to stream audio. librespot authenticates with Spotify's streaming protocol using anonymous credentials — it operates independently of your Spotify account and cannot access your personal data.",
+                            text = "Spoty uses librespot to stream audio. librespot authenticates with Spotify's streaming protocol using anonymous credentials — it operates independently of your Spotify account and cannot access your personal data.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant,
                         )
@@ -457,7 +457,7 @@ fun AccountsScreen(
                         Spacer(Modifier.height(16.dp))
 
                         FeatureAvailability(
-                            "Stream tracks from Outify",
+                            "Stream tracks from Spoty",
                             isPlaybackLoggedIn && isPremium,
                             0
                         )

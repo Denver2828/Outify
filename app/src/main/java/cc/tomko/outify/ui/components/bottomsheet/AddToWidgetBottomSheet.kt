@@ -204,7 +204,7 @@ fun AddToWidgetBottomSheet(
                         )
                         Spacer(Modifier.height(4.dp))
                         Text(
-                            text = "Long-press your home screen and add an Outify widget first.",
+                            text = "Long-press your home screen and add a Spoty widget first.",
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.outline,
                         )

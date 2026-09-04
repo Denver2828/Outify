@@ -25,8 +25,8 @@ ksp {
 }
 
 val majorVersion = 1
-val minorVersion = 9
-val patchVersion = 1
+val minorVersion = 0
+val patchVersion = 0
 
 extensions.configure<ApplicationExtension>("android") {
     compileSdk = 37
@@ -40,7 +40,9 @@ extensions.configure<ApplicationExtension>("android") {
         applicationId = "cc.tomko.outify"
         minSdk = 26
         targetSdk = 36
-        versionCode = majorVersion * 10_000 + minorVersion * 100 + patchVersion
+        // Offset keeps versionCode above the last pre-rebrand build (10901) so the
+        // app upgrades in place after the version restart at 1.0.0.
+        versionCode = 10_000 + majorVersion * 10_000 + minorVersion * 100 + patchVersion
         versionName = "$majorVersion.$minorVersion.$patchVersion"
 
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${keystoreProps.getProperty("spotify.playback.clientId", "")}\"")

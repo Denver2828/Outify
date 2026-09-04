@@ -264,7 +264,7 @@ fun MiscSettingsScreen(
                                 ) {
                                     Button(
                                         onClick = {
-                                            exportLauncher.launch("outify-backup.${OutifyBackup.FILE_EXTENSION}")
+                                            exportLauncher.launch("spoty-backup.${OutifyBackup.FILE_EXTENSION}")
                                         },
                                         modifier = Modifier.weight(1f)
                                     ) {

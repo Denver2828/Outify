@@ -98,7 +98,7 @@ class MediaLibrarySessionCallback @Inject constructor(
                     .setIsPlayable(false)
                     .setIsBrowsable(true)
                     .setMediaType(MediaMetadata.MEDIA_TYPE_FOLDER_MIXED)
-                    .setTitle("Outify")
+                    .setTitle("Spoty")
                     .build()
             )
             .build()

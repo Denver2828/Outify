@@ -1,106 +1,58 @@
-<!-- markdownlint-disable -->
-> [!WARNING]
-> Starting from **September 1st 2026** old Spotify credentials will be revoked. Users on version **< 1.8.0** will no longer be able to stream audio.
-> To keep streaming audio, update the app and follow [guides](https://github.com/iTomKo/Outify/blob/master/docs/MIGRATING.md).
+# Spoty
 
-<div align="center">
-  <a href="https://github.com/iTomKo/Outify">
-    <img src="./.github/logo.svg" alt="Outify" width="150">
-  </a>
-  <h1 align="center">
-    Outify
-  </h1>
-  <p>
-    <br />
-    <strong>
-      Implementation of 
-      <a href="https://github.com/librespot-org/librespot/">librespot</a>
-      for Spotify streaming 
-    </strong>
-  </p>
-
-  <p>
-    <a href="https://github.com/iTomKo/Outify/issues/new?assignees=&labels=bug&projects=&template=bug_report.yml">Report Bug</a>
-    ·
-    <a href="https://github.com/iTomKo/Outify/issues/new?template=feature_request.md">Request Feature</a>
-    ·
-    <a href="https://github.com/iTomKo/Outify/discussions/new?category=q-a">Ask Question</a>
-  </p>
-
-  <br />
-
-  ![Kotlin](https://img.shields.io/badge/Kotlin-7F52FF?&style=for-the-badge&logo=kotlin&logoColor=white)
-  ![Android](https://img.shields.io/badge/Android-34A853?style=for-the-badge&logo=android&logoColor=white)
-  ![Rust](https://img.shields.io/badge/Rust-000000?style=for-the-badge&logo=rust&logoColor=white)
-
-  [![GitHub License](https://img.shields.io/github/license/iTomKo/Outify?style=for-the-badge&label=%20)](https://www.gnu.org/licenses/gpl-3.0)
-  [![GitHub Issues or Pull Requests](https://img.shields.io/github/issues/iTomKo/Outify?style=for-the-badge)](https://github.com/iTomKo/Outify/issues)
-</div>
-
-### Information
-Third party open source Android Spotify client with Material 3 using librespot Rust
-
-> [!WARNING]
-> Outify is still in early development.
-> Any contributions are welcomed.
+Spoty is an Android Spotify client built with Jetpack Compose and Material 3 on top of a Rust
+[librespot](https://github.com/librespot-org/librespot) core bridged through JNI. The Rust side
+handles authentication, Spotify Connect and audio streaming; the Kotlin side owns the UI, playback
+service, widgets and settings. The interface is Spanish-first with an English fallback.
 
 > [!NOTE]
-> Outify requires premium Spotify account!
-> No support will be provided for non-premium users.
+> Spoty is not affiliated with Spotify, Google or librespot. Using a third-party client may be
+> against the Spotify Terms of Service. Use at your own risk.
 
-### Features
-Outify is based on librespot backend allowing us to stream Spotify audio.
+## Requirements
 
-- Searching Spotify
-- Streaming S16 audio
-- Viewing playlists, albums, artists, your library
-- Sleek Material 3 design
-- Dynamic Material Theme
+- A Spotify **Premium** account (free accounts cannot stream through librespot).
+- Android 8.0 (API 26) or newer, arm64-v8a or armeabi-v7a.
 
-### Contributing
-Please take a look at [CONTRIBUTING.md](https://github.com/iTomKo/Outify/blob/master/docs/CONTRIBUTING.md)
+## Features
 
-### Help & Support
-Contact us through Github:
-- via [issues](https://github.com/iTomKo/Outify/issues) for reports, feature requests, bug reports, ..
-- via [discussions](https://github.com/iTomKo/Outify/discussions) for help with the application.
+- Playback of tracks, albums, playlists, artists, podcasts and your library, with queue and radio.
+- Acts as a Spotify Connect device, so other Spotify apps can hand playback over to it.
+- Synced lyrics in the full-screen player.
+- Home screen widgets for playback control and quick access.
+- Backup and restore of preferences, gestures and queues.
+- Dynamic Material 3 theming that follows the system palette.
 
-### Roadmap
-- [x] raw PCM streaming
-- [x] adding to queue
-- [x] starting radio
-- [x] playlist support
-    - [x] playing and viewing playlist
-    - [x] modifying playlist
-- [x] interacting with spotify account
-    - [x] login to Spotify Web API
-- [ ] jams
-- [ ] offline support
-- [x] media notification
-- [x] keep alive lifecycle
+## Building
 
-### Screenshots
-<p>
-    <img src="docs/images/playerscreen.png" alt="Player interface" width="200" hspace="10"/>
-    <img src="docs/images/lyrics.png" alt="Player interface" width="200" hspace="10"/>
-    <img src="docs/images/artist.png" alt="Artist view" width="200" hspace="10"/>
-    <img src="docs/images/liked.png" alt="Liked view" width="200" hspace="10"/>
-</p>
+Prerequisites:
 
-[View entire gallery](./docs/images/)
+- Android Studio with the Android SDK, platform-tools and NDK r29 (`29.0.13113456`).
+- JDK 21 in `JAVA_HOME`.
+- Rust toolchain (1.90.0) via [rustup](https://rustup.rs/), plus `cargo-ndk` and the Android targets:
 
-### Attribution
-[librespot-org/librespot](https://github.com/librespot-org/librespot) for providing the required backend
+  ```bash
+  cargo install cargo-ndk
+  rustup target add aarch64-linux-android armv7-linux-androideabi
+  ```
 
-[PixelPlay](https://github.com/theovilardo/PixelPlayer/) for UI, UX inspiration
+- `ANDROID_SDK_ROOT` and `ANDROID_NDK_HOME` set in the environment.
+- Spotify app credentials from the [Spotify Developer Dashboard](https://developer.spotify.com/dashboard/create)
+  with redirect URI `http://127.0.0.1:5588/account/login`, copied into `keystore.properties`
+  (see `keystore.properties.example`).
 
-[OuterTune](https://github/OuterTune/OuterTune) for UI, UX inspiration
+Steps:
 
-Google for Jetpack Compose, Material Components and Icons
+1. Clone the repository with submodules: `git clone --recurse-submodules <repo-url>`.
+2. Build the Rust core. Without it the app will not start.
+   - Linux / WSL2: `./buildLibrespot.sh`
+   - Windows: `Set-ExecutionPolicy -ExecutionPolicy Bypass -Scope Process; .\build-librespot.ps1`
+   - Manual: run `cargo ndk -t arm64-v8a --platform 21 build --release` (and `-t armeabi-v7a`) inside
+     `rust/librespot-ffi`, then copy each `liblibrespot_ffi.so` into `app/src/main/jniLibs/<abi>/`.
+3. Build the app from Android Studio or with `./gradlew assembleDebug`.
 
-### Disclaimer
-Outify is not affiliated with Spotify, Google or librespot in any way. Usage of this app **can** be against Spotify ToS.
-Use at your own risk.
+See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for module details and troubleshooting.
 
-Made with ❤️ by TomKo
+## License
 
+Spoty is released under the GNU General Public License v3.0. See [LICENSE](LICENSE) for the full text.

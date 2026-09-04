@@ -1,7 +1,7 @@
 <resources>
-    <string name="app_name" translatable="false">Outify</string>
+    <string name="app_name" translatable="false">Spoty</string>
     <string name="title_activity_auth" translatable="false">AuthActivity</string>
-    <string name="title_activity_main" translatable="false">Outify</string>
+    <string name="title_activity_main" translatable="false">Spoty</string>
     <string name="title_activity_callback" translatable="false">CallbackActivity</string>
     <string name="title_activity_home_screen" translatable="false">HomeScreen</string>
     <string name="audio_playback_attribution">This app plays audio</string>

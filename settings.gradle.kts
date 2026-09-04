@@ -20,5 +20,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "Outify"
+rootProject.name = "Spoty"
 include(":app")
