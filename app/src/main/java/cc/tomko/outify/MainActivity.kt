@@ -537,7 +537,19 @@ class MainActivity : ComponentActivity() {
                                                 )
                                             }
                                         } else {
-                                            Box(modifier = Modifier.align(Alignment.BottomCenter)) {
+                                            // Composed after the player sheet, so it paints over the sheet's
+                                            // bottom rows. Hide it while the player is expanded, exactly like
+                                            // the floating variant does.
+                                            AnimatedVisibility(
+                                                visible = currentAudio == null || !playerSheetState.isExpanded,
+                                                enter = slideInVertically(
+                                                    initialOffsetY = { fullHeight -> fullHeight }
+                                                ) + fadeIn(),
+                                                exit = slideOutVertically(
+                                                    targetOffsetY = { fullHeight -> fullHeight }
+                                                ) + fadeOut(),
+                                                modifier = Modifier.align(Alignment.BottomCenter),
+                                            ) {
                                                 OutifyBottomNav(
                                                     items = allRoutes,
                                                     selectedId = selectedId,

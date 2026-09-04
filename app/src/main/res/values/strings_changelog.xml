@@ -3,6 +3,14 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.1.3 -->
+    <string name="changelog_1_1_3_version" translatable="false">1.1.3</string>
+    <string name="changelog_1_1_3_date">4 de septiembre de 2026</string>
+    <string name="changelog_1_1_3_title">La barra de navegación ya no tapa el reproductor</string>
+    <string-array name="changelog_1_1_3_bullets">
+        <item>Con la barra de navegación clásica, la barra se dibujaba encima del reproductor expandido y ocultaba la fila de letras, cola y más. Ahora se esconde mientras el reproductor está abierto, igual que la barra flotante.</item>
+    </string-array>
+
     <!-- 1.1.2 -->
     <string name="changelog_1_1_2_version" translatable="false">1.1.2</string>
     <string name="changelog_1_1_2_date">4 de septiembre de 2026</string>

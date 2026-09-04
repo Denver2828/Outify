@@ -128,6 +128,16 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Descartado.** Quitar el doble padding en `MainActivity`. Es la causa de fondo, pero el margen se comparte con la animación del mini reproductor y tocarlo sin probar en varios dispositivos era más riesgo que beneficio. Queda anotado como deuda.
 
+### 2026-09-04 — 1.1.3: la causa real era la barra de navegación
+
+**Qué pasaba de verdad.** Con la 1.1.2 instalada, el mantenedor tocó la zona donde debía estar la fila de letras y las letras se abrieron. La fila existía y recibía toques, pero no se veía. La captura lo mostró: asomaban los 12 dp superiores de la píldora y la punta de los tres íconos. Algo opaco la tapaba de ahí hacia abajo.
+
+**Causa.** En `MainActivity`, en modo vertical con la barra de navegación clásica (`experimentalFloatingNav = false`), `OutifyBottomNav` se compone después de la hoja del reproductor y sin condición de visibilidad. Es un `Surface` opaco, negro con AMOLED, así que pintaba encima de la parte baja del reproductor expandido sin que se notara contra el fondo negro. La variante flotante, que es la predeterminada, sí se oculta cuando el reproductor está expandido. Por eso nadie lo vio antes: hay que haber elegido la barra clásica.
+
+**Solución.** La barra clásica se envuelve en el mismo `AnimatedVisibility` que la flotante: se esconde mientras el reproductor está expandido.
+
+**Sobre 1.1.1 y 1.1.2.** El recorte que corrigieron era real, la fila de aleatorio/repetir/favorito sí estaba fuera de pantalla en la primera captura. Pero no era la única causa, y diagnostiqué la segunda captura con la hipótesis vieja en vez de mirar los píxeles. Dos versiones para llegar a la causa de fondo. La lección queda: cuando un botón responde al toque pero no se ve, no es layout, es algo dibujado encima.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.
