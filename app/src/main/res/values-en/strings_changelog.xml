@@ -3,11 +3,11 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
-    <!-- 1.1.1 -->
-    <string name="changelog_1_1_1_date">September 4, 2026</string>
-    <string name="changelog_1_1_1_title">The lyrics button is visible again</string>
-    <string-array name="changelog_1_1_1_bullets">
-        <item>The player cover now shrinks to the available space so the lyrics, queue and more buttons never fall off the screen.</item>
+    <!-- 1.1.2 -->
+    <string name="changelog_1_1_2_date">September 4, 2026</string>
+    <string name="changelog_1_1_2_title">The lyrics button is visible again</string>
+    <string-array name="changelog_1_1_2_bullets">
+        <item>The player cover now takes only the leftover space, so the lyrics, queue and more buttons never fall off the screen.</item>
         <item>Those buttons are now shown in landscape too.</item>
     </string-array>
 

@@ -116,16 +116,18 @@ Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100)
 
 **Números:** 869 entradas de texto en total, con paridad exacta entre español e inglés en los siete archivos.
 
-### 2026-09-04 — 1.1.1: el botón de letras no se veía
+### 2026-09-04 — 1.1.1 y 1.1.2: el botón de letras no se veía
 
 **Problema.** En el teléfono del mantenedor el reproductor mostraba la tapa, el título, la barra y los controles, y debajo un hueco negro. Faltaban la fila de aleatorio/repetir/favorito y la fila de letras/cola/más.
 
 **Causa.** La hoja del reproductor se ubica con un margen inferior reservado para la barra de navegación, y adentro `PlayerContent` vuelve a aplicar el padding interno del Scaffold, que ya incluye esa barra. El alto se descuenta dos veces. La tapa ocupaba el ancho completo sin mirar el alto disponible, el contenido fijo excedía la columna y las dos últimas filas se dibujaban fuera del área visible.
 
-**Solución.** La tapa se dimensiona con el menor valor entre el ancho disponible y el alto que sobra después de reservar lo que va debajo (metadatos, controles, filas de acciones). En pantallas altas no cambia nada visible. En pantallas cortas o con doble padding la tapa se achica y todo entra. Además el layout horizontal ahora dibuja la fila de acciones, que recibía pero nunca renderizaba.
+**Solución.** Primer intento: estimar el alto de lo que va debajo de la tapa y restarlo. Falló en el dispositivo real, la fila de letras seguía afuera porque la estimación de metadatos quedó corta. Solución definitiva: la tapa vive en un contenedor con `weight`, así Compose mide primero todas las filas de alto fijo y la tapa recibe solo el alto que sobra, como el cuadrado más grande que entre. No depende de ninguna estimación ni del padding. Además el layout horizontal ahora dibuja la fila de acciones, que recibía pero nunca renderizaba.
+
+**Lección.** Cuando el problema es "esto no entra", no se resuelve estimando. Se resuelve dejando que el layout mida y ceda por construcción.
 
 **Descartado.** Quitar el doble padding en `MainActivity`. Es la causa de fondo, pero el margen se comparte con la animación del mini reproductor y tocarlo sin probar en varios dispositivos era más riesgo que beneficio. Queda anotado como deuda.
 
 ## Problemas conocidos heredados
 
-- **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1. Mitigado por el dimensionado de la tapa, no corregido en su origen.
+- **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

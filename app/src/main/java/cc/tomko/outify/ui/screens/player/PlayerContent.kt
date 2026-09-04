@@ -30,7 +30,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListState
 import androidx.compose.foundation.shape.CircleShape
@@ -945,18 +944,6 @@ private fun FullPlayerPortraitContent(
         val playbackControlsHeight = maxHeight * 0.105f
         val segmentedControlsHeight = maxHeight * 0.09f
 
-        // The cover must leave room for everything below it. On short or wide
-        // screens a full-width cover pushes the last rows (shuffle/repeat and
-        // lyrics/queue/more) past the bottom edge, where they get clipped.
-        val metadataEstimate = 130.dp
-        val actionsRowHeight = if (isEpisode) 0.dp else 72.dp
-        val fixedBelowCover =
-            metadataEstimate + playbackControlsHeight + segmentedControlsHeight + actionsRowHeight
-        val coverHeightBudget =
-            maxHeight - outerVerticalPadding * 2 - topPadding * 1.5f - fixedBelowCover
-        val coverWidthBudget = maxWidth - horizontalPadding * 2 - horizontalPadding * 1.3f
-        val coverSize = minOf(coverWidthBudget, coverHeightBudget).coerceAtLeast(140.dp)
-
         Column(
             modifier = Modifier
                 .fillMaxSize()
@@ -964,18 +951,20 @@ private fun FullPlayerPortraitContent(
                 .padding(top = topPadding),
             horizontalAlignment = Alignment.CenterHorizontally,
         ) {
+            // Every row below the cover has a fixed height and is measured first.
+            // The cover takes whatever height is left and is the largest square
+            // that fits, so the bottom rows (shuffle/repeat and lyrics/queue/more)
+            // can never be pushed off screen, whatever the screen shape or insets.
             Box(
-                modifier = Modifier.fillMaxWidth(),
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .weight(1f)
+                    .padding(horizontal = horizontalPadding * 0.65f)
+                    .padding(top = topPadding * 0.5f, bottom = 12.dp),
                 contentAlignment = Alignment.Center
             ) {
-                albumCoverSection(
-                    Modifier
-                        .width(coverSize)
-                        .padding(top = topPadding * 0.5f)
-                )
+                albumCoverSection(Modifier.aspectRatio(1f))
             }
-
-            Spacer(Modifier.weight(0.5f))
 
             Column(
                 modifier = Modifier
@@ -987,15 +976,15 @@ private fun FullPlayerPortraitContent(
                 playerProgressSection()
             }
 
-            Spacer(Modifier.weight(0.05f))
+            Spacer(Modifier.height(8.dp))
 
             playbackControlsSection(playbackControlsHeight)
 
-            Spacer(Modifier.weight(1f))
+            Spacer(Modifier.weight(0.12f))
 
             controlsSection(segmentedControlsHeight)
 
-            if(!isEpisode) {
+            if (!isEpisode) {
                 moreActions()
             }
         }
