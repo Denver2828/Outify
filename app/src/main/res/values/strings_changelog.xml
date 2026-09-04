@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="changelog_title">Registro de cambios</string>
+    <string name="changelog_settings_description">Novedades de cada versión</string>
+
+    <!-- 1.1.0 -->
+    <string name="changelog_1_1_0_version" translatable="false">1.1.0</string>
+    <string name="changelog_1_1_0_date">4 de septiembre de 2026</string>
+    <string name="changelog_1_1_0_title">Spoty en español y ajustes de letras</string>
+    <string-array name="changelog_1_1_0_bullets">
+        <item>Español rioplatense como idioma predeterminado, con inglés como alternativa.</item>
+        <item>Modo de tema Sistema / Claro / Oscuro en Apariencia.</item>
+        <item>Control de adelanto de letras para que puedas leer cada línea antes de que se cante.</item>
+        <item>Control de tamaño de texto de las letras.</item>
+        <item>Esta pantalla de registro de cambios.</item>
+        <item>Nuevo ícono de la app.</item>
+    </string-array>
+
+    <!-- 1.0.0 -->
+    <string name="changelog_1_0_0_version" translatable="false">1.0.0</string>
+    <string name="changelog_1_0_0_date">4 de septiembre de 2026</string>
+    <string name="changelog_1_0_0_title">Nace Spoty</string>
+    <string name="changelog_1_0_0_body">Spoty es un cliente de Spotify para Android pensado para cuentas Premium. Reproducí tu música con librespot, manejá otros dispositivos con Spotify Connect, seguí las letras sincronizadas, sumá widgets a la pantalla de inicio, guardá copias de tus ajustes y elegí un tema que siga la portada del álbum o los colores del sistema.</string>
+    <string-array name="changelog_1_0_0_bullets">
+        <item>Reproducción con librespot para cuentas de Spotify Premium.</item>
+        <item>Compatibilidad con dispositivos Spotify Connect.</item>
+        <item>Letras sincronizadas con la reproducción.</item>
+        <item>Widgets para la pantalla de inicio.</item>
+        <item>Copia de seguridad y restauración de los ajustes.</item>
+        <item>Tema que sigue la portada del álbum o los colores del sistema.</item>
+    </string-array>
+</resources>

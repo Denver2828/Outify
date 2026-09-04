@@ -32,6 +32,7 @@ import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.data.repository.DarkModeSetting
 import coil3.imageLoader
 import coil3.request.ImageRequest
 import coil3.request.allowHardware
@@ -277,4 +278,15 @@ enum class ThemeMode {
     DYNAMIC_SYSTEM,
     DYNAMIC_ALBUM,
     STATIC
+}
+
+/**
+ * Resolves the user's theme mode preference into the boolean [OutifyTheme] expects.
+ * [DarkModeSetting.SYSTEM] follows the device setting; the others force a palette.
+ */
+@Composable
+fun DarkModeSetting.resolveDarkTheme(): Boolean = when (this) {
+    DarkModeSetting.SYSTEM -> isSystemInDarkTheme()
+    DarkModeSetting.LIGHT -> false
+    DarkModeSetting.DARK -> true
 }

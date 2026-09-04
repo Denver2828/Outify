@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="changelog_title">Changelog</string>
+    <string name="changelog_settings_description">What is new in each version</string>
+
+    <!-- 1.1.0 -->
+    <string name="changelog_1_1_0_date">September 4, 2026</string>
+    <string name="changelog_1_1_0_title">Spoty in Spanish and lyrics settings</string>
+    <string-array name="changelog_1_1_0_bullets">
+        <item>Rioplatense Spanish as the default language, with English as fallback.</item>
+        <item>System / Light / Dark theme mode in Appearance.</item>
+        <item>Lyrics lead-time slider so you can read each line before it is sung.</item>
+        <item>Lyrics text size slider.</item>
+        <item>This changelog screen.</item>
+        <item>New app icon.</item>
+    </string-array>
+
+    <!-- 1.0.0 -->
+    <string name="changelog_1_0_0_date">September 4, 2026</string>
+    <string name="changelog_1_0_0_title">Spoty is born</string>
+    <string name="changelog_1_0_0_body">Spoty is an Android Spotify client built for Premium accounts. Play your music through librespot, control other devices with Spotify Connect, follow synced lyrics, add home-screen widgets, back up your settings and pick a theme that follows the album art or the system colors.</string>
+    <string-array name="changelog_1_0_0_bullets">
+        <item>Playback through librespot for Spotify Premium accounts.</item>
+        <item>Spotify Connect device support.</item>
+        <item>Lyrics synced with playback.</item>
+        <item>Home-screen widgets.</item>
+        <item>Settings backup and restore.</item>
+        <item>Theme that follows the album art or the system colors.</item>
+    </string-array>
+</resources>

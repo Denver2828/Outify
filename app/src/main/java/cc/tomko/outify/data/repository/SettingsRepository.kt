@@ -67,9 +67,22 @@ class SettingsRepository @Inject constructor(
              */
             val SHOW_LYRICS_ALWAYS = booleanPreferencesKey("always_show_lyrics")
             val ROMANIZE_LYRICS = booleanPreferencesKey("romanize_lyrics")
+
+            /**
+             * When true, [OFFSET_MS] is added to the playback position used to pick the active line.
+             * A positive offset highlights each line before it is actually sung.
+             */
+            val OFFSET_ENABLED = booleanPreferencesKey("lyrics_offset_enabled")
+            val OFFSET_MS = intPreferencesKey("lyrics_offset_ms")
+
+            /**
+             * Multiplier applied to the lyric line font size (1.0 = default)
+             */
+            val FONT_SCALE = floatPreferencesKey("lyrics_font_scale")
         }
 
         object Interface {
+            val DARK_MODE = stringPreferencesKey("dark_mode")
             val DYNAMIC_THEME = booleanPreferencesKey("dynamic_theme")
             val DYNAMIC_SYSTEM = booleanPreferencesKey("dynamic_system")
             val ACCENT_COLOR = longPreferencesKey("accent_color")
@@ -140,6 +153,9 @@ class SettingsRepository @Inject constructor(
             swipeGesturesEnabled = enabled,
             flipQueueGestures = flipQueueGestures,
             gestureSettings = if (enabled) decodeGestures(prefs[Keys.Gesture.GESTURES]) else emptyList(),
+
+            // Theme mode
+            darkMode = DarkModeSetting.fromName(prefs[Keys.Interface.DARK_MODE]),
 
             // Dynamic theme
             dynamicTheme = prefs[Keys.Interface.DYNAMIC_THEME] ?: true,
@@ -277,6 +293,21 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.ROMANIZE_LYRICS] ?: false
     }
 
+    val lyricsOffsetEnabled: Flow<Boolean> = dataStore.data.map {
+        it[Keys.Lyrics.OFFSET_ENABLED] ?: false
+    }
+
+    /**
+     * Positive = lyric lines become active earlier than they are sung
+     */
+    val lyricsOffsetMs: Flow<Int> = dataStore.data.map {
+        it[Keys.Lyrics.OFFSET_MS] ?: DEFAULT_LYRICS_OFFSET_MS
+    }
+
+    val lyricsFontScale: Flow<Float> = dataStore.data.map {
+        it[Keys.Lyrics.FONT_SCALE] ?: 1.0f
+    }
+
     val lastTrackUri = dataStore.data.map { it[Keys.Playback.LAST_TRACK_URI] }
     val lastContextUri = dataStore.data.map { it[Keys.Playback.LAST_CONTEXT_URI] }
     val lastPositionMs = dataStore.data.map { it[Keys.Playback.LAST_POSITION_MS]?.toLongOrNull() }
@@ -409,6 +440,22 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setRomanizeLyrics(enabled: Boolean) {
         dataStore.edit { it[Keys.Lyrics.ROMANIZE_LYRICS] = enabled }
+    }
+
+    suspend fun setLyricsOffsetEnabled(enabled: Boolean) {
+        dataStore.edit { it[Keys.Lyrics.OFFSET_ENABLED] = enabled }
+    }
+
+    suspend fun setLyricsOffsetMs(offsetMs: Int) {
+        dataStore.edit { it[Keys.Lyrics.OFFSET_MS] = offsetMs }
+    }
+
+    suspend fun setLyricsFontScale(scale: Float) {
+        dataStore.edit { it[Keys.Lyrics.FONT_SCALE] = scale }
+    }
+
+    suspend fun setDarkMode(mode: DarkModeSetting) {
+        dataStore.edit { it[Keys.Interface.DARK_MODE] = mode.name }
     }
 
     suspend fun removeUserProfile() {
@@ -576,6 +623,9 @@ data class InterfaceSettings(
             trigger = GestureTrigger.LongPress,
         )
     ),
+    // Theme mode (follow system / force light / force dark)
+    val darkMode: DarkModeSetting = DarkModeSetting.SYSTEM,
+
     // Dynamic theme
     val dynamicTheme: Boolean = true,
     val dynamicSystem: Boolean = true,
@@ -602,6 +652,22 @@ data class InterfaceSettings(
     val navbarHistoryOnEnd: Boolean = true,
     val navbarShowLabel: Boolean = true,
 )
+
+/**
+ * Default lead time (ms) applied when the lyrics offset is enabled
+ */
+const val DEFAULT_LYRICS_OFFSET_MS = 500
+
+enum class DarkModeSetting {
+    SYSTEM,
+    LIGHT,
+    DARK;
+
+    companion object {
+        fun fromName(name: String?): DarkModeSetting =
+            entries.firstOrNull { it.name == name } ?: SYSTEM
+    }
+}
 
 data class PlaybackSettings(
     val gapless: Boolean = false,

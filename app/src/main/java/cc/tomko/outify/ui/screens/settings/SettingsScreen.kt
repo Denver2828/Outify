@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Interests
 import androidx.compose.material3.ElevatedCard
@@ -21,7 +22,9 @@ import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import cc.tomko.outify.R
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
 
@@ -34,6 +37,7 @@ fun SettingsScreen(
     openInterfaceSettings: (() -> Unit),
     openPlaybackSettings: (() -> Unit),
     openMiscSettings: (() -> Unit),
+    openChangelog: (() -> Unit),
     openAboutSettings: (() -> Unit),
     openAccountSettings: (() -> Unit),
 ) {
@@ -95,6 +99,13 @@ fun SettingsScreen(
                         description = "Sync, Backup & restore",
                         icon = { Icon(Icons.Default.DeveloperMode, contentDescription = null) },
                         onClick = openMiscSettings,
+                    )
+
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.changelog_title)) },
+                        description = stringResource(R.string.changelog_settings_description),
+                        icon = { Icon(Icons.Default.History, contentDescription = null) },
+                        onClick = openChangelog,
                     )
 
                     PreferenceEntry(

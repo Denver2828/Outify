@@ -29,6 +29,15 @@ class PlaybackSettingViewModel @Inject constructor(
     val romanizeLyrics: Flow<Boolean> =
         settingsRepository.romanizeLyrics
 
+    val lyricsOffsetEnabled: Flow<Boolean> =
+        settingsRepository.lyricsOffsetEnabled
+
+    val lyricsOffsetMs: Flow<Int> =
+        settingsRepository.lyricsOffsetMs
+
+    val lyricsFontScale: Flow<Float> =
+        settingsRepository.lyricsFontScale
+
     val clientId: Flow<String?> =
         settingsRepository.clientId
 
@@ -78,6 +87,24 @@ class PlaybackSettingViewModel @Inject constructor(
     fun setRomanizeLyrics(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setRomanizeLyrics(enabled)
+        }
+    }
+
+    fun setLyricsOffsetEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsOffsetEnabled(enabled)
+        }
+    }
+
+    fun setLyricsOffsetMs(offsetMs: Int) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsOffsetMs(offsetMs)
+        }
+    }
+
+    fun setLyricsFontScale(scale: Float) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsFontScale(scale)
         }
     }
 

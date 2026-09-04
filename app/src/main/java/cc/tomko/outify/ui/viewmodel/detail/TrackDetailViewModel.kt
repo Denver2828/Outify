@@ -11,6 +11,7 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.track.TrackUiState
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -35,10 +36,21 @@ class TrackDetailViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val likedRepository: LikedRepository,
     private val likedDao: LikedDao,
+    settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(TrackUiState())
     val uiState: StateFlow<TrackUiState> = _uiState
+
+    /**
+     * Multiplier applied to lyric lines, shared with the lyrics sheet setting
+     */
+    val lyricsFontScale: StateFlow<Float> = settingsRepository.lyricsFontScale
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5_000),
+            initialValue = 1.0f
+        )
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedTrackIds: StateFlow<Set<String>> =

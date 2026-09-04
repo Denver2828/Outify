@@ -191,7 +191,8 @@ fun SharedTransitionScope.TrackDetailScreen(
                         }
 
                         item(key = "lyrics") {
-                            LyricsSection(lyrics = lyrics)
+                            val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
+                            LyricsSection(lyrics = lyrics, fontScale = lyricsFontScale)
                         }
                     }
 
@@ -314,7 +315,11 @@ fun SharedTransitionScope.TrackDetailScreen(
 }
 
 @Composable
-private fun LyricsSection(lyrics: List<LyricLine>) {
+private fun LyricsSection(lyrics: List<LyricLine>, fontScale: Float) {
+    val baseStyle = MaterialTheme.typography.bodyLarge
+    // Same multiplier the lyrics sheet uses, applied on top of this screen's base size
+    val lineStyle = baseStyle.copy(fontSize = baseStyle.fontSize * fontScale)
+
     Column(
         modifier = Modifier
             .fillMaxWidth()
@@ -324,7 +329,7 @@ private fun LyricsSection(lyrics: List<LyricLine>) {
         lyrics.forEach { line ->
             Text(
                 text = line.text,
-                style = MaterialTheme.typography.bodyLarge,
+                style = lineStyle,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 modifier = Modifier.fillMaxWidth(),
                 textAlign = TextAlign.Start,

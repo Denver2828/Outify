@@ -61,6 +61,11 @@ import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
+/**
+ * Lyric line size at 100% text scale. Shared with the settings preview.
+ */
+const val LYRIC_LINE_BASE_FONT_SIZE_SP = 22f
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun LyricsBottomSheet(
@@ -76,6 +81,8 @@ fun LyricsBottomSheet(
 ) {
     val lyrics by viewModel.lyrics.collectAsState()
     val positionMs by viewModel.positionMs.collectAsState()
+    val effectivePositionMs by viewModel.effectivePositionMs.collectAsState()
+    val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
     val isCurrentTrack by viewModel.isCurrentTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val durationMs by viewModel.durationMs.collectAsState()
@@ -235,7 +242,9 @@ fun LyricsBottomSheet(
                 } else {
                     LyricsList(
                         lyrics = lyrics,
-                        currentPositionMs = positionMs,
+                        // Offset-adjusted so lines can light up ahead of the vocals
+                        currentPositionMs = effectivePositionMs,
+                        fontScale = lyricsFontScale,
                         isSynced = isSynced,
                         activeLineColor = activeLineColor,
                         inactiveTextColor = inactiveTextColor,
@@ -366,6 +375,7 @@ fun LyricsBottomSheet(
 private fun LyricsList(
     lyrics: List<LyricLine>,
     currentPositionMs: Long,
+    fontScale: Float,
     isSynced: Boolean,
     activeLineColor: Color,
     inactiveTextColor: Color,
@@ -432,7 +442,8 @@ private fun LyricsList(
                 text = line.text,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = fontWeight,
-                    fontSize = 22.sp // always measured at the largest size
+                    // always measured at the largest size so auto-scroll centering stays correct
+                    fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
                 ),
                 color = textColor,
                 textAlign = TextAlign.Start,

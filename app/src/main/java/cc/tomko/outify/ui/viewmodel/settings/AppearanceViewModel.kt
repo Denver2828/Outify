@@ -3,6 +3,7 @@ package cc.tomko.outify.ui.viewmodel.settings
 import androidx.compose.ui.graphics.Color
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -56,6 +57,12 @@ class AppearanceViewModel @Inject constructor(
     fun setMonochromeHeaders(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setMonochromeHeaders(enabled)
+        }
+    }
+
+    fun setDarkMode(mode: DarkModeSetting) {
+        viewModelScope.launch {
+            settingsRepository.setDarkMode(mode)
         }
     }
 

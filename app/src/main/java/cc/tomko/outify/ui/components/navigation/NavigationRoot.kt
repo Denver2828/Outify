@@ -35,6 +35,7 @@ import cc.tomko.outify.ui.screens.library.track.TrackDetailScreen
 import cc.tomko.outify.ui.screens.settings.AboutScreen
 import cc.tomko.outify.ui.screens.settings.AccountsScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
+import cc.tomko.outify.ui.screens.settings.ChangelogScreen
 import cc.tomko.outify.ui.screens.settings.DebugScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
@@ -295,6 +296,9 @@ fun SharedTransitionScope.NavigationRoot(
                     openMiscSettings = {
                         backStack.add(Route.MiscSettings)
                     },
+                    openChangelog = {
+                        backStack.add(Route.Changelog)
+                    },
                     openAboutSettings = {
                         backStack.add(Route.AboutScreen)
                     },
@@ -357,6 +361,12 @@ fun SharedTransitionScope.NavigationRoot(
 
             entry<Route.AboutScreen> {
                 AboutScreen(
+                    onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                )
+            }
+
+            entry<Route.Changelog> {
+                ChangelogScreen(
                     onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                 )
             }

@@ -14,6 +14,7 @@ import cc.tomko.outify.data.dao.PlaylistDao
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.ThemeMode
+import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.viewmodel.widgets.PlaybackConfigureViewModel
 import dagger.hilt.android.AndroidEntryPoint
 import javax.inject.Inject
@@ -54,6 +55,7 @@ class PlaybackWidgetConfigure : ComponentActivity() {
                 audio = currentTrack,
                 themeMode = themeMode,
                 staticAccentColor = interfaceSettings.accentColor,
+                darkTheme = interfaceSettings.darkMode.resolveDarkTheme(),
                 pureBlack = interfaceSettings.pureBlack,
                 highContrastCompat = interfaceSettings.highContrastCompat,
                 content = {

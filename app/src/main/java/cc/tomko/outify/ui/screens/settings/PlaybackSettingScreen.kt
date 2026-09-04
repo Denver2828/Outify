@@ -14,10 +14,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.RestartAlt
 import androidx.compose.material.icons.filled.SkipNext
+import androidx.compose.material.icons.filled.Timer
 import androidx.compose.material.icons.filled.Translate
 import androidx.compose.material3.Badge
 import androidx.compose.material3.CardDefaults
@@ -40,10 +42,13 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import cc.tomko.outify.data.repository.DEFAULT_LYRICS_OFFSET_MS
 import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.playback.model.Bitrate
 import cc.tomko.outify.playback.model.getName
 import cc.tomko.outify.ui.components.DropdownOption
+import cc.tomko.outify.ui.components.bottomsheet.LYRIC_LINE_BASE_FONT_SIZE_SP
 import cc.tomko.outify.ui.components.DropdownPreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
@@ -52,6 +57,23 @@ import cc.tomko.outify.ui.components.TextInputPreferenceEntry
 import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
 import kotlinx.coroutines.delay
 import kotlin.math.roundToInt
+
+private const val LYRICS_OFFSET_MIN_MS = -3000f
+private const val LYRICS_OFFSET_MAX_MS = 3000f
+private const val LYRICS_OFFSET_STEP_MS = 100
+
+private const val LYRICS_FONT_SCALE_MIN = 0.7f
+private const val LYRICS_FONT_SCALE_MAX = 1.6f
+private const val LYRICS_FONT_SCALE_STEP = 0.1f
+
+/**
+ * Number of intermediate stops for a [Slider] that must land exactly on every `step` multiple
+ */
+private fun sliderSteps(min: Float, max: Float, step: Float): Int =
+    ((max - min) / step).roundToInt() - 1
+
+private fun formatLeadTime(offsetMs: Int): String =
+    if (offsetMs > 0) "+$offsetMs ms" else "$offsetMs ms"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -63,6 +85,9 @@ fun PlaybackSettingScreen(
     val settings by viewModel.settings.collectAsState(initial = PlaybackSettings.Default)
     val restartNeeded by viewModel.needsRestart.collectAsState()
     val romanizeLyrics by viewModel.romanizeLyrics.collectAsState(initial = false)
+    val lyricsOffsetEnabled by viewModel.lyricsOffsetEnabled.collectAsState(initial = false)
+    val lyricsOffsetMs by viewModel.lyricsOffsetMs.collectAsState(initial = DEFAULT_LYRICS_OFFSET_MS)
+    val lyricsFontScale by viewModel.lyricsFontScale.collectAsState(initial = 1.0f)
     val savedClientId by viewModel.clientId.collectAsState(initial = null)
     val savedClientSecret by viewModel.clientSecret.collectAsState(initial = null)
 
@@ -228,13 +253,91 @@ fun PlaybackSettingScreen(
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth()
                 ) {
-                    SwitchPreferenceEntry(
-                        title = { Text("Romanize lyrics") },
-                        description = "Show romanized text beneath original lyrics",
-                        icon = { Icon(Icons.Default.Translate, contentDescription = null) },
-                        onCheckedChange = { viewModel.setRomanizeLyrics(it) },
-                        isChecked = romanizeLyrics
-                    )
+                    Column {
+                        SwitchPreferenceEntry(
+                            title = { Text("Romanize lyrics") },
+                            description = "Show romanized text beneath original lyrics",
+                            icon = { Icon(Icons.Default.Translate, contentDescription = null) },
+                            onCheckedChange = { viewModel.setRomanizeLyrics(it) },
+                            isChecked = romanizeLyrics
+                        )
+
+                        SwitchPreferenceEntry(
+                            title = { Text("Show lyrics early") },
+                            description = "Highlight each line before it is sung",
+                            icon = { Icon(Icons.Default.Timer, contentDescription = null) },
+                            onCheckedChange = { viewModel.setLyricsOffsetEnabled(it) },
+                            isChecked = lyricsOffsetEnabled
+                        )
+
+                        if (lyricsOffsetEnabled) {
+                            // Local draft so dragging does not spam DataStore; committed on release
+                            var leadTimeMs by remember(lyricsOffsetMs) {
+                                mutableFloatStateOf(lyricsOffsetMs.toFloat())
+                            }
+
+                            PreferenceEntry(
+                                title = { Text("Lead time") },
+                                description = formatLeadTime(leadTimeMs.roundToInt()),
+                                content = {
+                                    Slider(
+                                        value = leadTimeMs,
+                                        onValueChange = { leadTimeMs = it },
+                                        onValueChangeFinished = {
+                                            viewModel.setLyricsOffsetMs(leadTimeMs.roundToInt())
+                                        },
+                                        valueRange = LYRICS_OFFSET_MIN_MS..LYRICS_OFFSET_MAX_MS,
+                                        steps = sliderSteps(
+                                            LYRICS_OFFSET_MIN_MS,
+                                            LYRICS_OFFSET_MAX_MS,
+                                            LYRICS_OFFSET_STEP_MS.toFloat()
+                                        ),
+                                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                    )
+                                },
+                                onClick = { },
+                            )
+                        }
+
+                        var fontScale by remember(lyricsFontScale) {
+                            mutableFloatStateOf(lyricsFontScale)
+                        }
+
+                        PreferenceEntry(
+                            title = { Text("Lyrics text size") },
+                            description = "${(fontScale * 100).roundToInt()}%",
+                            icon = { Icon(Icons.Default.FormatSize, contentDescription = null) },
+                            content = {
+                                Slider(
+                                    value = fontScale,
+                                    onValueChange = { fontScale = it },
+                                    onValueChangeFinished = {
+                                        // Snap to one decimal so stored values match the slider stops
+                                        val snapped = (fontScale * 10).roundToInt() / 10f
+                                        viewModel.setLyricsFontScale(snapped)
+                                    },
+                                    valueRange = LYRICS_FONT_SCALE_MIN..LYRICS_FONT_SCALE_MAX,
+                                    steps = sliderSteps(
+                                        LYRICS_FONT_SCALE_MIN,
+                                        LYRICS_FONT_SCALE_MAX,
+                                        LYRICS_FONT_SCALE_STEP
+                                    ),
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+
+                                Text(
+                                    text = "Lyrics will look like this",
+                                    style = MaterialTheme.typography.headlineSmall.copy(
+                                        fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
+                                    ),
+                                    color = MaterialTheme.colorScheme.primary,
+                                    maxLines = 1,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
+                                )
+                            },
+                            onClick = { },
+                        )
+                    }
                 }
             }
 

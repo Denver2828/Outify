@@ -7,6 +7,7 @@ import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Job
@@ -15,6 +16,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -28,13 +30,44 @@ class LyricsViewModel @Inject constructor(
     private val playerRepository: PlayerRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val spirc: SpircWrapper,
+    private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
     private val _lyrics = MutableStateFlow<List<LyricLine>>(emptyList())
     val lyrics: StateFlow<List<LyricLine>> = _lyrics.asStateFlow()
 
+    /**
+     * Real playback position. Drives the time label and the seek slider.
+     */
     private val _positionMs = MutableStateFlow(0L)
     val positionMs: StateFlow<Long> = _positionMs.asStateFlow()
+
+    /**
+     * Lead time applied to the active-line computation; 0 when the offset is disabled.
+     */
+    private val lyricsOffsetMs: StateFlow<Long> = combine(
+        settingsRepository.lyricsOffsetEnabled,
+        settingsRepository.lyricsOffsetMs,
+    ) { enabled, offsetMs ->
+        if (enabled) offsetMs.toLong() else 0L
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /**
+     * Position used to pick the active lyric line and to auto-scroll.
+     * Positive offsets highlight a line before it is actually sung.
+     */
+    val effectivePositionMs: StateFlow<Long> = combine(
+        _positionMs,
+        lyricsOffsetMs,
+    ) { position, offset ->
+        position + offset
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 0L)
+
+    /**
+     * Multiplier applied to the lyric line font size (1.0 = default)
+     */
+    val lyricsFontScale: StateFlow<Float> = settingsRepository.lyricsFontScale
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1.0f)
 
     private val _isCurrentTrack = MutableStateFlow(false)
     val isCurrentTrack: StateFlow<Boolean> = _isCurrentTrack.asStateFlow()

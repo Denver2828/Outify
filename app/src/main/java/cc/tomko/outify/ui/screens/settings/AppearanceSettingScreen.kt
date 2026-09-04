@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.PlaylistPlay
 import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Audiotrack
+import androidx.compose.material.icons.filled.BrightnessMedium
 import androidx.compose.material.icons.filled.Contrast
 import androidx.compose.material.icons.filled.DarkMode
 import androidx.compose.material.icons.filled.DesignServices
@@ -26,6 +27,9 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SegmentedButton
+import androidx.compose.material3.SegmentedButtonDefaults
+import androidx.compose.material3.SingleChoiceSegmentedButtonRow
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -34,12 +38,20 @@ import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.ui.components.ColorPreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceSectionHeader
 import cc.tomko.outify.ui.components.SwitchPreferenceEntry
+import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
+
+private val darkModeOptions = listOf(
+    DarkModeSetting.SYSTEM to "System",
+    DarkModeSetting.LIGHT to "Light",
+    DarkModeSetting.DARK to "Dark",
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -49,6 +61,7 @@ fun AppearanceSettingScreen(
     modifier: Modifier = Modifier,
 ) {
     val settings by viewModel.settings.collectAsStateWithLifecycle(initialValue = InterfaceSettings())
+    val isDarkTheme = settings.darkMode.resolveDarkTheme()
 
     Scaffold(
         topBar = {
@@ -70,6 +83,38 @@ fun AppearanceSettingScreen(
                 .padding(horizontal = 16.dp, vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(8.dp)
         ) {
+            item {
+                PreferenceSectionHeader("Theme")
+
+                ElevatedCard {
+                    PreferenceEntry(
+                        title = { Text("Theme") },
+                        description = "Follow the system or force light / dark",
+                        icon = { Icon(Icons.Default.BrightnessMedium, contentDescription = null) },
+                        content = {
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                            ) {
+                                darkModeOptions.forEachIndexed { index, (mode, label) ->
+                                    SegmentedButton(
+                                        selected = settings.darkMode == mode,
+                                        onClick = { viewModel.setDarkMode(mode) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = darkModeOptions.size
+                                        ),
+                                        label = { Text(label) }
+                                    )
+                                }
+                            }
+                        },
+                        onClick = { },
+                    )
+                }
+            }
+
             item {
                 PreferenceSectionHeader("Dynamic")
 
@@ -112,9 +157,11 @@ fun AppearanceSettingScreen(
                 ElevatedCard {
                     SwitchPreferenceEntry(
                         title = { Text("Pure black") },
-                        description = "Use AMOLED black",
+                        description = if (isDarkTheme) "Use AMOLED black" else "Use AMOLED black (dark theme only)",
                         icon = { Icon(Icons.Default.DarkMode, contentDescription = null) },
                         isChecked = settings.pureBlack,
+                        // Only has an effect on the dark palette
+                        isEnabled = isDarkTheme,
                         onCheckedChange = { enabled ->
                             viewModel.setPureBlack(enabled)
                         }

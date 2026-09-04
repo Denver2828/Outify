@@ -80,6 +80,7 @@ import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.ThemeMode
+import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.components.GlobalPopupHost
 import cc.tomko.outify.ui.components.navigation.FloatingOutifyBottomNav
 import cc.tomko.outify.ui.components.navigation.NavDestination
@@ -313,6 +314,7 @@ class MainActivity : ComponentActivity() {
             audio = currentAudio,
             themeMode = themeMode,
             staticAccentColor = interfaceSettings.accentColor,
+            darkTheme = interfaceSettings.darkMode.resolveDarkTheme(),
             pureBlack = interfaceSettings.pureBlack,
             highContrastCompat = interfaceSettings.highContrastCompat,
             content = {
