@@ -15,12 +15,14 @@ Cliente Android de Spotify, construido con Jetpack Compose y un núcleo de repro
 | Etapa | Alcance | Estado |
 | --- | --- | --- |
 | 1 | Rebranding total: nombre Spoty, ícono nuevo, pantalla About sin enlaces a GitHub, "Made by Darius", versión 1.0.0 | hecha |
-| 2 | Internacionalización: extracción de cadenas hardcodeadas a resources, español rioplatense como default, inglés como alternativa | pendiente |
-| 3 | Ajuste de tema Sistema / Claro / Oscuro dentro de la app | pendiente |
-| 4 | Ajuste de adelanto de letras en milisegundos | pendiente |
-| 5 | Ajuste de tamaño de fuente de letras | pendiente |
-| 6 | Pantalla "Registro de cambios" en ajustes con el historial de versiones | pendiente |
+| 2 | Internacionalización: extracción de cadenas hardcodeadas a resources, español rioplatense como default, inglés como alternativa | hecha |
+| 3 | Ajuste de tema Sistema / Claro / Oscuro dentro de la app | hecha |
+| 4 | Ajuste de adelanto de letras en milisegundos | hecha |
+| 5 | Ajuste de tamaño de fuente de letras | hecha |
+| 6 | Pantalla "Registro de cambios" en ajustes con el historial de versiones | hecha |
 | 7 | Este manifiesto, mantenido en cada etapa | en curso |
+
+Las siete etapas se publican juntas como Spoty 1.1.0 (código de versión 20100).
 
 ## Decisiones
 
@@ -89,6 +91,30 @@ Cliente Android de Spotify, construido con Jetpack Compose y un núcleo de repro
 **Pendiente de esta etapa:** `docs/`, `.github/ISSUE_TEMPLATE` y `docs/CONTRIBUTING.md` siguen nombrando al proyecto anterior y apuntan a su repositorio. Se revisan o eliminan en una etapa posterior.
 
 **Idioma de los documentos:** el README queda en inglés, siguiendo el idioma del proyecto original. Este manifiesto se escribe en español porque es un documento interno del mantenedor.
+
+### 2026-09-04 — Etapas 3 a 6: cómo quedaron los ajustes nuevos
+
+**Tema.** Nueva preferencia `dark_mode` con valores Sistema, Claro y Oscuro, como fila segmentada al principio de Apariencia. Se resuelve a un booleano antes de entrar al tema, así los tres modos de color existentes (estático, sistema, portada del álbum) no cambian. La opción de negro AMOLED se muestra deshabilitada cuando el tema efectivo es claro.
+
+**Adelanto de letras.** Un switch "Mostrar letras antes" habilita un slider de -3000 a +3000 ms en pasos de 100, con 500 ms por defecto. El valor se suma a la posición de reproducción solo para decidir la línea activa y el auto-scroll. El reloj y la barra de progreso siguen mostrando la posición real. Las letras estáticas del detalle de canción no lo usan porque no tienen marcas de tiempo.
+
+**Tamaño de letras.** Escala de 0,7 a 1,6 sobre los 22 sp base, con vista previa en vivo en el ajuste. La medición que usa el auto-scroll para centrar la línea también se escala, si no el centrado se desfasaría.
+
+**Registro de cambios.** Pantalla estática en Ajustes, arriba de "Acerca de". El contenido vive en resources bilingües desde el primer día. Las versiones se marcan como no traducibles.
+
+### 2026-09-04 — Etapa 2: decisiones de internacionalización
+
+**Español como default de Android.** `res/values/` contiene el español y `res/values-en/` el inglés. Cualquier dispositivo que no esté en inglés ve la app en español. Se eliminó `values-cs` (checo): cubría solo 20 cadenas del proyecto original y habría producido una interfaz mezclada.
+
+**Registro.** Voseo rioplatense consistente ("Tocá", "Elegí", "Podés"), sin lunfardo, con mayúscula solo al inicio de frase como en Material. Glosario fijado: Inicio, Buscar, Biblioteca, Ajustes, Playlist, Cola, Canciones que te gustan, Letras, Respaldo.
+
+**Un archivo de resources por área, con prefijo.** `strings_settings.xml` (`settings_`), `strings_sheets.xml` (`sheet_`), `strings_screens.xml` (`screen_`), `strings_ui.xml` (`ui_`), `strings_system.xml` (`sys_`) más el `strings.xml` base y `strings_changelog.xml`. Permitió extraer en paralelo sin colisiones de claves y facilita ubicar cada texto.
+
+**Nombres de enums.** Los helpers que devolvían texto en inglés (`getDisplayName`, `getName`) se reemplazaron por funciones `labelRes()` que devuelven un id de resource y se resuelven en la interfaz. Los ViewModels que muestran mensajes reciben `@ApplicationContext`.
+
+**Cadenas que quedan en inglés a propósito:** logs, identificadores de canales de notificación, claves de DataStore, URIs de Spotify, y el nombre de la cola automática "Current Queue" que ya está persistido en almacenamiento y no conviene traducir en caliente.
+
+**Números:** 869 entradas de texto en total, con paridad exacta entre español e inglés en los siete archivos.
 
 ## Problemas conocidos heredados
 
