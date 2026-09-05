@@ -35,6 +35,7 @@ import cc.tomko.outify.ui.screens.library.track.TrackDetailScreen
 import cc.tomko.outify.ui.screens.settings.AboutScreen
 import cc.tomko.outify.ui.screens.settings.AccountsScreen
 import cc.tomko.outify.ui.screens.settings.AppearanceSettingScreen
+import cc.tomko.outify.ui.screens.settings.AudioDiagnosticsScreen
 import cc.tomko.outify.ui.screens.settings.ChangelogScreen
 import cc.tomko.outify.ui.screens.settings.DebugScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
@@ -58,6 +59,7 @@ import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.DebugViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
+import cc.tomko.outify.ui.viewmodel.settings.AudioDiagnosticsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.MiscSettingsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
@@ -299,6 +301,9 @@ fun SharedTransitionScope.NavigationRoot(
                     openChangelog = {
                         backStack.add(Route.Changelog)
                     },
+                    openAudioDiagnostics = {
+                        backStack.add(Route.AudioDiagnostics)
+                    },
                     openAboutSettings = {
                         backStack.add(Route.AboutScreen)
                     },
@@ -367,6 +372,14 @@ fun SharedTransitionScope.NavigationRoot(
 
             entry<Route.Changelog> {
                 ChangelogScreen(
+                    onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                )
+            }
+
+            entry<Route.AudioDiagnostics> {
+                val viewModel: AudioDiagnosticsViewModel = hiltViewModel()
+                AudioDiagnosticsScreen(
+                    viewModel = viewModel,
                     onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                 )
             }

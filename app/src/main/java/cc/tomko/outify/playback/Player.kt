@@ -21,6 +21,7 @@ import cc.tomko.outify.core.model.Episode
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toPlayableAudio
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
 import cc.tomko.outify.services.PlaybackService
@@ -71,6 +72,7 @@ class Player @Inject constructor(
             application.applicationContext,
             object : PlayerEventCallback {
                 override fun onTrackChange(spotify_uri: String, json_str: String) {
+                AudioDiagnostics.record("Player", "track change: $spotify_uri")
                 scope.launch {
                     val audio = if (spotify_uri.startsWith("spotify:episode:")) {
                         val episode: Episode = try {
@@ -199,6 +201,7 @@ class Player @Inject constructor(
             }
 
             override fun onPlayingStatus(playing: Boolean) {
+                AudioDiagnostics.record("Player", "librespot playing=$playing")
                 scope.launch {
                     stateHolder.setPlaying(playing)
                     invalidateState()
@@ -218,6 +221,7 @@ class Player @Inject constructor(
      */
     private fun syncAudioFocus(playing: Boolean) {
         val command = audioFocusManager.updateAudioFocus(playing, STATE_READY)
+        AudioDiagnostics.record("Player", "audio focus sync: playing=$playing -> command=$command")
         if (!playing) return
 
         when (command) {
@@ -240,11 +244,12 @@ class Player @Inject constructor(
         application.mainLooper,
         object : AudioFocusManager.PlayerControl {
             override fun setVolumeMultiplier(volume: Float) {
-                Log.i("Player", "Volume changed to $volume")
+                AudioDiagnostics.record("Player", "focus volume multiplier $volume")
                 engine.setVolume(volume)
             }
 
             override fun executePlayerCommand(command: Int) {
+                AudioDiagnostics.record("Player", "focus callback command=$command")
                 when (command) {
                     AudioFocusManager.PLAYER_COMMAND_WAIT_FOR_CALLBACK,
                     AudioFocusManager.PLAYER_COMMAND_DO_NOT_PLAY -> {

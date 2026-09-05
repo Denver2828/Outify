@@ -10,6 +10,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AccountCircle
 import androidx.compose.material.icons.filled.DeveloperMode
 import androidx.compose.material.icons.filled.Headphones
+import androidx.compose.material.icons.filled.GraphicEq
 import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Interests
@@ -38,6 +39,7 @@ fun SettingsScreen(
     openPlaybackSettings: (() -> Unit),
     openMiscSettings: (() -> Unit),
     openChangelog: (() -> Unit),
+    openAudioDiagnostics: (() -> Unit),
     openAboutSettings: (() -> Unit),
     openAccountSettings: (() -> Unit),
 ) {
@@ -106,6 +108,13 @@ fun SettingsScreen(
                         description = stringResource(R.string.changelog_settings_description),
                         icon = { Icon(Icons.Default.History, contentDescription = null) },
                         onClick = openChangelog,
+                    )
+
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.settings_audio_diagnostics_title)) },
+                        description = stringResource(R.string.settings_audio_diagnostics_description),
+                        icon = { Icon(Icons.Default.GraphicEq, contentDescription = null) },
+                        onClick = openAudioDiagnostics,
                     )
 
                     PreferenceEntry(

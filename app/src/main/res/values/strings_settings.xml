@@ -21,6 +21,16 @@
     <string name="settings_playback_description">Bitrate, Spotify Connect, gapless, …</string>
     <string name="settings_misc_title">Varios</string>
     <string name="settings_misc_description">Sincronización, respaldo y restauración</string>
+    <string name="settings_audio_diagnostics_title">Diagnóstico de audio</string>
+    <string name="settings_audio_diagnostics_description">Registro para resolver problemas de sonido</string>
+    <string name="settings_audio_diagnostics_intro">Dale play a una canción, esperá unos segundos y después tocá Compartir para enviar el registro. Los dos tonos de prueba suenan sin pasar por Spotify: sirven para saber si este dispositivo deja salir el audio de la app.</string>
+    <string name="settings_audio_diagnostics_tone_track">Tono (AudioTrack)</string>
+    <string name="settings_audio_diagnostics_tone_system">Tono (sistema)</string>
+    <string name="settings_audio_diagnostics_share">Compartir registro</string>
+    <string name="settings_audio_diagnostics_share_subject">Spoty: diagnóstico de audio</string>
+    <string name="settings_audio_diagnostics_copy">Copiar</string>
+    <string name="settings_audio_diagnostics_refresh">Actualizar</string>
+    <string name="settings_audio_diagnostics_loading">Generando registro…</string>
     <string name="settings_about_title">Acerca de</string>
     <string name="settings_about_description">Número de compilación</string>
     <string name="settings_accounts_title">Cuentas</string>

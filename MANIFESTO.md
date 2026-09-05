@@ -178,6 +178,19 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Avisos compactos.** Las hojas de "Permitir notificaciones" y "Optimización de batería" tenían un ícono de 112 dp, título grande y dos botones de 58 dp apilados: en una pantalla apaisada y baja cubrían casi todo. Se unificaron en un componente compacto de ancho máximo 400 dp: ícono de 36 dp junto al título, cuerpo corto y los dos botones en una fila.
 
+### 2026-09-04 — 1.3.2: diagnóstico de audio dentro de la app
+
+**Por qué.** 1.3.1 no cambió nada en la caja iCarPlay: play, barra que avanza, silencio. La hipótesis del foco de audio era la más probable desde el código, pero sin logs del dispositivo se está adivinando, y la caja no tiene adb a mano. La app tiene que poder contar sola qué pasó.
+
+**Qué se agregó.**
+
+- `diagnostics/AudioDiagnostics`: un registro en memoria (400 eventos) que además escribe a logcat, y un informe que junta versión y modelo, estado de reproducción, `AudioManager` (volumen de música, modo, dispositivos de salida con tipo y nombre), el estado del `AudioTrack` (estado, cuadros recibidos, bytes escritos, errores, posición de reproducción, underruns, ruta de salida) y las últimas 800 líneas de logcat del propio proceso, que no requieren permiso.
+- Instrumentación del motor: creación del `AudioTrack`, cada 500 cuadros PCM un resumen, errores de escritura, fallos de salida, cambios de pista, estado de reproducción de librespot y cada decisión del foco de audio.
+- Pantalla Ajustes › Diagnóstico de audio con Compartir (archivo por `FileProvider` a través del selector del sistema), Copiar y Actualizar.
+- Dos tonos de prueba que no pasan por librespot: uno con un `AudioTrack` idéntico al del motor y otro con `ToneGenerator` sobre `STREAM_MUSIC`. Son la bifurcación del diagnóstico: si suena el primero, la ruta está bien y el problema es el PCM que entrega librespot; si solo suena el segundo, la caja ignora los `AudioTrack` con atributos de medios de esta app; si no suena ninguno, la caja no enruta el audio de la app.
+
+**Descartado.** Subir el registro a un servidor propio. No hay infraestructura y el selector de compartir alcanza para que el usuario lo mande por mensajería.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

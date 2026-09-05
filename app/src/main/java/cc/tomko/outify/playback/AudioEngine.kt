@@ -11,6 +11,7 @@ import android.os.Looper
 import android.util.Log
 import android.widget.Toast
 import cc.tomko.outify.R
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.SonicAudioProcessor
@@ -44,6 +45,17 @@ class AudioEngine(
     private var currentChannels = -1
     private var currentFormat: PcmFormat? = null
 
+    // Diagnostics counters, read by AudioDiagnostics when a report is built.
+    @Volatile private var framesReceived = 0L
+    @Volatile private var bytesWritten = 0L
+    @Volatile private var writeErrors = 0L
+    @Volatile private var partialWrites = 0L
+    @Volatile private var droppedFrames = 0L
+    @Volatile private var lastWriteResult = 0
+    @Volatile private var lastPcmSampleRate = -1
+    @Volatile private var lastPcmChannels = -1
+    @Volatile private var lastPcmSize = -1
+
     private val pcmBuffer = ByteBuffer.allocateDirect(4 * 8192)
 
     private val sonic = SonicAudioProcessor()
@@ -66,6 +78,26 @@ class AudioEngine(
 
         // Registers callbacks to handle librespot events
         registerPlayerEventListener(eventCallback)
+
+        AudioDiagnostics.registerSnapshotProvider(::diagnosticSnapshot)
+    }
+
+    private fun diagnosticSnapshot(): String = buildString {
+        val track = audioTrack
+        appendLine("pcm: frames=$framesReceived lastSize=$lastPcmSize lastRate=$lastPcmSampleRate lastChannels=$lastPcmChannels")
+        appendLine("writes: bytes=$bytesWritten errors=$writeErrors partial=$partialWrites dropped=$droppedFrames lastResult=$lastWriteResult")
+        appendLine("outputFailureReported=$outputFailureReported speed=${stateHolder.state.value.playbackSpeed}")
+        if (track == null) {
+            appendLine("audioTrack: none")
+        } else {
+            appendLine(
+                "audioTrack: state=${track.state} playState=${track.playState} rate=${track.sampleRate} " +
+                    "channels=${track.channelCount} format=${track.audioFormat} sessionId=${track.audioSessionId}"
+            )
+            appendLine("audioTrack: headPosition=${track.playbackHeadPosition} underruns=${track.underrunCount}")
+            appendLine("audioTrack: route=${AudioDiagnostics.describeDevice(track.routedDevice)}")
+            appendLine("audioTrack: attributes=${track.audioAttributes}")
+        }
     }
 
     private fun ensureAudioTrack(sampleRate: Int, channels: Int, format: PcmFormat): Boolean {
@@ -147,14 +179,16 @@ class AudioEngine(
                 currentFormat = format
 
                 outputFailureReported = false
-                Log.i(
+                AudioDiagnostics.record(
                     TAG,
                     "AudioTrack created: sampleRate=$sampleRate, channels=$channels, encoding=$encoding, " +
-                        "buffer=$bufferSize, route=${describeRoute(newTrack)}"
+                        "buffer=$bufferSize, minBuffer=$minBufferSize, playState=${newTrack.playState}, " +
+                        "route=${describeRoute(newTrack)}"
                 )
                 return true
             } catch (t: Throwable) {
                 Log.e(TAG, "Exception while creating AudioTrack", t)
+                AudioDiagnostics.record(TAG, "AudioTrack creation threw $t")
                 reportOutputFailure(t.javaClass.simpleName + ": " + (t.message ?: ""))
                 return false
             }
@@ -166,6 +200,7 @@ class AudioEngine(
      * while every frame is dropped here. Tell the user once per failure streak.
      */
     private fun reportOutputFailure(reason: String) {
+        AudioDiagnostics.record(TAG, "audio output failure: $reason")
         if (outputFailureReported) return
         outputFailureReported = true
         mainHandler.post {
@@ -266,7 +301,21 @@ class AudioEngine(
         writeLock.withLock {
             pcmBuffer.order(ByteOrder.nativeOrder())
 
+            framesReceived++
+            lastPcmSize = size
+            lastPcmSampleRate = sampleRate
+            lastPcmChannels = channels
+            if (framesReceived == 1L || framesReceived % 500 == 0L) {
+                AudioDiagnostics.record(
+                    TAG,
+                    "pcm frame #$framesReceived size=$size rate=$sampleRate channels=$channels " +
+                        "written=$bytesWritten errors=$writeErrors dropped=$droppedFrames " +
+                        "head=${audioTrack?.playbackHeadPosition ?: -1} underruns=${audioTrack?.underrunCount ?: -1}"
+                )
+            }
+
             if (!ensureAudioTrack(sampleRate, channels, PcmFormat.S16)) {
+                droppedFrames++
                 Log.w(TAG, "ensureAudioTrack failed - dropping frame")
                 return
             }
@@ -356,10 +405,18 @@ class AudioEngine(
 
     private fun writeToTrack(buffer: ByteBuffer, size: Int, track: AudioTrack) {
         val written = track.write(buffer, size, AudioTrack.WRITE_BLOCKING)
+        lastWriteResult = written
         if (written < 0) {
-            Log.e(TAG, "AudioTrack.write returned error: $written")
-        } else if (written < size) {
-            Log.w(TAG, "AudioTrack wrote $written / $size bytes (partial write)")
+            writeErrors++
+            if (writeErrors <= 5 || writeErrors % 500 == 0L) {
+                AudioDiagnostics.record(TAG, "AudioTrack.write returned error $written (playState=${track.playState})")
+            }
+        } else {
+            bytesWritten += written
+            if (written < size) {
+                partialWrites++
+                Log.w(TAG, "AudioTrack wrote $written / $size bytes (partial write)")
+            }
         }
     }
 
