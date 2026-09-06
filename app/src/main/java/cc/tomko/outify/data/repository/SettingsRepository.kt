@@ -76,6 +76,12 @@ class SettingsRepository @Inject constructor(
             val OFFSET_MS = intPreferencesKey("lyrics_offset_ms")
 
             /**
+             * When true, the lyrics sheet follows and highlights the line being sung.
+             * When false, the whole lyric text is shown as static content.
+             */
+            val SYNCED = booleanPreferencesKey("lyrics_synced")
+
+            /**
              * Multiplier applied to the lyric line font size (1.0 = default)
              */
             val FONT_SCALE = floatPreferencesKey("lyrics_font_scale")
@@ -308,6 +314,10 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.FONT_SCALE] ?: 1.0f
     }
 
+    val lyricsSynced: Flow<Boolean> = dataStore.data.map {
+        it[Keys.Lyrics.SYNCED] ?: true
+    }
+
     val lastTrackUri = dataStore.data.map { it[Keys.Playback.LAST_TRACK_URI] }
     val lastContextUri = dataStore.data.map { it[Keys.Playback.LAST_CONTEXT_URI] }
     val lastPositionMs = dataStore.data.map { it[Keys.Playback.LAST_POSITION_MS]?.toLongOrNull() }
@@ -452,6 +462,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setLyricsFontScale(scale: Float) {
         dataStore.edit { it[Keys.Lyrics.FONT_SCALE] = scale }
+    }
+
+    suspend fun setLyricsSynced(value: Boolean) {
+        dataStore.edit { it[Keys.Lyrics.SYNCED] = value }
     }
 
     suspend fun setDarkMode(mode: DarkModeSetting) {

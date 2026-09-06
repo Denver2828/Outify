@@ -18,11 +18,13 @@ import cc.tomko.outify.services.OAuthService
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
@@ -39,10 +41,28 @@ class AccountsViewModel @Inject constructor(
     private val json = Json { ignoreUnknownKeys = true }
 
     private val _isPlaybackLoggedIn = MutableStateFlow(false)
-    val isPlaybackLoggedIn: StateFlow<Boolean> = _isPlaybackLoggedIn.asStateFlow()
-
     private val _isAccountLoggedIn = MutableStateFlow(false)
-    val isAccountLoggedIn: StateFlow<Boolean> = _isAccountLoggedIn.asStateFlow()
+
+    /**
+     * A single Spotify login now backs both halves, so the UI only cares about the pair being
+     * complete. A half-logged-in state can still happen when upgrading from an older version.
+     */
+    val isLoggedIn: StateFlow<Boolean> = combine(
+        _isPlaybackLoggedIn,
+        _isAccountLoggedIn,
+    ) { playback, account ->
+        playback && account
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * Exactly one of the two halves is authenticated: the login has to be repeated to complete it.
+     */
+    val isPartiallyLoggedIn: StateFlow<Boolean> = combine(
+        _isPlaybackLoggedIn,
+        _isAccountLoggedIn,
+    ) { playback, account ->
+        playback != account
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     private val _username = MutableStateFlow<String?>(null)
     val username: StateFlow<String?> = _username.asStateFlow()
@@ -80,7 +100,11 @@ class AccountsViewModel @Inject constructor(
         }
     }
 
-    fun startSpircAuth(context: Context) {
+    /**
+     * Single Spotify login. The librespot OAuth flow also stores the Web API token natively, so a
+     * successful callback authenticates playback and the account at once.
+     */
+    fun startAuth(context: Context) {
         OAuthService.start(context)
 
         serverManager.start(onCodeReceived = { code, state ->
@@ -89,14 +113,15 @@ class AccountsViewModel @Inject constructor(
             val isSuccess = result.contains("\"success\":true")
             val errorDetails = if (!isSuccess) parseErrorMessage(result) else null
             if (!isSuccess) {
-                NativeErrorHandler.handleErrorJson(result, "spirc oauth")
+                NativeErrorHandler.handleErrorJson(result, "spotify oauth")
             }
             GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
             if (isSuccess) {
-                _isPlaybackLoggedIn.value = authManager.hasCachedCredentials()
                 checkAuthState()
                 AuthStateEventBus.tryEmitPlaybackLoggedIn()
+                AuthStateEventBus.tryEmitAccountLoggedIn()
                 spircController.restart()
+                fetchProfile()
             }
         })
 
@@ -107,56 +132,16 @@ class AccountsViewModel @Inject constructor(
         )
     }
 
-    fun startAccountAuth(context: Context) {
-        OAuthService.start(context)
-
-        serverManager.start(onCodeReceived = { code, state ->
-            OAuthService.stop(context)
-            val result = spClient.completeOAuthFlow(code)
-            val isSuccess = result.contains("\"success\":true")
-            val errorDetails = if (!isSuccess) parseErrorMessage(result) else null
-            if (!isSuccess) {
-                NativeErrorHandler.handleErrorJson(result, "account oauth")
-            }
-            GlobalPopupController.show(PopupSpec.AuthResult(isSuccess, errorDetails = errorDetails))
-            if (isSuccess) {
-                viewModelScope.launch {
-                    delay(100)
-                    var authenticated = spClient.isOAuthAuthenticated()
-                    if (!authenticated) {
-                        delay(300)
-                        authenticated = spClient.isOAuthAuthenticated()
-                    }
-                    _isAccountLoggedIn.value = authenticated
-                    checkAuthState()
-                    AuthStateEventBus.tryEmitAccountLoggedIn()
-                    if (authenticated) {
-                        fetchProfile()
-                    }
-                }
-            }
-        })
-
-        val url = spClient.startOAuthFlow()
-
-        context.startActivity(
-            Intent(Intent.ACTION_VIEW, url.toUri())
-        )
-    }
-
-    fun logoutPlayback() {
+    fun logout() {
         authManager.logout()
-        _isPlaybackLoggedIn.value = false
-    }
-
-    fun logoutAccount() {
         spClient.logout()
+        _isPlaybackLoggedIn.value = false
         _isAccountLoggedIn.value = false
+        _scopes.value = emptyList()
 
         viewModelScope.launch {
             try {
                 settingsRepository.removeUserProfile()
-                _scopes.value = emptyList()
             } catch (e: Exception) {
             }
         }

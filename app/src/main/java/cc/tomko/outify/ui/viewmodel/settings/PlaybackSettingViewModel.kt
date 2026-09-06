@@ -38,6 +38,9 @@ class PlaybackSettingViewModel @Inject constructor(
     val lyricsFontScale: Flow<Float> =
         settingsRepository.lyricsFontScale
 
+    val lyricsSynced: Flow<Boolean> =
+        settingsRepository.lyricsSynced
+
     val clientId: Flow<String?> =
         settingsRepository.clientId
 
@@ -105,6 +108,12 @@ class PlaybackSettingViewModel @Inject constructor(
     fun setLyricsFontScale(scale: Float) {
         viewModelScope.launch {
             settingsRepository.setLyricsFontScale(scale)
+        }
+    }
+
+    fun setLyricsSynced(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsSynced(enabled)
         }
     }
 

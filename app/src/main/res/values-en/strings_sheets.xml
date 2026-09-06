@@ -28,22 +28,6 @@
         <item quantity="other">%1$d tracks</item>
     </plurals>
 
-    <!-- Account -->
-    <string name="sheet_account_profile_picture_cd">Profile picture</string>
-    <string name="sheet_account_logged_in_cd">Logged in</string>
-    <string name="sheet_account_log_out">Log out</string>
-    <string name="sheet_account_login_in_progress">You should be in the login process now…</string>
-
-    <!-- Battery permission -->
-    <string name="sheet_battery_title">Keep the music going</string>
-    <string name="sheet_battery_description">Exempt Spoty from battery optimization so playback and syncs don\'t get cut off in the background.</string>
-    <string name="sheet_battery_disable_optimization">Disable battery optimization</string>
-
-    <!-- Notification permission -->
-    <string name="sheet_notification_title">Stay in sync</string>
-    <string name="sheet_notification_description">Get notified when your library finishes syncing tracks.</string>
-    <string name="sheet_notification_allow">Allow notifications</string>
-
     <!-- Folders -->
     <string name="sheet_folder_edit_title">Edit folder</string>
     <string name="sheet_folder_create_title">Create folder</string>
@@ -147,8 +131,6 @@
     <!-- Lyrics -->
     <string name="sheet_lyrics_unknown_track">Unknown track</string>
     <string name="sheet_lyrics_unknown_artist">Unknown artist</string>
-    <string name="sheet_lyrics_tab_synced">Synced</string>
-    <string name="sheet_lyrics_tab_static">Static</string>
     <string name="sheet_lyrics_no_lyrics_episodes">No lyrics for episodes</string>
 
     <!-- Playback devices -->

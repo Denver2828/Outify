@@ -69,6 +69,12 @@ class LyricsViewModel @Inject constructor(
     val lyricsFontScale: StateFlow<Float> = settingsRepository.lyricsFontScale
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1.0f)
 
+    /**
+     * When false the lyric text is shown static, without following the playback position.
+     */
+    val lyricsSynced: StateFlow<Boolean> = settingsRepository.lyricsSynced
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), true)
+
     private val _isCurrentTrack = MutableStateFlow(false)
     val isCurrentTrack: StateFlow<Boolean> = _isCurrentTrack.asStateFlow()
 

@@ -34,7 +34,15 @@
     <string name="settings_about_title">Acerca de</string>
     <string name="settings_about_description">Número de compilación</string>
     <string name="settings_accounts_title">Cuentas</string>
-    <string name="settings_accounts_description">Inicio de sesión de reproducción y cuenta</string>
+    <string name="settings_accounts_description">Tu cuenta de Spotify</string>
+
+    <!-- Permissions -->
+    <string name="settings_permissions_header">Permisos</string>
+    <string name="settings_permissions_notifications_title">Permitir notificaciones</string>
+    <string name="settings_permissions_notifications_description">Recibí un aviso cuando tu biblioteca termine de sincronizar las canciones.</string>
+    <string name="settings_permissions_battery_title">Desactivar optimización de batería</string>
+    <string name="settings_permissions_battery_description">Excluí a Spoty de la optimización de batería para que la reproducción y las sincronizaciones no se corten en segundo plano.</string>
+    <string name="settings_permissions_granted">Ya está concedido</string>
 
     <!-- About -->
     <string name="settings_about_version_label">Versión</string>
@@ -43,29 +51,17 @@
     <string name="settings_about_made_by">Hecho por</string>
 
     <!-- Accounts -->
-    <string name="settings_accounts_playback_login_title">Inicio de sesión de reproducción</string>
-    <string name="settings_accounts_playback_login_sheet_description">Este inicio de sesión es obligatorio para poder reproducir. Usa credenciales de Spotify anónimas para transmitir audio.</string>
-    <string name="settings_accounts_account_login_title">Inicio de sesión de cuenta</string>
-    <string name="settings_accounts_account_login_sheet_description">Este inicio de sesión permite operar sobre tu cuenta de Spotify: marcar canciones con Me gusta, crear playlists, acceder a recomendaciones y administrar tu biblioteca.</string>
     <string name="settings_accounts_premium_required_title">Se requiere Spotify Premium</string>
     <string name="settings_accounts_premium_required_description">Spoty solo funciona con una cuenta de Spotify Premium. Tocá para saber por qué.</string>
-    <string name="settings_accounts_why_two_logins_title">¿Por qué dos inicios de sesión?</string>
-    <string name="settings_accounts_why_two_logins_librespot">Spoty usa librespot para transmitir audio. librespot se autentica con el protocolo de streaming de Spotify mediante credenciales anónimas: funciona de forma independiente de tu cuenta de Spotify y no puede acceder a tus datos personales.</string>
-    <string name="settings_accounts_why_two_logins_oauth">El inicio de sesión de tu cuenta de Spotify es independiente y se gestiona mediante OAuth. Da acceso a tu biblioteca, tus playlists y las funciones sociales, pero no participa en la transmisión de audio.</string>
-    <string name="settings_accounts_playback_login_description">librespot · credenciales anónimas de streaming</string>
-    <string name="settings_accounts_playback_required">Necesario para transmitir audio.</string>
-    <string name="settings_accounts_playback_anonymous_description">Usa credenciales anónimas incluidas en librespot para autenticarse con el protocolo de streaming de Spotify. No está vinculado a tu cuenta personal de Spotify.</string>
+    <string name="settings_accounts_connect">Conectar cuenta de Spotify</string>
+    <string name="settings_accounts_connect_description">Iniciá sesión una sola vez con tu cuenta de Spotify. Sirve para reproducir música y para tu biblioteca.</string>
+    <string name="settings_accounts_reconnect_description">Volvé a iniciar sesión para completar la conexión.</string>
+    <string name="settings_accounts_logout">Cerrar sesión</string>
     <string name="settings_accounts_profile_picture">Foto de perfil</string>
     <string name="settings_accounts_account_fallback">Cuenta</string>
     <string name="settings_accounts_logged_in">Sesión iniciada</string>
     <string name="settings_accounts_logged_in_free">Sesión iniciada (Free)</string>
     <string name="settings_accounts_premium_required_for_playback">Se requiere Spotify Premium para reproducir</string>
-    <string name="settings_accounts_account_login_description">Tu cuenta de Spotify · OAuth</string>
-    <string name="settings_accounts_account_oauth_description">Tu cuenta real de Spotify, conectada mediante OAuth.</string>
-    <string name="settings_accounts_feature_like_tracks">Marcar y quitar Me gusta en canciones</string>
-    <string name="settings_accounts_feature_playlists">Crear y modificar playlists</string>
-    <string name="settings_accounts_feature_recommendations">Acceder a tus recomendaciones</string>
-    <string name="settings_accounts_feature_library">Administrar tu biblioteca</string>
     <string name="settings_accounts_feature_availability_header">Disponibilidad de funciones</string>
     <string name="settings_accounts_feature_availability_intro">Funciones disponibles según tu estado de sesión:</string>
     <string name="settings_accounts_availability_stream">Reproducir canciones desde Spoty</string>
@@ -192,6 +188,8 @@
     <string name="settings_keepalive_title">Mantener activo</string>
     <string name="settings_keepalive_description">Permitir reanudar desde la notificación</string>
     <string name="settings_lyrics_section">Letras</string>
+    <string name="settings_lyrics_synced_title">Letras sincronizadas</string>
+    <string name="settings_lyrics_synced_description">Seguir y resaltar la línea que se está cantando. Desactivalo para ver la letra completa fija.</string>
     <string name="settings_romanize_lyrics_title">Romanizar letras</string>
     <string name="settings_romanize_lyrics_description">Mostrar el texto romanizado debajo de la letra original</string>
     <string name="settings_lyrics_early_title">Mostrar letras antes</string>

@@ -1,14 +1,10 @@
 package cc.tomko.outify
 
 import android.content.res.Configuration
-import android.Manifest
 import android.annotation.SuppressLint
 import android.content.Intent
-import android.content.pm.PackageManager
 import android.net.Uri
-import android.os.Build
 import android.os.Bundle
-import android.os.PowerManager
 import android.view.KeyEvent
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.BackHandler
@@ -76,9 +72,7 @@ import cc.tomko.outify.data.setting.LocalEpisodeSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
-import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.OutifyTheme
-import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.ThemeMode
 import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.components.GlobalPopupHost
@@ -141,18 +135,6 @@ class MainActivity : ComponentActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.TIRAMISU ||
-            checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS) != PackageManager.PERMISSION_GRANTED
-        ) {
-            GlobalPopupController.show(PopupSpec.NotificationPermission)
-        }
-
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M &&
-            !getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(packageName)
-        ) {
-            GlobalPopupController.show(PopupSpec.BatteryOptimization)
-        }
 
         volumeController.start()
 

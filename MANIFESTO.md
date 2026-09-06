@@ -191,6 +191,14 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Descartado.** Subir el registro a un servidor propio. No hay infraestructura y el selector de compartir alcanza para que el usuario lo mande por mensajería.
 
+### 2026-09-05 — 1.4.0: un solo inicio de sesión, permisos en Ajustes y letras sin controles encima
+
+**Un solo inicio de sesión.** La app tenía dos botones de login: uno para librespot (reproducción) y otro para la Web API (biblioteca, perfil), cada uno con su flujo OAuth, su callback y su archivo (`credentials.json` y `account.json`). El usuario los veía como dos cuentas. Al mirar el código nativo, las 26 scopes que pide librespot incluyen las 10 que pide la Web API y ambos flujos usan el mismo client id. Entonces el flujo de librespot alcanza para los dos: al completar el intercambio del código, Rust guarda las credenciales de librespot y además adopta el mismo token como token de la Web API (`SpotifyClient::adopt_token`). Se usa el token ya refrescado, porque Spotify rota los refresh tokens y el original queda inválido. Un solo botón "Conectar cuenta de Spotify", un solo "Cerrar sesión" que limpia ambos. Si por una instalación vieja quedó una sola mitad conectada, la pantalla pide volver a conectar. El flujo de la Web API (`/account/login`) queda en el código pero la interfaz ya no lo usa.
+
+**Permisos en Ajustes.** Los avisos de notificaciones y batería aparecían en cada arranque mientras no estuvieran concedidos, sin memoria de que el usuario los había rechazado, y en la pantalla del auto tapaban el reproductor. Se quitaron del arranque. Ahora son dos filas en Ajustes › Permisos que lanzan el pedido del sistema y muestran "Ya está concedido" cuando corresponde. Descartado: guardar un "no volver a preguntar"; sin aviso automático no hace falta.
+
+**Letras: modo y controles.** La hoja de letras tenía dos pastillas "Sincronizadas / Estáticas" como estado local que se perdía al cerrar, y los botones de anterior, pausa y siguiente flotaban sobre el texto (96×72 dp el central), con la barra de progreso en una segunda fila. En apaisado o en el auto, los controles se dibujaban encima de las líneas que se estaban cantando. Decisiones: el modo pasa a ser un ajuste persistente (Ajustes › Reproducción › Letras, "Letras sincronizadas", activado por defecto) y desaparece de la hoja; los controles pasan a una única fila al pie, después de la lista y no encima, con iconos de 40 y 44 dp y la barra de progreso en la misma fila. La lista ya no necesita reservar 160 dp de padding inferior.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

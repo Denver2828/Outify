@@ -31,22 +31,6 @@
     <string name="sheet_share_clip_label" translatable="false">%1$s - Spoty</string>
     <string name="sheet_percent_value" translatable="false">%1$d%%</string>
 
-    <!-- Account -->
-    <string name="sheet_account_profile_picture_cd">Foto de perfil</string>
-    <string name="sheet_account_logged_in_cd">Sesión iniciada</string>
-    <string name="sheet_account_log_out">Cerrar sesión</string>
-    <string name="sheet_account_login_in_progress">Ahora deberías estar iniciando sesión…</string>
-
-    <!-- Battery permission -->
-    <string name="sheet_battery_title">Que la música no se corte</string>
-    <string name="sheet_battery_description">Excluí a Spoty de la optimización de batería para que la reproducción y las sincronizaciones no se corten en segundo plano.</string>
-    <string name="sheet_battery_disable_optimization">Desactivar optimización de batería</string>
-
-    <!-- Notification permission -->
-    <string name="sheet_notification_title">Mantenete al tanto</string>
-    <string name="sheet_notification_description">Recibí un aviso cuando tu biblioteca termine de sincronizar las canciones.</string>
-    <string name="sheet_notification_allow">Permitir notificaciones</string>
-
     <!-- Folders -->
     <string name="sheet_folder_edit_title">Editar carpeta</string>
     <string name="sheet_folder_create_title">Crear carpeta</string>
@@ -150,8 +134,6 @@
     <!-- Lyrics -->
     <string name="sheet_lyrics_unknown_track">Canción desconocida</string>
     <string name="sheet_lyrics_unknown_artist">Artista desconocido</string>
-    <string name="sheet_lyrics_tab_synced">Sincronizadas</string>
-    <string name="sheet_lyrics_tab_static">Estáticas</string>
     <string name="sheet_lyrics_no_lyrics_episodes">Los episodios no tienen letras</string>
 
     <!-- Playback devices -->

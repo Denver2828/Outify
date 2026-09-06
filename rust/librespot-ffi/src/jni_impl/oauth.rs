@@ -132,6 +132,16 @@ pub extern "system" fn Java_cc_tomko_outify_core_AuthManager_handleOAuthCode(
         warn!("credential save to cache failed: {e:?}");
     }
 
+    // The librespot scopes are a superset of the Web API scopes and both flows share
+    // the same client id, so the same token logs the account in as well.
+    match rt.block_on(async { crate::spotify::client::get_client().adopt_token(&token).await }) {
+        Ok(_) => info!("oauth token adopted for the web api account"),
+        Err(e) => {
+            error!("web api token adoption failed: {e}");
+            return make_error_json(&env, "authentication_error", &format!("Account login failed: {e}"));
+        }
+    }
+
     make_success_json(&env)
 }
 

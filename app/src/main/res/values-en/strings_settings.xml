@@ -32,7 +32,15 @@
     <string name="settings_about_title">About</string>
     <string name="settings_about_description">Build number</string>
     <string name="settings_accounts_title">Accounts</string>
-    <string name="settings_accounts_description">Playback &amp; account login</string>
+    <string name="settings_accounts_description">Your Spotify account</string>
+
+    <!-- Permissions -->
+    <string name="settings_permissions_header">Permissions</string>
+    <string name="settings_permissions_notifications_title">Allow notifications</string>
+    <string name="settings_permissions_notifications_description">Get notified when your library finishes syncing tracks.</string>
+    <string name="settings_permissions_battery_title">Disable battery optimization</string>
+    <string name="settings_permissions_battery_description">Exempt Spoty from battery optimization so playback and syncs don\'t get cut off in the background.</string>
+    <string name="settings_permissions_granted">Already granted</string>
 
     <!-- About -->
     <string name="settings_about_version_label">Version</string>
@@ -40,29 +48,17 @@
     <string name="settings_about_made_by">Made by</string>
 
     <!-- Accounts -->
-    <string name="settings_accounts_playback_login_title">Playback login</string>
-    <string name="settings_accounts_playback_login_sheet_description">This login is mandatory to allow for playback. It uses anonymous Spotify credentials to stream audio.</string>
-    <string name="settings_accounts_account_login_title">Account login</string>
-    <string name="settings_accounts_account_login_sheet_description">This login allows for manipulation of your Spotify account: liking tracks, creating playlists, accessing recommendations, and managing your library.</string>
     <string name="settings_accounts_premium_required_title">Spotify Premium required</string>
     <string name="settings_accounts_premium_required_description">Spoty only works with a Spotify Premium account. Tap to learn why.</string>
-    <string name="settings_accounts_why_two_logins_title">Why two logins?</string>
-    <string name="settings_accounts_why_two_logins_librespot">Spoty uses librespot to stream audio. librespot authenticates with Spotify\'s streaming protocol using anonymous credentials — it operates independently of your Spotify account and cannot access your personal data.</string>
-    <string name="settings_accounts_why_two_logins_oauth">Your Spotify account login is separate and handled via OAuth. It grants access to your library, playlists, and social features — but is not involved in audio streaming.</string>
-    <string name="settings_accounts_playback_login_description">librespot · anonymous streaming credentials</string>
-    <string name="settings_accounts_playback_required">Required for audio streaming.</string>
-    <string name="settings_accounts_playback_anonymous_description">Uses anonymous credentials embedded in librespot to authenticate with Spotify\'s streaming protocol. Not linked to your personal Spotify account.</string>
+    <string name="settings_accounts_connect">Connect Spotify account</string>
+    <string name="settings_accounts_connect_description">Sign in once with your Spotify account. It covers playback and your library.</string>
+    <string name="settings_accounts_reconnect_description">Sign in again to complete the connection.</string>
+    <string name="settings_accounts_logout">Log out</string>
     <string name="settings_accounts_profile_picture">Profile picture</string>
     <string name="settings_accounts_account_fallback">Account</string>
     <string name="settings_accounts_logged_in">Logged in</string>
     <string name="settings_accounts_logged_in_free">Logged in (Free)</string>
     <string name="settings_accounts_premium_required_for_playback">Spotify Premium required for playback</string>
-    <string name="settings_accounts_account_login_description">Your Spotify account · OAuth</string>
-    <string name="settings_accounts_account_oauth_description">Your real Spotify account, connected via OAuth.</string>
-    <string name="settings_accounts_feature_like_tracks">Liking and unliking tracks</string>
-    <string name="settings_accounts_feature_playlists">Creating and modifying playlists</string>
-    <string name="settings_accounts_feature_recommendations">Accessing your recommendations</string>
-    <string name="settings_accounts_feature_library">Managing your library</string>
     <string name="settings_accounts_feature_availability_header">Feature availability</string>
     <string name="settings_accounts_feature_availability_intro">Features available based on your login status:</string>
     <string name="settings_accounts_availability_stream">Stream tracks from Spoty</string>
@@ -185,6 +181,8 @@
     <string name="settings_keepalive_title">Keepalive</string>
     <string name="settings_keepalive_description">Allow resurrection from notification</string>
     <string name="settings_lyrics_section">Lyrics</string>
+    <string name="settings_lyrics_synced_title">Synced lyrics</string>
+    <string name="settings_lyrics_synced_description">Follow and highlight the line being sung. Turn it off to see the full lyrics as static text.</string>
     <string name="settings_romanize_lyrics_title">Romanize lyrics</string>
     <string name="settings_romanize_lyrics_description">Show romanized text beneath original lyrics</string>
     <string name="settings_lyrics_early_title">Show lyrics early</string>

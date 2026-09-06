@@ -108,6 +108,34 @@ impl SpotifyClient {
         Ok(new_token)
     }
 
+    /// Adopts a token obtained by another OAuth flow (the librespot login) as the
+    /// Web API token, so a single sign-in covers both playback and the account.
+    pub async fn adopt_token(&self, token: &OAuthToken) -> Result<(), SpotifyApiError> {
+        let now = Instant::now();
+        let expires_in = if token.expires_at > now {
+            token.expires_at.duration_since(now).as_secs()
+        } else {
+            0
+        };
+
+        let new_token = WebApiToken::new(
+            token.access_token.clone(),
+            token.refresh_token.clone(),
+            expires_in,
+            token.scopes.join(" "),
+        );
+
+        let mut token_guard = self.token.write().await;
+        *token_guard = Some(new_token.clone());
+        drop(token_guard);
+
+        let mut oauth_state_guard = self.oauth_state.write().await;
+        *oauth_state_guard = None;
+        drop(oauth_state_guard);
+
+        self.save_token(&new_token).await
+    }
+
     pub async fn save_token(&self, token: &WebApiToken) -> Result<(), SpotifyApiError> {
         let mut path = crate::FILES_DIR
             .get()

@@ -2,8 +2,6 @@ package cc.tomko.outify.ui.screens.settings
 
 import android.content.Intent
 import androidx.compose.animation.AnimatedVisibility
-import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -14,21 +12,25 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Login
+import androidx.compose.material.icons.automirrored.filled.Logout
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material.icons.outlined.Cancel
+import androidx.compose.material3.Button
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -36,9 +38,6 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -50,10 +49,8 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.R
-import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.SmartImage
-import cc.tomko.outify.ui.components.bottomsheet.AccountDetailBottomSheet
 import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
 
 @OptIn(ExperimentalMaterial3ExpressiveApi::class, ExperimentalMaterial3Api::class)
@@ -69,38 +66,13 @@ fun AccountsScreen(
         viewModel.checkAuthState()
     }
 
-    val isPlaybackLoggedIn by viewModel.isPlaybackLoggedIn.collectAsStateWithLifecycle()
-    val isAccountLoggedIn by viewModel.isAccountLoggedIn.collectAsStateWithLifecycle()
+    val isLoggedIn by viewModel.isLoggedIn.collectAsStateWithLifecycle()
+    val isPartiallyLoggedIn by viewModel.isPartiallyLoggedIn.collectAsStateWithLifecycle()
     val scopes by viewModel.scopes.collectAsStateWithLifecycle()
 
     val isPremium by viewModel.isPremium.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
     val userImageUrl by viewModel.userImageUrl.collectAsStateWithLifecycle()
-
-    var showPlaybackSheet by remember { mutableStateOf(false) }
-    var showAccountSheet by remember { mutableStateOf(false) }
-
-    if (showPlaybackSheet) {
-        AccountDetailBottomSheet(
-            title = stringResource(R.string.settings_accounts_playback_login_title),
-            description = stringResource(R.string.settings_accounts_playback_login_sheet_description),
-            isLoggedIn = isPlaybackLoggedIn,
-            onLogout = { viewModel.logoutPlayback() },
-            onDismiss = { showPlaybackSheet = false }
-        )
-    }
-
-    if (showAccountSheet) {
-        AccountDetailBottomSheet(
-            title = stringResource(R.string.settings_accounts_account_login_title),
-            description = stringResource(R.string.settings_accounts_account_login_sheet_description),
-            isLoggedIn = isAccountLoggedIn,
-            username = username,
-            userImageUrl = userImageUrl,
-            onLogout = { viewModel.logoutAccount() },
-            onDismiss = { showAccountSheet = false }
-        )
-    }
 
     Scaffold(
         topBar = {
@@ -124,7 +96,7 @@ fun AccountsScreen(
         ) {
             item {
                 AnimatedVisibility(
-                    visible = !isPremium || !isAccountLoggedIn
+                    visible = !isPremium || !isLoggedIn
                 ) {
 
                     Surface(
@@ -183,117 +155,11 @@ fun AccountsScreen(
             }
 
             item {
-                Surface(
-                    modifier = Modifier.fillMaxWidth(),
-                    shape = RoundedCornerShape(16.dp),
-                    color = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.6f),
-                ) {
-                    Column(
-                        modifier = Modifier.padding(16.dp),
-                        verticalArrangement = Arrangement.spacedBy(6.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_accounts_why_two_logins_title),
-                            style = MaterialTheme.typography.titleSmall,
-                            fontWeight = FontWeight.SemiBold,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_accounts_why_two_logins_librespot),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_accounts_why_two_logins_oauth),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            item {
                 ElevatedCard(
                     modifier = modifier.fillMaxWidth(),
                 ) {
-                    PreferenceEntry(
-                        title = { Text(stringResource(R.string.settings_accounts_playback_login_title)) },
-                        description = stringResource(R.string.settings_accounts_playback_login_description),
-                        icon = {
-                            if (isPlaybackLoggedIn) {
-                                Icon(
-                                    Icons.Default.CheckCircle,
-                                    contentDescription = null,
-                                    tint = MaterialTheme.colorScheme.primary
-                                )
-                            } else {
-                                Icon(Icons.AutoMirrored.Filled.Login, contentDescription = null)
-                            }
-                        },
-                        trailingContent = {
-                            Box(
-                                contentAlignment = Alignment.Center,
-                                modifier = Modifier
-                                    .size(24.dp)
-                                    .background(
-                                        color = MaterialTheme.colorScheme.primaryContainer,
-                                        shape = CircleShape
-                                    )
-                            ) {
-                                Text(
-                                    text = "0",
-                                    style = MaterialTheme.typography.labelSmall,
-                                    color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                )
-                            }
-                        },
-                        onClick = {
-                            if (isPlaybackLoggedIn) {
-                                showPlaybackSheet = true
-                            } else {
-                                viewModel.startSpircAuth(context)
-                            }
-                        },
-                    )
-
-                    Spacer(Modifier.height(12.dp))
-
-                    Column(
-                        modifier = Modifier
-                            .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                            .fillMaxWidth(),
-                        verticalArrangement = Arrangement.spacedBy(4.dp)
-                    ) {
-                        Text(
-                            text = stringResource(R.string.settings_accounts_playback_required),
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurface,
-                        )
-                        Text(
-                            text = stringResource(R.string.settings_accounts_playback_anonymous_description),
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        )
-                    }
-                }
-            }
-
-            item {
-                ElevatedCard(
-                    modifier = modifier.fillMaxWidth(),
-                ) {
-                    Column(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .clickable {
-                                if (isAccountLoggedIn) {
-                                    showAccountSheet = true
-                                } else {
-                                    viewModel.startAccountAuth(context)
-                                }
-                            }
-                    ) {
-                        if (isAccountLoggedIn) {
+                    if (isLoggedIn) {
+                        Column(modifier = Modifier.fillMaxWidth()) {
                             Row(
                                 modifier = Modifier
                                     .padding(16.dp)
@@ -337,28 +203,12 @@ fun AccountsScreen(
                                     tint = MaterialTheme.colorScheme.primary,
                                     modifier = Modifier.size(24.dp)
                                 )
-
-                                Box(
-                                    contentAlignment = Alignment.Center,
-                                    modifier = Modifier
-                                        .size(24.dp)
-                                        .background(
-                                            color = MaterialTheme.colorScheme.primaryContainer,
-                                            shape = CircleShape
-                                        )
-                                ) {
-                                    Text(
-                                        text = "1",
-                                        style = MaterialTheme.typography.labelSmall,
-                                        color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                    )
-                                }
                             }
 
                             if (!isPremium) {
                                 Row(
                                     modifier = Modifier
-                                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                                        .padding(horizontal = 16.dp)
                                         .fillMaxWidth(),
                                     verticalAlignment = Alignment.CenterVertically,
                                     horizontalArrangement = Arrangement.spacedBy(8.dp)
@@ -376,60 +226,50 @@ fun AccountsScreen(
                                     )
                                 }
                             }
-                        } else {
-                            PreferenceEntry(
-                                title = { Text(stringResource(R.string.settings_accounts_account_login_title)) },
-                                description = stringResource(R.string.settings_accounts_account_login_description),
-                                icon = {
-                                    Icon(
-                                        Icons.AutoMirrored.Filled.Login,
-                                        contentDescription = null
-                                    )
+
+                            OutlinedButton(
+                                onClick = { viewModel.logout() },
+                                modifier = Modifier
+                                    .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 16.dp)
+                                    .fillMaxWidth(),
+                            ) {
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Logout,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
+                                )
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.settings_accounts_logout))
+                            }
+                        }
+                    } else {
+                        Column(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(20.dp),
+                            verticalArrangement = Arrangement.spacedBy(16.dp)
+                        ) {
+                            Text(
+                                text = if (isPartiallyLoggedIn) {
+                                    stringResource(R.string.settings_accounts_reconnect_description)
+                                } else {
+                                    stringResource(R.string.settings_accounts_connect_description)
                                 },
-                                trailingContent = {
-                                    Box(
-                                        contentAlignment = Alignment.Center,
-                                        modifier = Modifier
-                                            .size(24.dp)
-                                            .background(
-                                                color = MaterialTheme.colorScheme.primaryContainer,
-                                                shape = CircleShape
-                                            )
-                                    ) {
-                                        Text(
-                                            text = "1",
-                                            style = MaterialTheme.typography.labelSmall,
-                                            color = MaterialTheme.colorScheme.onPrimaryContainer,
-                                        )
-                                    }
-                                },
-                                onClick = { viewModel.startAccountAuth(context) },
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
 
-                            Spacer(Modifier.height(12.dp))
-
-                            Column(
-                                modifier = Modifier
-                                    .padding(start = 16.dp, end = 16.dp, bottom = 16.dp)
-                                    .fillMaxWidth(),
-                                verticalArrangement = Arrangement.spacedBy(4.dp)
+                            Button(
+                                onClick = { viewModel.startAuth(context) },
+                                modifier = Modifier.fillMaxWidth(),
                             ) {
-                                Text(
-                                    text = stringResource(R.string.settings_accounts_account_oauth_description),
-                                    style = MaterialTheme.typography.bodyMedium,
-                                    color = MaterialTheme.colorScheme.onSurface,
+                                Icon(
+                                    Icons.AutoMirrored.Filled.Login,
+                                    contentDescription = null,
+                                    modifier = Modifier.size(18.dp)
                                 )
-
-                                Spacer(Modifier.height(8.dp))
-
-                                Column(
-                                    verticalArrangement = Arrangement.spacedBy(6.dp)
-                                ) {
-                                    FeatureItem(stringResource(R.string.settings_accounts_feature_like_tracks))
-                                    FeatureItem(stringResource(R.string.settings_accounts_feature_playlists))
-                                    FeatureItem(stringResource(R.string.settings_accounts_feature_recommendations))
-                                    FeatureItem(stringResource(R.string.settings_accounts_feature_library))
-                                }
+                                Spacer(Modifier.width(8.dp))
+                                Text(stringResource(R.string.settings_accounts_connect))
                             }
                         }
                     }
@@ -460,71 +300,63 @@ fun AccountsScreen(
 
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_stream),
-                            isPlaybackLoggedIn && isPremium,
-                            0
+                            isLoggedIn && isPremium
                         )
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_sync_liked),
-                            isPlaybackLoggedIn && isPremium,
-                            0
+                            isLoggedIn && isPremium
                         )
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_view_catalog),
-                            isPlaybackLoggedIn && isPremium,
-                            0
+                            isLoggedIn && isPremium
                         )
 
                         Spacer(Modifier.height(12.dp))
 
-                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_search), isAccountLoggedIn, 1)
+                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_search), isLoggedIn)
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_modify_playlists),
-                            isAccountLoggedIn && scopes.containsAll(
+                            isLoggedIn && scopes.containsAll(
                                 listOf(
                                     "playlist-modify-public",
                                     "playlist-modify-private"
                                 )
-                            ),
-                            1
+                            )
                         )
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_create_playlists),
-                            isAccountLoggedIn && scopes.containsAll(
+                            isLoggedIn && scopes.containsAll(
                                 listOf(
                                     "playlist-modify-public",
                                     "playlist-modify-private"
                                 )
-                            ),
-                            1
+                            )
                         )
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_like_items),
-                            isAccountLoggedIn && scopes.containsAll(
+                            isLoggedIn && scopes.containsAll(
                                 listOf(
                                     "user-library-modify",
                                     "user-follow-modify",
                                     "playlist-modify-public"
                                 )
-                            ),
-                            1
+                            )
                         )
 
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_sync_albums),
-                            isAccountLoggedIn && scopes.containsAll(
+                            isLoggedIn && scopes.containsAll(
                                 listOf(
                                     "user-library-read",
                                 )
-                            ),
-                            1
+                            )
                         )
 
                         FeatureAvailability(
                             stringResource(R.string.settings_accounts_availability_episode_to_show),
-                            isAccountLoggedIn,
-                            1
+                            isLoggedIn
                         )
-                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_user_profiles), isPlaybackLoggedIn, 0)
+                        FeatureAvailability(stringResource(R.string.settings_accounts_availability_user_profiles), isLoggedIn)
 
                         Spacer(Modifier.height(12.dp))
 
@@ -547,27 +379,7 @@ fun AccountsScreen(
 }
 
 @Composable
-private fun FeatureItem(text: String, modifier: Modifier = Modifier) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        modifier = modifier.padding(start = 4.dp)
-    ) {
-        Surface(
-            modifier = Modifier.size(6.dp),
-            shape = CircleShape,
-            color = MaterialTheme.colorScheme.primary.copy(alpha = 0.6f)
-        ) {}
-        Text(
-            text = text,
-            style = MaterialTheme.typography.bodySmall,
-            color = MaterialTheme.colorScheme.onSurfaceVariant,
-        )
-    }
-}
-
-@Composable
-private fun FeatureAvailability(text: String, available: Boolean, badgeNumber: Int, modifier: Modifier = Modifier) {
+private fun FeatureAvailability(text: String, available: Boolean, modifier: Modifier = Modifier) {
     Row(
         verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.spacedBy(12.dp),
@@ -590,23 +402,5 @@ private fun FeatureAvailability(text: String, available: Boolean, badgeNumber: I
             color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
         )
-
-        Box(
-            contentAlignment = Alignment.Center,
-            modifier = Modifier
-                .size(24.dp)
-                .background(
-                    color = if (available) MaterialTheme.colorScheme.primaryContainer
-                    else MaterialTheme.colorScheme.surfaceContainerHigh,
-                    shape = CircleShape
-                )
-        ) {
-            Text(
-                text = badgeNumber.toString(),
-                style = MaterialTheme.typography.labelSmall,
-                color = if (available) MaterialTheme.colorScheme.onPrimaryContainer
-                else MaterialTheme.colorScheme.onSurfaceVariant
-            )
-        }
     }
 }

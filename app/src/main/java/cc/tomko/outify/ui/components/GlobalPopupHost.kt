@@ -1,18 +1,10 @@
 package cc.tomko.outify.ui.components
 
-import android.Manifest
-import android.content.Intent
-import android.net.Uri
-import android.os.Build
-import android.provider.Settings
-import androidx.activity.compose.rememberLauncherForActivityResult
-import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.rememberCoroutineScope
-import androidx.compose.ui.platform.LocalContext
 import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.core.model.OutifyUri
@@ -26,9 +18,7 @@ import cc.tomko.outify.ui.components.bottomsheet.AddToPlaylistBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.AddToWidgetBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.ArtistInfoBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.AuthResultBottomSheet
-import cc.tomko.outify.ui.components.bottomsheet.BatteryOptimizationBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.CreatePlaylistBottomSheet
-import cc.tomko.outify.ui.components.bottomsheet.NotificationPermissionBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.PlaybackDevicesBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.PlaylistInfoBottomSheet
 import cc.tomko.outify.ui.components.bottomsheet.RecommendationConfigBottomSheet
@@ -138,8 +128,11 @@ fun GlobalPopupHost(
                     lyricsViewModel.loadLyrics(popup.track, popup.shouldFollowCurrentTrack)
                 }
 
+                val lyricsSynced by lyricsViewModel.lyricsSynced.collectAsState()
+
                 LyricsBottomSheet(
                     viewModel = lyricsViewModel,
+                    isSyncedMode = lyricsSynced,
                     onDismissRequest = { GlobalPopupController.dismiss(popup.id) },
                     onPlayPause = { lyricsViewModel.playPause() },
                     onSkipNext = { lyricsViewModel.skipNext() },
@@ -268,38 +261,6 @@ fun GlobalPopupHost(
                     onDismiss = {
                         GlobalPopupController.dismiss(popup.id)
                     }
-                )
-            }
-
-            is PopupSpec.NotificationPermission -> {
-                val permissionLauncher = rememberLauncherForActivityResult(
-                    ActivityResultContracts.RequestPermission()
-                ) { }
-                NotificationPermissionBottomSheet(
-                    onAllow = {
-                        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
-                            permissionLauncher.launch(Manifest.permission.POST_NOTIFICATIONS)
-                        }
-                        GlobalPopupController.dismiss(popup.id)
-                    },
-                    onDismiss = { GlobalPopupController.dismiss(popup.id) },
-                )
-            }
-
-            is PopupSpec.BatteryOptimization -> {
-                val context = LocalContext.current
-                val batteryLauncher = rememberLauncherForActivityResult(
-                    ActivityResultContracts.StartActivityForResult()
-                ) { }
-                BatteryOptimizationBottomSheet(
-                    onAllow = {
-                        val intent = Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS).apply {
-                            data = Uri.parse("package:${context.packageName}")
-                        }
-                        batteryLauncher.launch(intent)
-                        GlobalPopupController.dismiss(popup.id)
-                    },
-                    onDismiss = { GlobalPopupController.dismiss(popup.id) },
                 )
             }
 

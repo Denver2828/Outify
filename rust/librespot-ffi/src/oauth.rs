@@ -86,15 +86,17 @@ impl OAuthSession {
             })?;
         debug!("oauth token exchange succeeded");
 
-        // Refreshing token to provide consistent TokenResponse that contains refresh token
+        // Refreshing token to provide consistent TokenResponse that contains refresh token.
+        // Spotify rotates refresh tokens on refresh, so the refreshed token is the one
+        // that stays valid for later refreshes (the Web API client reuses it).
         let refresh_token = token_response.refresh_token.clone();
-        let _refreshed = self
+        let refreshed = self
             .client
             .refresh_token_async(&refresh_token)
             .await
             .map_err(|e| Error::unknown(format!("Unable to refresh OAuth token: {e}")))?;
 
-        Ok(token_response)
+        Ok(if refreshed.refresh_token.is_empty() { token_response } else { refreshed })
     }
 }
 
