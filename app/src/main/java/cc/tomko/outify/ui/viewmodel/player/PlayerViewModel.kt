@@ -246,27 +246,7 @@ class PlayerViewModel @Inject constructor(
     fun toggleFavorite() {
         val trackId = currentAudio.value?.id ?: return
         viewModelScope.launch {
-            val wasLiked = likedRepository.isLiked(trackId)
-
-            if (wasLiked) {
-                likedRepository.removeLiked(trackId)
-            } else {
-                likedRepository.addLiked(trackId)
-            }
-
-            val success = if (wasLiked) {
-                spClient.deleteItems(arrayOf("spotify:track:$trackId"))
-            } else {
-                spClient.saveItems(arrayOf("spotify:track:$trackId"))
-            }
-
-            if (!success) {
-                if (wasLiked) {
-                    likedRepository.addLiked(trackId)
-                } else {
-                    likedRepository.removeLiked(trackId)
-                }
-            }
+            likedRepository.toggleTrackLiked(trackId)
         }
     }
 

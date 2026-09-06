@@ -3,6 +3,15 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.0 -->
+    <string name="changelog_1_7_0_version" translatable="false">1.7.0</string>
+    <string name="changelog_1_7_0_date">6 de septiembre de 2026</string>
+    <string name="changelog_1_7_0_title">Me gusta desde la pantalla de letras</string>
+    <string-array name="changelog_1_7_0_bullets">
+        <item>La pantalla de letras tiene ahora un corazón arriba a la derecha, tanto en vertical como en apaisado. Un toque agrega la canción a Me gusta; otro la quita.</item>
+        <item>El corazón muestra el estado de la canción que estás viendo, aunque no sea la que está sonando, y se pinta del color principal cuando ya está en Me gusta.</item>
+    </string-array>
+
     <!-- 1.6.0 -->
     <string name="changelog_1_6_0_version" translatable="false">1.6.0</string>
     <string name="changelog_1_6_0_date">6 de septiembre de 2026</string>

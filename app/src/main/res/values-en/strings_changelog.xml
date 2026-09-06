@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.0 -->
+    <string name="changelog_1_7_0_date">September 6, 2026</string>
+    <string name="changelog_1_7_0_title">Like from the lyrics screen</string>
+    <string-array name="changelog_1_7_0_bullets">
+        <item>The lyrics screen now has a heart at the top right, in portrait and in landscape. One tap adds the song to Liked Songs; another removes it.</item>
+        <item>The heart reflects the song you are looking at, even when it is not the one playing, and turns the accent color once the song is liked.</item>
+    </string-array>
+
     <!-- 1.6.0 -->
     <string name="changelog_1_6_0_date">September 6, 2026</string>
     <string name="changelog_1_6_0_title">LRCLIB lyrics when Spotify has none</string>

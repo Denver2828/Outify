@@ -8,11 +8,14 @@ import cc.tomko.outify.core.model.LyricsResult
 import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -20,6 +23,8 @@ import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.combine
+import kotlinx.coroutines.flow.flatMapLatest
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
@@ -50,6 +55,8 @@ class LyricsViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val spirc: SpircWrapper,
     private val settingsRepository: SettingsRepository,
+    private val likedDao: LikedDao,
+    private val likedRepository: LikedRepository,
 ) : ViewModel() {
 
     private val _lyricsState = MutableStateFlow<LyricsUiState>(LyricsUiState.Missing)
@@ -117,6 +124,17 @@ class LyricsViewModel @Inject constructor(
 
     private val _isEpisode = MutableStateFlow(false)
     val isEpisode: StateFlow<Boolean> = _isEpisode.asStateFlow()
+
+    /**
+     * Liked state of the displayed track (not necessarily the one playing),
+     * so the heart stays correct when the sheet was opened from a track detail.
+     */
+    @OptIn(ExperimentalCoroutinesApi::class)
+    val isLiked: StateFlow<Boolean> = _displayedTrack
+        .flatMapLatest { track ->
+            if (track == null) flowOf(false) else likedDao.observeIsTrackLiked(track.id)
+        }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /**
      * True only when the displayed lyrics carry real timestamps; plain-text
@@ -228,6 +246,14 @@ class LyricsViewModel @Inject constructor(
     private fun LyricsResult.toUiState(): LyricsUiState = when (this) {
         is LyricsResult.Found -> LyricsUiState.Found(lines, source, synced)
         LyricsResult.NotFound, LyricsResult.Error -> LyricsUiState.Missing
+    }
+
+    fun toggleLiked() {
+        if (_isEpisode.value) return
+        val trackId = _displayedTrack.value?.id ?: return
+        viewModelScope.launch {
+            likedRepository.toggleTrackLiked(trackId)
+        }
     }
 
     fun seekTo(timestampMs: Long) {

@@ -27,6 +27,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
@@ -97,6 +98,7 @@ fun LyricsBottomSheet(
     val hasSyncedContent by viewModel.hasSyncedContent.collectAsState()
     val lyricsSource by viewModel.lyricsSource.collectAsState()
     val isLoadingLyrics by viewModel.isLoading.collectAsState()
+    val isLiked by viewModel.isLiked.collectAsState()
 
     val showPlaybackControls = hasSyncedContent && isCurrentTrack
 
@@ -176,6 +178,26 @@ fun LyricsBottomSheet(
                         maxLines = 1
                     )
                     LyricsSourceBadge(source = lyricsSource)
+                }
+
+                if (!isEpisode) {
+                    IconButton(
+                        onClick = { viewModel.toggleLiked() },
+                        modifier = Modifier
+                            .align(Alignment.CenterEnd)
+                            .background(surfaceVariant, CircleShape)
+                            .size(40.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Favorite,
+                            contentDescription = stringResource(
+                                if (isLiked) R.string.sys_gesture_action_remove_from_favorites
+                                else R.string.sys_gesture_action_add_to_favorites
+                            ),
+                            tint = if (isLiked) MaterialTheme.colorScheme.primary
+                            else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 

@@ -229,6 +229,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Se aprovechó para** proveer un `OkHttpClient` único por Hilt (antes `Recommendations` creaba el suyo) y agregar los primeros tests unitarios del proyecto: parser LRC y selección de candidato por duración.
 
+### 2026-09-06 — 1.7.0: Me gusta desde la pantalla de letras
+
+**Pedido.** Un corazón en la pantalla de letras para marcar la canción como Me gusta sin volver al reproductor.
+
+**Decisión.** El corazón va en la cabecera, a la derecha, en la hoja vertical y en la vista apaisada, con el mismo círculo que la flecha de volver. Refleja la canción mostrada (`displayedTrack`), no la que suena: si la hoja se abrió desde el detalle de una pista, el corazón habla de esa pista. Se oculta para episodios de podcast, que van a otra lista.
+
+**Un solo mecanismo.** El reproductor ya tenía la lógica de alternar: actualización local optimista, llamada a Spotify y vuelta atrás si falla. Estaba escrita dentro del ViewModel del reproductor. Se movió a `LikedRepository.toggleTrackLiked`, y tanto el reproductor como la pantalla de letras la llaman. Se descartó copiar el bloque en el ViewModel de letras: ya hay copias parecidas en varios ViewModels de detalle y en `MainViewModel`, y sumar otra era seguir cavando. Unificar esas otras copias queda pendiente; no se tocaron para no mezclar cambios.
+
+**Qué no se hizo.** No hay aviso de error cuando Spotify rechaza el cambio: el corazón vuelve solo a su estado anterior, igual que en el reproductor. Sumar el aviso implica decidir dónde mostrarlo en una hoja modal y en la vista del auto, y eso merece su propia entrada.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

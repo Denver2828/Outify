@@ -2,6 +2,7 @@ package cc.tomko.outify.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.dao.AlbumDao
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.database.AppDatabase
@@ -37,6 +38,7 @@ class LikedRepository @Inject constructor(
     private val episodeMetadataHelper: EpisodeMetadataHelper,
     private val showMetadataHelper: ShowMetadataHelper,
     private val metadata: Metadata,
+    private val spClient: SpClient,
 ) {
     private val scope = CoroutineScope(Dispatchers.IO)
 
@@ -180,6 +182,30 @@ class LikedRepository @Inject constructor(
         .stateIn(scope, SharingStarted.Eagerly, 0)
 
     suspend fun isLiked(trackId: String): Boolean = likedDao.containsTrack(trackId)
+
+    /**
+     * Flips the liked state of a track: optimistic local update first, then the
+     * remote call, rolled back when Spotify rejects it.
+     * @return the liked state after the call
+     */
+    suspend fun toggleTrackLiked(trackId: String): Boolean = withContext(Dispatchers.IO) {
+        val wasLiked = isLiked(trackId)
+
+        if (wasLiked) removeLiked(trackId) else addLiked(trackId)
+
+        val uri = "spotify:track:$trackId"
+        val success = if (wasLiked) {
+            spClient.deleteItems(arrayOf(uri))
+        } else {
+            spClient.saveItems(arrayOf(uri))
+        }
+
+        if (!success) {
+            if (wasLiked) addLiked(trackId) else removeLiked(trackId)
+            return@withContext wasLiked
+        }
+        !wasLiked
+    }
 
     /**
      * Adds a track to the liked list (optimistic UI update)
