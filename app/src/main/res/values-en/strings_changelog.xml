@@ -3,6 +3,13 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.5.1 -->
+    <string name="changelog_1_5_1_date">September 5, 2026</string>
+    <string name="changelog_1_5_1_title">The lyrics sheet spans the full width</string>
+    <string-array name="changelog_1_5_1_bullets">
+        <item>In landscape the lyrics sheet left the player visible at both sides. It now covers the whole screen.</item>
+    </string-array>
+
     <!-- 1.5.0 -->
     <string name="changelog_1_5_0_date">September 5, 2026</string>
     <string name="changelog_1_5_0_title">Fullscreen lyrics in the car</string>

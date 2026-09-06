@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cc.tomko.outify.R
@@ -120,6 +121,8 @@ fun LyricsBottomSheet(
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
         sheetState = sheetState,
+        // Material caps sheets at 640.dp; in landscape that left the player visible at both sides
+        sheetMaxWidth = Dp.Unspecified,
         containerColor = backgroundColor,
         contentColor = MaterialTheme.colorScheme.onBackground,
         scrimColor = Color.Black.copy(alpha = 0.5f),

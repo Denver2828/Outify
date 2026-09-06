@@ -209,6 +209,10 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Registro de audio.** El registro recibido (spoty-audio-20260905-215335) es del Samsung, no de la caja: AudioTrack creado, escrituras sin errores, posición avanzando, salida por parlante, foco de audio concedido en cada play. Sirve como línea base sana para comparar contra el que salga de la caja.
 
+### 2026-09-05 — 1.5.1: la hoja de letras a todo el ancho
+
+`ModalBottomSheet` de Material 3 limita el ancho de la hoja a 640 dp. En vertical no se nota; en apaisado la hoja de letras quedaba centrada con el reproductor asomando a ambos lados. Se pasa `sheetMaxWidth = Dp.Unspecified` para que cubra la pantalla completa. La pantalla apaisada nueva de 1.5.0 no tenía este límite porque no es una hoja.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.
