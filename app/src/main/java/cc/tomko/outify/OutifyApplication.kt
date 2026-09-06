@@ -10,6 +10,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.diagnostics.ProcessExitDiagnostics
 import cc.tomko.outify.ui.viewmodel.detail.DetailViewModelStore
 import cc.tomko.outify.ui.viewmodel.detail.setDetailViewModelStore
 import cc.tomko.outify.utils.ExceptionCollector
@@ -68,6 +69,8 @@ class OutifyApplication : Application() {
             Toast.makeText(this, getString(R.string.sys_error_missing_credentials), Toast.LENGTH_LONG).show()
             throw Exception("No Spotify credentials were supplied during build! spotify.playback.clientId is${if (spotifyId.isEmpty()) "" else " not"} empty; spotify.playback.clientSecret is${if (spotifySecret.isEmpty()) "" else " not"} empty")
         }
+
+        appScope.launch { ProcessExitDiagnostics.logLastExit(applicationContext) }
 
         appScope.launch {
             LibrespotFfi.libInit(applicationContext, spotifyId, spotifySecret)

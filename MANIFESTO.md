@@ -239,6 +239,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Qué no se hizo.** No hay aviso de error cuando Spotify rechaza el cambio: el corazón vuelve solo a su estado anterior, igual que en el reproductor. Sumar el aviso implica decidir dónde mostrarlo en una hoja modal y en la vista del auto, y eso merece su propia entrada.
 
+### 2026-09-06 — 1.7.1: el diagnóstico explica los cuelgues
+
+**Causa.** Apareció un "Spoty no responde" en la pantalla de letras. El informe de diagnóstico que llegó después no servía: la sección de logcat solo cubre el proceso vivo, y el cuelgue había ocurrido en un proceso anterior que Android ya había matado. No había forma de saber en qué estaba trabado el hilo principal.
+
+**Decisión.** El informe suma la sección "Process exits": las últimas diez salidas del proceso según `ActivityManager.getHistoricalProcessExitReasons`, con fecha, motivo, estado, importancia y memoria. Para los ANR y los crashes nativos se adjunta el volcado que Android guarda: las primeras 300 líneas y, si el bloque del hilo `main` queda fuera de esa ventana, ese bloque completo, con un tope de unos 40 KB por traza. Además, al arrancar se escribe una línea `ProcessExit` en logcat con el motivo del cierre anterior.
+
+**Qué se descartó.** Leer `/data/anr` directamente: no es accesible sin root. Adjuntar la traza entera: un volcado de ANR pasa fácil de 200 KB y ahoga el informe que se comparte por WhatsApp.
+
+**Lección.** Un informe de diagnóstico tiene que sobrevivir al reinicio del proceso. Todo lo que se pierda con la muerte del proceso hay que pedírselo al sistema en el arranque siguiente.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

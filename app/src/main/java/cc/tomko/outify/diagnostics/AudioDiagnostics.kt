@@ -78,6 +78,10 @@ object AudioDiagnostics {
         recorded.forEach { appendLine(it) }
         appendLine()
 
+        appendLine("--- Process exits (last 10) ---")
+        append(ProcessExitDiagnostics.describe(context))
+        appendLine()
+
         appendLine("--- logcat (this process, last $LOGCAT_LINES lines) ---")
         appendLine(readLogcat())
     }

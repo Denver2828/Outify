@@ -3,6 +3,15 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.1 -->
+    <string name="changelog_1_7_1_version" translatable="false">1.7.1</string>
+    <string name="changelog_1_7_1_date">6 de septiembre de 2026</string>
+    <string name="changelog_1_7_1_title">El diagnóstico explica los cuelgues</string>
+    <string-array name="changelog_1_7_1_bullets">
+        <item>El informe de diagnóstico de audio suma la sección "Process exits": las últimas diez veces que Android cerró la app, con fecha, motivo y, cuando fue un "Spoty no responde", el volcado del hilo principal en el momento del cuelgue.</item>
+        <item>Al arrancar, la app deja en el registro una línea con el motivo del cierre anterior, así queda a la vista en el siguiente informe.</item>
+    </string-array>
+
     <!-- 1.7.0 -->
     <string name="changelog_1_7_0_version" translatable="false">1.7.0</string>
     <string name="changelog_1_7_0_date">6 de septiembre de 2026</string>

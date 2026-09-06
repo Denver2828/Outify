@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.1 -->
+    <string name="changelog_1_7_1_date">September 6, 2026</string>
+    <string name="changelog_1_7_1_title">Diagnostics explain freezes</string>
+    <string-array name="changelog_1_7_1_bullets">
+        <item>The audio diagnostics report gains a "Process exits" section: the last ten times Android closed the app, with date, reason and, for a "Spoty is not responding" freeze, the main thread dump captured at that moment.</item>
+        <item>On startup the app logs one line with the reason for the previous exit, so it shows up in the next report.</item>
+    </string-array>
+
     <!-- 1.7.0 -->
     <string name="changelog_1_7_0_date">September 6, 2026</string>
     <string name="changelog_1_7_0_title">Like from the lyrics screen</string>
