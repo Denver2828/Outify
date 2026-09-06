@@ -35,12 +35,14 @@ import androidx.compose.material.icons.filled.Album
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Home
 import androidx.compose.material.icons.filled.LibraryMusic
+import androidx.compose.material.icons.filled.Lyrics
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.Podcasts
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.Scaffold
+import androidx.compose.material3.SmallFloatingActionButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
 import androidx.compose.runtime.LaunchedEffect
@@ -50,6 +52,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -67,6 +70,7 @@ import cc.tomko.outify.core.EpisodeDetails
 import cc.tomko.outify.core.model.Episode
 import cc.tomko.outify.core.spirc.VolumeController
 import cc.tomko.outify.data.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.LandscapeLayout
 import cc.tomko.outify.data.repository.PendingBackupImport
 import cc.tomko.outify.data.setting.LocalEpisodeSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
@@ -87,6 +91,7 @@ import cc.tomko.outify.ui.components.player.QueueBottomSheet
 import cc.tomko.outify.ui.components.player.rememberPlayerSheetState
 import cc.tomko.outify.ui.components.player.rememberQueueBottomSheetState
 import cc.tomko.outify.ui.notifications.InAppNotificationHost
+import cc.tomko.outify.ui.screens.player.LandscapeLyricsScreen
 import cc.tomko.outify.ui.screens.player.PlayerContent
 import cc.tomko.outify.ui.viewmodel.MainViewModel
 import cc.tomko.outify.ui.viewmodel.bottomsheet.AddToPlaylistViewModel
@@ -384,7 +389,26 @@ class MainActivity : ComponentActivity() {
                                         }
                                     }
 
-                                    if (isLandscape) {
+                                    var landscapeLyricsVisible by rememberSaveable { mutableStateOf(true) }
+                                    val lyricsTrack = currentAudio?.takeIf { it.isTrack() }?.sourceTrack
+
+                                    // Playback just started: offer the lyrics again
+                                    LaunchedEffect(lyricsTrack != null) {
+                                        if (lyricsTrack != null) landscapeLyricsVisible = true
+                                    }
+
+                                    val landscapeLyricsEnabled = isLandscape &&
+                                            interfaceSettings.landscapeLayout == LandscapeLayout.FULLSCREEN_LYRICS
+
+                                    if (landscapeLyricsEnabled && landscapeLyricsVisible && lyricsTrack != null) {
+                                        BackHandler { landscapeLyricsVisible = false }
+
+                                        LandscapeLyricsScreen(
+                                            track = lyricsTrack,
+                                            onBrowse = { landscapeLyricsVisible = false },
+                                            modifier = Modifier.fillMaxSize()
+                                        )
+                                    } else if (isLandscape) {
                                         Row(modifier = Modifier.fillMaxSize()) {
                                             Box(
                                                 modifier = Modifier
@@ -440,6 +464,23 @@ class MainActivity : ComponentActivity() {
                                                         onItemSelected = { item -> if (backStack.last() != item.route) backStack.add(item.route) },
                                                         modifier = Modifier.align(Alignment.BottomCenter)
                                                     )
+                                                }
+
+                                                if (interfaceSettings.landscapeLayout == LandscapeLayout.FULLSCREEN_LYRICS && lyricsTrack != null) {
+                                                    SmallFloatingActionButton(
+                                                        onClick = { landscapeLyricsVisible = true },
+                                                        modifier = Modifier
+                                                            .align(Alignment.BottomEnd)
+                                                            .padding(
+                                                                end = 16.dp,
+                                                                bottom = if (interfaceSettings.experimentalFloatingNav) 76.dp else 72.dp
+                                                            )
+                                                    ) {
+                                                        Icon(
+                                                            imageVector = Icons.Default.Lyrics,
+                                                            contentDescription = stringResource(R.string.ui_landscape_lyrics_open)
+                                                        )
+                                                    }
                                                 }
                                             }
                                         }

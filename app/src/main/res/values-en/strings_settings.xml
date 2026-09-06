@@ -81,6 +81,10 @@
     <string name="settings_theme_system">System</string>
     <string name="settings_theme_light">Light</string>
     <string name="settings_theme_dark">Dark</string>
+    <string name="settings_landscape_header">Landscape view</string>
+    <string name="settings_landscape_description">What to show when the phone or the car screen is in landscape.</string>
+    <string name="settings_landscape_fullscreen_lyrics">Fullscreen lyrics</string>
+    <string name="settings_landscape_player_and_content">Player and content</string>
     <string name="settings_dynamic_section">Dynamic</string>
     <string name="settings_dynamic_theme_title">Dynamic theme</string>
     <string name="settings_dynamic_theme_description">Color scheme will change according to the current track</string>

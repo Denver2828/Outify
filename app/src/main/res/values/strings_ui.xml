@@ -136,6 +136,11 @@
     <string name="ui_top_items_last_4_weeks">Últimas 4 semanas</string>
     <string name="ui_top_items_last_6_months">Últimos 6 meses</string>
     <string name="ui_top_items_last_year">Último año</string>
+    <!-- Landscape fullscreen lyrics -->
+    <string name="ui_landscape_lyrics_browse">Ir a la biblioteca</string>
+    <string name="ui_landscape_lyrics_open">Ver letras</string>
+    <string name="ui_landscape_lyrics_empty">No hay letras para esta canción.</string>
+
     <string name="ui_color_saturation">Saturación</string>
     <string name="ui_color_lightness">Luminosidad</string>
 </resources>

@@ -19,6 +19,7 @@ import androidx.compose.material.icons.filled.MonochromePhotos
 import androidx.compose.material.icons.filled.Palette
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.PlayCircleOutline
+import androidx.compose.material.icons.filled.StayCurrentLandscape
 import androidx.compose.material.icons.filled.SystemUpdate
 import androidx.compose.material.icons.filled.Title
 import androidx.compose.material.icons.filled.Topic
@@ -42,6 +43,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.R
 import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.LandscapeLayout
 import cc.tomko.outify.ui.components.ColorPreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceSectionHeader
@@ -53,6 +55,11 @@ private val darkModeOptions = listOf(
     DarkModeSetting.SYSTEM to R.string.settings_theme_system,
     DarkModeSetting.LIGHT to R.string.settings_theme_light,
     DarkModeSetting.DARK to R.string.settings_theme_dark,
+)
+
+private val landscapeLayoutOptions = listOf(
+    LandscapeLayout.FULLSCREEN_LYRICS to R.string.settings_landscape_fullscreen_lyrics,
+    LandscapeLayout.PLAYER_AND_CONTENT to R.string.settings_landscape_player_and_content,
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -106,6 +113,38 @@ fun AppearanceSettingScreen(
                                         shape = SegmentedButtonDefaults.itemShape(
                                             index = index,
                                             count = darkModeOptions.size
+                                        ),
+                                        label = { Text(stringResource(labelRes)) }
+                                    )
+                                }
+                            }
+                        },
+                        onClick = { },
+                    )
+                }
+            }
+
+            item {
+                PreferenceSectionHeader(stringResource(R.string.settings_landscape_header))
+
+                ElevatedCard {
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.settings_landscape_header)) },
+                        description = stringResource(R.string.settings_landscape_description),
+                        icon = { Icon(Icons.Default.StayCurrentLandscape, contentDescription = null) },
+                        content = {
+                            SingleChoiceSegmentedButtonRow(
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .padding(top = 12.dp)
+                            ) {
+                                landscapeLayoutOptions.forEachIndexed { index, (layout, labelRes) ->
+                                    SegmentedButton(
+                                        selected = settings.landscapeLayout == layout,
+                                        onClick = { viewModel.setLandscapeLayout(layout) },
+                                        shape = SegmentedButtonDefaults.itemShape(
+                                            index = index,
+                                            count = landscapeLayoutOptions.size
                                         ),
                                         label = { Text(stringResource(labelRes)) }
                                     )

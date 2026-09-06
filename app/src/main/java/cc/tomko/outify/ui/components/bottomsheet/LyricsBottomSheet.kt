@@ -290,8 +290,11 @@ fun LyricsBottomSheet(
     }
 }
 
+/**
+ * Auto-centering lyric list. Shared with the landscape fullscreen lyrics screen.
+ */
 @Composable
-private fun LyricsList(
+internal fun LyricsList(
     lyrics: List<LyricLine>,
     currentPositionMs: Long,
     fontScale: Float,

@@ -108,6 +108,8 @@ class SettingsRepository @Inject constructor(
             val SHOW_NAVBAR_HISTORY = booleanPreferencesKey("show_navbar_history")
             val NAVBAR_HISTORY_ON_END = booleanPreferencesKey("navbar_history_on_end")
             val NAVBAR_SHOW_SELECTED_LABEL = booleanPreferencesKey("navbar_show_selected_label")
+
+            val LANDSCAPE_LAYOUT = stringPreferencesKey("landscape_layout")
         }
 
         object Queue {
@@ -162,6 +164,9 @@ class SettingsRepository @Inject constructor(
 
             // Theme mode
             darkMode = DarkModeSetting.fromName(prefs[Keys.Interface.DARK_MODE]),
+
+            // Landscape layout
+            landscapeLayout = LandscapeLayout.fromName(prefs[Keys.Interface.LANDSCAPE_LAYOUT]),
 
             // Dynamic theme
             dynamicTheme = prefs[Keys.Interface.DYNAMIC_THEME] ?: true,
@@ -472,6 +477,10 @@ class SettingsRepository @Inject constructor(
         dataStore.edit { it[Keys.Interface.DARK_MODE] = mode.name }
     }
 
+    suspend fun setLandscapeLayout(layout: LandscapeLayout) {
+        dataStore.edit { it[Keys.Interface.LANDSCAPE_LAYOUT] = layout.name }
+    }
+
     suspend fun removeUserProfile() {
         dataStore.edit { prefs ->
             prefs.remove(Keys.USER_ID)
@@ -640,6 +649,9 @@ data class InterfaceSettings(
     // Theme mode (follow system / force light / force dark)
     val darkMode: DarkModeSetting = DarkModeSetting.SYSTEM,
 
+    // What the landscape orientation shows
+    val landscapeLayout: LandscapeLayout = LandscapeLayout.FULLSCREEN_LYRICS,
+
     // Dynamic theme
     val dynamicTheme: Boolean = true,
     val dynamicSystem: Boolean = true,
@@ -680,6 +692,19 @@ enum class DarkModeSetting {
     companion object {
         fun fromName(name: String?): DarkModeSetting =
             entries.firstOrNull { it.name == name } ?: SYSTEM
+    }
+}
+
+/**
+ * What the app shows while the screen is in landscape orientation.
+ */
+enum class LandscapeLayout {
+    FULLSCREEN_LYRICS,
+    PLAYER_AND_CONTENT;
+
+    companion object {
+        fun fromName(name: String?): LandscapeLayout =
+            entries.firstOrNull { it.name == name } ?: FULLSCREEN_LYRICS
     }
 }
 

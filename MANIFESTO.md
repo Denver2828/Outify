@@ -199,6 +199,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Letras: modo y controles.** La hoja de letras tenía dos pastillas "Sincronizadas / Estáticas" como estado local que se perdía al cerrar, y los botones de anterior, pausa y siguiente flotaban sobre el texto (96×72 dp el central), con la barra de progreso en una segunda fila. En apaisado o en el auto, los controles se dibujaban encima de las líneas que se estaban cantando. Decisiones: el modo pasa a ser un ajuste persistente (Ajustes › Reproducción › Letras, "Letras sincronizadas", activado por defecto) y desaparece de la hoja; los controles pasan a una única fila al pie, después de la lista y no encima, con iconos de 40 y 44 dp y la barra de progreso en la misma fila. La lista ya no necesita reservar 160 dp de padding inferior.
 
+### 2026-09-05 — 1.5.0: vista apaisada de letras a pantalla completa
+
+**Pedido.** La vista apaisada de 1.4.0 (reproductor a la izquierda, lista a la derecha, controles compactos en la hoja de letras) gustó y se mantiene como opción. Pero en el auto lo que se quiere mirar es la letra, grande, sin nada encima, y solo tres botones: anterior, pausa, siguiente.
+
+**Decisión.** Un ajuste nuevo en Interfaz, "Vista apaisada", con dos valores: "Letras a pantalla completa" (por defecto) y "Reproductor y lista". Con el primero, al estar apaisado y con una canción sonando, la app muestra una pantalla propia (`LandscapeLyricsScreen`) que reutiliza la misma lista de letras de la hoja (auto-centrado, toque para saltar, anticipación y tamaño de texto de Ajustes) y sigue sola el cambio de canción. Abajo, tres botones y nada más: ni barra de progreso ni tiempos, porque en el auto no se busca dentro de la canción.
+
+**Cómo se sale y se vuelve.** La flecha de arriba a la izquierda (o el botón atrás) muestra la vista de reproductor y lista para elegir otra música; un botón flotante de letras vuelve a la pantalla completa, y al empezar a sonar algo después de estar sin nada, la pantalla completa vuelve sola. Se descartó tapar la navegación de forma permanente: en la caja del auto no hay otra forma de elegir canciones.
+
+**Registro de audio.** El registro recibido (spoty-audio-20260905-215335) es del Samsung, no de la caja: AudioTrack creado, escrituras sin errores, posición avanzando, salida por parlante, foco de audio concedido en cada play. Sirve como línea base sana para comparar contra el que salga de la caja.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

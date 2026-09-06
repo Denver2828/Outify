@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
+import cc.tomko.outify.data.repository.LandscapeLayout
 import cc.tomko.outify.data.repository.SettingsRepository
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.Flow
@@ -63,6 +64,12 @@ class AppearanceViewModel @Inject constructor(
     fun setDarkMode(mode: DarkModeSetting) {
         viewModelScope.launch {
             settingsRepository.setDarkMode(mode)
+        }
+    }
+
+    fun setLandscapeLayout(layout: LandscapeLayout) {
+        viewModelScope.launch {
+            settingsRepository.setLandscapeLayout(layout)
         }
     }
 

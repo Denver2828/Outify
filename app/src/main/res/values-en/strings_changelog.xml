@@ -3,6 +3,15 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.5.0 -->
+    <string name="changelog_1_5_0_date">September 5, 2026</string>
+    <string name="changelog_1_5_0_title">Fullscreen lyrics in the car</string>
+    <string-array name="changelog_1_5_0_bullets">
+        <item>New landscape view: the lyrics fill the whole screen with only three buttons at the bottom, previous, pause and next. It is the default whenever the phone or the car screen is in landscape.</item>
+        <item>The top-left arrow goes to the usual library (player on the left, list on the right), and the floating lyrics button returns to the fullscreen view.</item>
+        <item>Settings › Interface › Landscape view lets you pick between "Fullscreen lyrics" and "Player and content".</item>
+    </string-array>
+
     <!-- 1.4.0 -->
     <string name="changelog_1_4_0_date">September 5, 2026</string>
     <string name="changelog_1_4_0_title">One sign-in and cleaner lyrics in the car</string>

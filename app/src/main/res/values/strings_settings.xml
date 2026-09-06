@@ -84,6 +84,10 @@
     <string name="settings_theme_system">Sistema</string>
     <string name="settings_theme_light">Claro</string>
     <string name="settings_theme_dark">Oscuro</string>
+    <string name="settings_landscape_header">Vista apaisada</string>
+    <string name="settings_landscape_description">Qué mostrar cuando el teléfono o la pantalla del auto están apaisados.</string>
+    <string name="settings_landscape_fullscreen_lyrics">Letras a pantalla completa</string>
+    <string name="settings_landscape_player_and_content">Reproductor y lista</string>
     <string name="settings_dynamic_section">Dinámico</string>
     <string name="settings_dynamic_theme_title">Tema dinámico</string>
     <string name="settings_dynamic_theme_description">Los colores cambian según la canción actual</string>
