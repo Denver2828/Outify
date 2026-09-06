@@ -85,6 +85,12 @@ class SettingsRepository @Inject constructor(
              * Multiplier applied to the lyric line font size (1.0 = default)
              */
             val FONT_SCALE = floatPreferencesKey("lyrics_font_scale")
+
+            /**
+             * When true, LRCLIB is queried whenever Spotify has no lyrics for a track.
+             * Sends title, artist, album and duration to lrclib.net.
+             */
+            val FALLBACK_ENABLED = booleanPreferencesKey("lyrics_fallback_enabled")
         }
 
         object Interface {
@@ -323,6 +329,10 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.SYNCED] ?: true
     }
 
+    val lyricsFallbackEnabled: Flow<Boolean> = dataStore.data.map {
+        it[Keys.Lyrics.FALLBACK_ENABLED] ?: true
+    }
+
     val lastTrackUri = dataStore.data.map { it[Keys.Playback.LAST_TRACK_URI] }
     val lastContextUri = dataStore.data.map { it[Keys.Playback.LAST_CONTEXT_URI] }
     val lastPositionMs = dataStore.data.map { it[Keys.Playback.LAST_POSITION_MS]?.toLongOrNull() }
@@ -471,6 +481,10 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setLyricsSynced(value: Boolean) {
         dataStore.edit { it[Keys.Lyrics.SYNCED] = value }
+    }
+
+    suspend fun setLyricsFallbackEnabled(value: Boolean) {
+        dataStore.edit { it[Keys.Lyrics.FALLBACK_ENABLED] = value }
     }
 
     suspend fun setDarkMode(mode: DarkModeSetting) {

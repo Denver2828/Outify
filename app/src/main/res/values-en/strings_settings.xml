@@ -187,6 +187,8 @@
     <string name="settings_lyrics_section">Lyrics</string>
     <string name="settings_lyrics_synced_title">Synced lyrics</string>
     <string name="settings_lyrics_synced_description">Follow and highlight the line being sung. Turn it off to see the full lyrics as static text.</string>
+    <string name="settings_lyrics_fallback_title">Look up lyrics on LRCLIB</string>
+    <string name="settings_lyrics_fallback_description">When Spotify has no lyrics, ask lrclib.net. The song title, artist, album and duration are sent.</string>
     <string name="settings_romanize_lyrics_title">Romanize lyrics</string>
     <string name="settings_romanize_lyrics_description">Show romanized text beneath original lyrics</string>
     <string name="settings_lyrics_early_title">Show lyrics early</string>

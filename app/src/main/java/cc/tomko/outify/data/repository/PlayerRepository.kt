@@ -3,7 +3,10 @@ package cc.tomko.outify.data.repository
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.LyricsResponse
 import cc.tomko.outify.core.model.LyricLine
+import cc.tomko.outify.core.model.LyricsResult
+import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.Track
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.withTimeout
@@ -14,22 +17,33 @@ class PlayerRepository @Inject constructor(
     private val spClient: SpClient,
     private val json: Json,
 ) {
-    suspend fun getLyrics(track: Track?, timeoutMs: Long = 2000L): List<LyricLine> =
+    /**
+     * Spotify's own lyrics for [track].
+     *
+     * The native call returns `null` both when Spotify answers 404 and when the request
+     * itself fails (the JNI layer logs the cause and collapses both to `null`). We treat
+     * `null` as [LyricsResult.NotFound]: the only cost of guessing wrong is caching a
+     * "no lyrics" answer for a track during an outage, and the fallback provider is
+     * consulted either way. Timeouts and parse failures are [LyricsResult.Error].
+     */
+    suspend fun getSpotifyLyrics(track: Track?, timeoutMs: Long = 2000L): LyricsResult =
         withContext(Dispatchers.IO) {
-            val id = track?.id ?: return@withContext emptyList()
+            val id = track?.id ?: return@withContext LyricsResult.NotFound
 
             val raw: String = try {
                 withTimeout(timeoutMs) {
-                    spClient.getLyrics(id) ?: ""
-                }
+                    spClient.getLyrics(id)
+                } ?: return@withContext LyricsResult.NotFound
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
                 e.printStackTrace()
-                return@withContext emptyList()
+                return@withContext LyricsResult.Error
             }
 
             return@withContext try {
                 val response: LyricsResponse = json.decodeFromString(raw)
-                response.lyrics.lines
+                val lines = response.lyrics.lines
                     .filter { it.words.isNotBlank() }
                     .map {
                         LyricLine(
@@ -37,9 +51,18 @@ class PlayerRepository @Inject constructor(
                             text = it.words
                         )
                     }
+                if (lines.isEmpty()) {
+                    LyricsResult.NotFound
+                } else {
+                    LyricsResult.Found(
+                        lines = lines,
+                        source = LyricsSource.SPOTIFY,
+                        synced = lines.any { it.timestampMs > 0L },
+                    )
+                }
             } catch (e: Exception) {
                 e.printStackTrace()
-                emptyList()
+                LyricsResult.Error
             }
         }
 }

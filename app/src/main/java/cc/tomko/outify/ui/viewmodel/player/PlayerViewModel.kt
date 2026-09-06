@@ -8,11 +8,13 @@ import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.LyricLine
+import cc.tomko.outify.core.model.LyricsResult
+import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.repository.LikedRepository
-import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
@@ -50,7 +52,7 @@ import kotlin.time.toDuration
 class PlayerViewModel @Inject constructor(
     val spirc: SpircWrapper,
     val imageLoader: ImageLoader,
-    private val playerRepository: PlayerRepository,
+    private val lyricsRepository: LyricsRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val settingsRepository: SettingsRepository,
     private val likedDao: LikedDao,
@@ -60,8 +62,17 @@ class PlayerViewModel @Inject constructor(
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 
-    private val _lyrics = MutableStateFlow<List<LyricLine>>(emptyList())
-    val lyrics: StateFlow<List<LyricLine>> = _lyrics
+    private val _lyricsResult = MutableStateFlow<LyricsResult>(LyricsResult.NotFound)
+    val lyrics: StateFlow<List<LyricLine>> = _lyricsResult
+        .map { it.linesOrEmpty }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, emptyList())
+
+    /**
+     * Provider that supplied the current lyrics; null when there are none.
+     */
+    val lyricsSource: StateFlow<LyricsSource?> = _lyricsResult
+        .map { (it as? LyricsResult.Found)?.source }
+        .stateIn(viewModelScope, SharingStarted.Eagerly, null)
 
     private val _positionMs =
         MutableStateFlow(playbackStateHolder.estimatePosition().inWholeMilliseconds)
@@ -98,8 +109,8 @@ class PlayerViewModel @Inject constructor(
      * True when the loaded lyrics carry real timestamps, so the card can highlight
      * and auto-scroll the active line. Lyrics with every timestamp at 0 are unsynced.
      */
-    val hasSyncedLyrics: StateFlow<Boolean> = _lyrics
-        .map { lines -> lines.isNotEmpty() && lines.any { it.timestampMs > 0L } }
+    val hasSyncedLyrics: StateFlow<Boolean> = _lyricsResult
+        .map { result -> result is LyricsResult.Found && result.synced && result.lines.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     val isShuffling = settingsRepository.shuffleEnabled
@@ -151,14 +162,14 @@ class PlayerViewModel @Inject constructor(
                 .map { it.currentAudio }
                 .distinctUntilChangedBy { it?.id }
                 .collectLatest { audio ->
-                    _lyrics.value = emptyList()
+                    _lyricsResult.value = LyricsResult.NotFound
                     val track = audio?.takeIf { it.isTrack() }?.sourceTrack ?: return@collectLatest
-                    _lyrics.value = try {
-                        playerRepository.getLyrics(track)
+                    _lyricsResult.value = try {
+                        lyricsRepository.getLyrics(track)
                     } catch (e: CancellationException) {
                         throw e
                     } catch (e: Exception) {
-                        emptyList()
+                        LyricsResult.Error
                     }
                 }
         }

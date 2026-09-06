@@ -213,6 +213,22 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 `ModalBottomSheet` de Material 3 limita el ancho de la hoja a 640 dp. En vertical no se nota; en apaisado la hoja de letras quedaba centrada con el reproductor asomando a ambos lados. Se pasa `sheetMaxWidth = Dp.Unspecified` para que cubra la pantalla completa. La pantalla apaisada nueva de 1.5.0 no tenía este límite porque no es una hoja.
 
+### 2026-09-06 — 1.6.0: letras de LRCLIB cuando Spotify no las tiene
+
+**Problema.** Para canciones sin letra en Spotify (por ejemplo "Duel - Stephen Lipson's Digital Variation" de Propaganda) la hoja de letras quedaba completamente negra: solo los episodios tenían un mensaje de "sin letra", y el repositorio devolvía una lista vacía tanto para "no existe" como para "se venció el tiempo" o "no se pudo leer la respuesta".
+
+**Decisión.** Un solo punto de entrada para letras (`LyricsRepository`) que consulta Spotify primero y, si no hay resultado, pide la letra a lrclib.net. El resultado deja de ser una lista y pasa a ser un tipo con tres salidas: encontrada (con origen y si está sincronizada), no encontrada, y error transitorio. La pantalla muestra "Buscando la letra…" mientras corre la búsqueda y "No encontramos la letra de esta canción" si ninguna fuente la tiene. Cuando la letra viene de LRCLIB, aparece una leyenda chica "Letra provista por LRCLIB" debajo del artista, en la hoja, en la vista apaisada y en la tarjeta del reproductor. Una letra en texto plano se muestra fija y sin controles de salto, porque no tiene tiempos.
+
+**Por qué LRCLIB y solo LRCLIB.** Es gratuito, no pide clave, devuelve letra sincronizada en formato LRC y permite pedir coincidencia exacta con título, artista, álbum y duración, que ya tenemos de Spotify. Primero se pide `/api/get` (coincidencia exacta); si responde 404, `/api/search` por título y artista y se elige el candidato con duración a ±5 segundos, prefiriendo el que tenga tiempos. Se descartaron por ahora los otros proveedores del proyecto hermano (KuGou, BetterLyrics, Paxsenix): sumarían latencia y superficie sin evidencia de que hagan falta.
+
+**Privacidad.** El fallback manda título, artista, álbum y duración a un tercero, así que es un interruptor en Ajustes › Reproducción › Letras ("Buscar letras en LRCLIB"), activado por defecto, y la descripción dice qué se envía. Apagado, no sale ninguna petición.
+
+**Caché.** Se recuerdan por canción tanto las letras encontradas como las que no existen (hasta 64 entradas), compartidas entre la tarjeta del reproductor, la hoja y el detalle de pista. Un "no encontrada" solo vale para la combinación de proveedores con la que se calculó: si se enciende el interruptor después, se vuelve a buscar. Los errores transitorios no se guardan, para reintentar la próxima vez.
+
+**Supuesto documentado.** La capa nativa devuelve `null` tanto cuando Spotify responde 404 como cuando la petición falla; no se tocó Rust para distinguirlos (obligaría a recompilar la librería nativa). Se toma `null` como "no existe": el costo de equivocarse es recordar un "sin letra" durante una caída, y el fallback se consulta de todas formas.
+
+**Se aprovechó para** proveer un `OkHttpClient` único por Hilt (antes `Recommendations` creaba el suyo) y agregar los primeros tests unitarios del proyecto: parser LRC y selección de candidato por duración.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

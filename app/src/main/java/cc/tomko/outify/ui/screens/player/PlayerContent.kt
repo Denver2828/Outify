@@ -101,6 +101,7 @@ import cc.tomko.outify.ui.components.AutoScrollingTextOnDemand
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.ToggleSegmentButton
 import cc.tomko.outify.ui.components.WavyMusicSlider
+import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.ui.components.player.LyricsCard
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
@@ -131,6 +132,7 @@ fun PlayerContent(
     val lyricsEffectivePositionMs by viewModel.lyricsEffectivePositionMs.collectAsState()
     val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
     val hasSyncedLyrics by viewModel.hasSyncedLyrics.collectAsState()
+    val lyricsSource by viewModel.lyricsSource.collectAsState()
 
     val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val layoutDirection = LocalLayoutDirection.current
@@ -265,6 +267,9 @@ fun PlayerContent(
                         activeIndex = activeIndex,
                         isSynced = hasSyncedLyrics,
                         fontScale = lyricsFontScale,
+                        sourceLabel = lyricsSource
+                            ?.takeIf { it != LyricsSource.SPOTIFY }
+                            ?.let { stringResource(R.string.sheet_lyrics_provided_by, it.displayName) },
                         onExpand = { GlobalPopupController.show(PopupSpec.Lyrics(lyricsTrack)) },
                         onSeek = { viewModel.onAction(PlayerAction.SeekTo(it)) },
                         modifier = Modifier

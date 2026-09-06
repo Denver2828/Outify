@@ -139,7 +139,6 @@
     <!-- Landscape fullscreen lyrics -->
     <string name="ui_landscape_lyrics_browse">Ir a la biblioteca</string>
     <string name="ui_landscape_lyrics_open">Ver letras</string>
-    <string name="ui_landscape_lyrics_empty">No hay letras para esta canción.</string>
 
     <string name="ui_color_saturation">Saturación</string>
     <string name="ui_color_lightness">Luminosidad</string>

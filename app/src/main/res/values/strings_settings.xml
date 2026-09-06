@@ -194,6 +194,8 @@
     <string name="settings_lyrics_section">Letras</string>
     <string name="settings_lyrics_synced_title">Letras sincronizadas</string>
     <string name="settings_lyrics_synced_description">Seguir y resaltar la línea que se está cantando. Desactivalo para ver la letra completa fija.</string>
+    <string name="settings_lyrics_fallback_title">Buscar letras en LRCLIB</string>
+    <string name="settings_lyrics_fallback_description">Cuando Spotify no tiene la letra, pedirla a lrclib.net. Se envían el título, el artista, el álbum y la duración de la canción.</string>
     <string name="settings_romanize_lyrics_title">Romanizar letras</string>
     <string name="settings_romanize_lyrics_description">Mostrar el texto romanizado debajo de la letra original</string>
     <string name="settings_lyrics_early_title">Mostrar letras antes</string>

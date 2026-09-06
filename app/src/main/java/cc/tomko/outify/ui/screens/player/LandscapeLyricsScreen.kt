@@ -39,6 +39,7 @@ import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.bottomsheet.LyricsList
+import cc.tomko.outify.ui.components.bottomsheet.LyricsSourceBadge
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
 /**
@@ -65,6 +66,8 @@ fun LandscapeLyricsScreen(
     val displayedTrack by viewModel.displayedTrack.collectAsState()
     val isEpisode by viewModel.isEpisode.collectAsState()
     val hasSyncedContent by viewModel.hasSyncedContent.collectAsState()
+    val lyricsSource by viewModel.lyricsSource.collectAsState()
+    val isLoadingLyrics by viewModel.isLoading.collectAsState()
 
     val isSynced = lyricsSynced && hasSyncedContent && isCurrentTrack
 
@@ -113,6 +116,7 @@ fun LandscapeLyricsScreen(
                     maxLines = 1,
                     overflow = TextOverflow.Ellipsis
                 )
+                LyricsSourceBadge(source = lyricsSource)
             }
         }
 
@@ -130,9 +134,11 @@ fun LandscapeLyricsScreen(
                     textAlign = TextAlign.Center,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
-            } else if (lyrics.isEmpty()) {
+            } else if (isLoadingLyrics || lyrics.isEmpty()) {
                 Text(
-                    text = stringResource(R.string.ui_landscape_lyrics_empty),
+                    text = stringResource(
+                        if (isLoadingLyrics) R.string.sheet_lyrics_loading else R.string.sheet_lyrics_not_found
+                    ),
                     style = MaterialTheme.typography.bodyLarge,
                     color = inactiveTextColor,
                     textAlign = TextAlign.Center,

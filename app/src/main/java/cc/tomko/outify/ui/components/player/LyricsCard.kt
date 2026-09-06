@@ -66,6 +66,8 @@ fun LyricsCard(
     onExpand: () -> Unit,
     onSeek: (Long) -> Unit,
     modifier: Modifier = Modifier,
+    /** Caption naming a non-Spotify provider, e.g. "Lyrics provided by LRCLIB". */
+    sourceLabel: String? = null,
 ) {
     val containerColor = MaterialTheme.colorScheme.primaryContainer
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
@@ -115,11 +117,21 @@ fun LyricsCard(
                 horizontalArrangement = Arrangement.SpaceBetween,
                 verticalAlignment = Alignment.CenterVertically,
             ) {
-                Text(
-                    text = stringResource(R.string.ui_lyrics_card_title),
-                    style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
-                    color = contentColor,
-                )
+                Column(modifier = Modifier.weight(1f)) {
+                    Text(
+                        text = stringResource(R.string.ui_lyrics_card_title),
+                        style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.Bold),
+                        color = contentColor,
+                    )
+                    if (sourceLabel != null) {
+                        Text(
+                            text = sourceLabel,
+                            style = MaterialTheme.typography.labelSmall,
+                            color = contentColor.copy(alpha = InactiveLineAlpha),
+                            maxLines = 1,
+                        )
+                    }
+                }
 
                 FilledTonalIconButton(
                     onClick = onExpand,

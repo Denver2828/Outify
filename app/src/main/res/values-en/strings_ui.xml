@@ -139,7 +139,6 @@
     <!-- Landscape fullscreen lyrics -->
     <string name="ui_landscape_lyrics_browse">Go to the library</string>
     <string name="ui_landscape_lyrics_open">Show lyrics</string>
-    <string name="ui_landscape_lyrics_empty">No lyrics for this song.</string>
 
     <string name="ui_color_saturation">Saturation</string>
     <string name="ui_color_lightness">Lightness</string>

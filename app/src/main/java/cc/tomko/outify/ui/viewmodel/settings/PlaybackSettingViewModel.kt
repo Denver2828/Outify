@@ -41,6 +41,9 @@ class PlaybackSettingViewModel @Inject constructor(
     val lyricsSynced: Flow<Boolean> =
         settingsRepository.lyricsSynced
 
+    val lyricsFallbackEnabled: Flow<Boolean> =
+        settingsRepository.lyricsFallbackEnabled
+
     val clientId: Flow<String?> =
         settingsRepository.clientId
 
@@ -114,6 +117,12 @@ class PlaybackSettingViewModel @Inject constructor(
     fun setLyricsSynced(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setLyricsSynced(enabled)
+        }
+    }
+
+    fun setLyricsFallbackEnabled(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsFallbackEnabled(enabled)
         }
     }
 

@@ -4,12 +4,15 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.LyricLine
+import cc.tomko.outify.core.model.LyricsResult
+import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
-import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -25,16 +28,47 @@ import javax.inject.Inject
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
 
+/**
+ * What the lyrics screens should draw for the displayed track.
+ */
+sealed class LyricsUiState {
+    data object Loading : LyricsUiState()
+
+    data class Found(
+        val lines: List<LyricLine>,
+        val source: LyricsSource,
+        val synced: Boolean,
+    ) : LyricsUiState()
+
+    /** Nothing to show: no provider had lyrics, or every lookup failed. */
+    data object Missing : LyricsUiState()
+}
+
 @HiltViewModel
 class LyricsViewModel @Inject constructor(
-    private val playerRepository: PlayerRepository,
+    private val lyricsRepository: LyricsRepository,
     private val playbackStateHolder: PlaybackStateHolder,
     private val spirc: SpircWrapper,
     private val settingsRepository: SettingsRepository,
 ) : ViewModel() {
 
-    private val _lyrics = MutableStateFlow<List<LyricLine>>(emptyList())
-    val lyrics: StateFlow<List<LyricLine>> = _lyrics.asStateFlow()
+    private val _lyricsState = MutableStateFlow<LyricsUiState>(LyricsUiState.Missing)
+    val lyricsState: StateFlow<LyricsUiState> = _lyricsState.asStateFlow()
+
+    val lyrics: StateFlow<List<LyricLine>> = _lyricsState
+        .map { (it as? LyricsUiState.Found)?.lines ?: emptyList() }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
+
+    /**
+     * Provider that supplied the displayed lyrics; null while loading or when there are none.
+     */
+    val lyricsSource: StateFlow<LyricsSource?> = _lyricsState
+        .map { (it as? LyricsUiState.Found)?.source }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), null)
+
+    val isLoading: StateFlow<Boolean> = _lyricsState
+        .map { it is LyricsUiState.Loading }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /**
      * Real playback position. Drives the time label and the seek slider.
@@ -84,13 +118,17 @@ class LyricsViewModel @Inject constructor(
     private val _isEpisode = MutableStateFlow(false)
     val isEpisode: StateFlow<Boolean> = _isEpisode.asStateFlow()
 
-    val hasSyncedContent: StateFlow<Boolean> = _lyrics
-        .map { it.isNotEmpty() }
+    /**
+     * True only when the displayed lyrics carry real timestamps; plain-text
+     * lyrics from a fallback provider cannot follow the playback position.
+     */
+    val hasSyncedContent: StateFlow<Boolean> = _lyricsState
+        .map { state -> state is LyricsUiState.Found && state.synced && state.lines.isNotEmpty() }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
-    private val lyricsCache = mutableMapOf<String, List<LyricLine>>()
     private var followCurrentTrack = false
     private var currentAudioObserver: Job? = null
+    private var fetchJob: Job? = null
 
     val currentAudio: StateFlow<PlayableAudio?> = playbackStateHolder.state
         .map { it.currentAudio }
@@ -153,8 +191,9 @@ class LyricsViewModel @Inject constructor(
                         _isCurrentTrack.value = false
                     }
                 } else {
+                    fetchJob?.cancel()
                     _isEpisode.value = true
-                    _lyrics.value = emptyList()
+                    _lyricsState.value = LyricsUiState.Missing
                     _isCurrentTrack.value = false
                 }
             }
@@ -162,17 +201,33 @@ class LyricsViewModel @Inject constructor(
     }
 
     private fun fetchLyrics(track: Track) {
-        val trackId = track.id
-        val cached = lyricsCache[trackId]
+        fetchJob?.cancel()
+
+        val cached = lyricsRepository.cached(track)
         if (cached != null) {
-            _lyrics.value = cached
+            _lyricsState.value = cached.toUiState()
             return
         }
-        viewModelScope.launch {
-            val result = playerRepository.getLyrics(track)
-            _lyrics.value = result
-            lyricsCache[trackId] = result
+
+        _lyricsState.value = LyricsUiState.Loading
+        fetchJob = viewModelScope.launch {
+            val result = try {
+                lyricsRepository.getLyrics(track)
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                LyricsResult.Error
+            }
+            // A newer track may have been requested while this lookup ran
+            if (_displayedTrack.value?.id == track.id) {
+                _lyricsState.value = result.toUiState()
+            }
         }
+    }
+
+    private fun LyricsResult.toUiState(): LyricsUiState = when (this) {
+        is LyricsResult.Found -> LyricsUiState.Found(lines, source, synced)
+        LyricsResult.NotFound, LyricsResult.Error -> LyricsUiState.Missing
     }
 
     fun seekTo(timestampMs: Long) {

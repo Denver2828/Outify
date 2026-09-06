@@ -3,6 +3,17 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.6.0 -->
+    <string name="changelog_1_6_0_version" translatable="false">1.6.0</string>
+    <string name="changelog_1_6_0_date">6 de septiembre de 2026</string>
+    <string name="changelog_1_6_0_title">Letras de LRCLIB cuando Spotify no las tiene</string>
+    <string-array name="changelog_1_6_0_bullets">
+        <item>Si Spotify no tiene la letra de una canción, la app la busca sola en lrclib.net y la muestra con el aviso "Letra provista por LRCLIB" debajo del título. Si viene sincronizada, se sigue igual que siempre; si es texto plano, se muestra fija.</item>
+        <item>La pantalla de letras ya no queda en negro: mientras busca dice "Buscando la letra…" y, si ninguna fuente la tiene, "No encontramos la letra de esta canción".</item>
+        <item>Nuevo interruptor en Ajustes › Reproducción › Letras, "Buscar letras en LRCLIB", activado por defecto. Al apagarlo no se envía nada a lrclib.net.</item>
+        <item>Las letras encontradas y las que no existen se recuerdan por canción, así no se vuelve a consultar cada vez que abrís la pantalla.</item>
+    </string-array>
+
     <!-- 1.5.1 -->
     <string name="changelog_1_5_1_version" translatable="false">1.5.1</string>
     <string name="changelog_1_5_1_date">5 de septiembre de 2026</string>

@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.LyricLine
+import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
@@ -94,6 +95,8 @@ fun LyricsBottomSheet(
     val displayedTrack by viewModel.displayedTrack.collectAsState()
     val isEpisode by viewModel.isEpisode.collectAsState()
     val hasSyncedContent by viewModel.hasSyncedContent.collectAsState()
+    val lyricsSource by viewModel.lyricsSource.collectAsState()
+    val isLoadingLyrics by viewModel.isLoading.collectAsState()
 
     val showPlaybackControls = hasSyncedContent && isCurrentTrack
 
@@ -172,6 +175,7 @@ fun LyricsBottomSheet(
                         color = MaterialTheme.colorScheme.onSurfaceVariant,
                         maxLines = 1
                     )
+                    LyricsSourceBadge(source = lyricsSource)
                 }
             }
 
@@ -188,6 +192,23 @@ fun LyricsBottomSheet(
                 ) {
                     Text(
                         text = stringResource(R.string.sheet_lyrics_no_lyrics_episodes),
+                        style = MaterialTheme.typography.bodyLarge,
+                        color = inactiveTextColor,
+                        textAlign = TextAlign.Center
+                    )
+                }
+            } else if (isLoadingLyrics || lyrics.isEmpty()) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .weight(1f)
+                        .padding(horizontal = 20.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = stringResource(
+                            if (isLoadingLyrics) R.string.sheet_lyrics_loading else R.string.sheet_lyrics_not_found
+                        ),
                         style = MaterialTheme.typography.bodyLarge,
                         color = inactiveTextColor,
                         textAlign = TextAlign.Center
@@ -296,6 +317,25 @@ fun LyricsBottomSheet(
 /**
  * Auto-centering lyric list. Shared with the landscape fullscreen lyrics screen.
  */
+/**
+ * Small caption naming the provider when the lyrics did not come from Spotify.
+ * Renders nothing for Spotify lyrics or while there are none.
+ */
+@Composable
+internal fun LyricsSourceBadge(
+    source: LyricsSource?,
+    modifier: Modifier = Modifier,
+) {
+    if (source == null || source == LyricsSource.SPOTIFY) return
+    Text(
+        text = stringResource(R.string.sheet_lyrics_provided_by, source.displayName),
+        style = MaterialTheme.typography.labelSmall,
+        color = MaterialTheme.colorScheme.primary,
+        maxLines = 1,
+        modifier = modifier.padding(top = 2.dp)
+    )
+}
+
 @Composable
 internal fun LyricsList(
     lyrics: List<LyricLine>,

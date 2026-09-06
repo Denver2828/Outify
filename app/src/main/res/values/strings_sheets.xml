@@ -135,6 +135,9 @@
     <string name="sheet_lyrics_unknown_track">Canción desconocida</string>
     <string name="sheet_lyrics_unknown_artist">Artista desconocido</string>
     <string name="sheet_lyrics_no_lyrics_episodes">Los episodios no tienen letras</string>
+    <string name="sheet_lyrics_loading">Buscando la letra…</string>
+    <string name="sheet_lyrics_not_found">No encontramos la letra de esta canción.</string>
+    <string name="sheet_lyrics_provided_by">Letra provista por %1$s</string>
 
     <!-- Playback devices -->
     <string name="sheet_devices_cd">Dispositivos</string>

@@ -14,6 +14,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
+import androidx.compose.material.icons.filled.CloudDownload
 import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.HighQuality
@@ -95,6 +96,7 @@ fun PlaybackSettingScreen(
     val lyricsOffsetMs by viewModel.lyricsOffsetMs.collectAsState(initial = DEFAULT_LYRICS_OFFSET_MS)
     val lyricsFontScale by viewModel.lyricsFontScale.collectAsState(initial = 1.0f)
     val lyricsSynced by viewModel.lyricsSynced.collectAsState(initial = true)
+    val lyricsFallbackEnabled by viewModel.lyricsFallbackEnabled.collectAsState(initial = true)
     val savedClientId by viewModel.clientId.collectAsState(initial = null)
     val savedClientSecret by viewModel.clientSecret.collectAsState(initial = null)
 
@@ -267,6 +269,14 @@ fun PlaybackSettingScreen(
                             icon = { Icon(Icons.Default.Lyrics, contentDescription = null) },
                             onCheckedChange = { viewModel.setLyricsSynced(it) },
                             isChecked = lyricsSynced
+                        )
+
+                        SwitchPreferenceEntry(
+                            title = { Text(stringResource(R.string.settings_lyrics_fallback_title)) },
+                            description = stringResource(R.string.settings_lyrics_fallback_description),
+                            icon = { Icon(Icons.Default.CloudDownload, contentDescription = null) },
+                            onCheckedChange = { viewModel.setLyricsFallbackEnabled(it) },
+                            isChecked = lyricsFallbackEnabled
                         )
 
                         SwitchPreferenceEntry(

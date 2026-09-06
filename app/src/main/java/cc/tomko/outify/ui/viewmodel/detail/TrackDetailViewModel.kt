@@ -11,7 +11,7 @@ import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.LikedRepository
-import cc.tomko.outify.data.repository.PlayerRepository
+import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.track.TrackUiState
@@ -37,7 +37,7 @@ class TrackDetailViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     private val spClient: SpClient,
-    private val playerRepository: PlayerRepository,
+    private val lyricsRepository: LyricsRepository,
     private val likedRepository: LikedRepository,
     private val likedDao: LikedDao,
     settingsRepository: SettingsRepository,
@@ -109,7 +109,7 @@ class TrackDetailViewModel @Inject constructor(
                 }
 
                 val lyrics = withContext(Dispatchers.IO) {
-                    playerRepository.getLyrics(track)
+                    lyricsRepository.getLyrics(track).linesOrEmpty
                 }
 
                 _uiState.value = TrackUiState(
