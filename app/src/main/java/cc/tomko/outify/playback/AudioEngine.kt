@@ -375,6 +375,7 @@ class AudioEngine(
             pcmBuffer.order(ByteOrder.nativeOrder())
 
             framesReceived++
+            PcmActivity.noteFrame()
             lastPcmSize = size
             lastPcmSampleRate = sampleRate
             lastPcmChannels = channels

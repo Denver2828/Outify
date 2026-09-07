@@ -135,7 +135,10 @@ class PlaybackStateHolder @Inject constructor() {
     private fun computePositionLocked(): Duration {
         val cur = _state.value
         if (!cur.isPlaying) return cur.position.active
-        val elapsed = System.currentTimeMillis() - cur.position.lastSync
+        // While the stream is stalled (no PCM for a while) the clock stops at the last frame,
+        // otherwise the counter keeps running with no audio behind it.
+        val end = PcmActivity.extrapolationEndMs(System.currentTimeMillis(), PcmActivity.lastFrameAtMs)
+        val elapsed = (end - cur.position.lastSync).coerceAtLeast(0L)
 
         // multiply by playbackSpeed
         val scaled = (elapsed * cur.playbackSpeed).toLong()
