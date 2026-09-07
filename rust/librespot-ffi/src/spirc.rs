@@ -244,17 +244,19 @@ impl SpircRuntime {
 
         let req = LoadRequest::from_context_uri(uri.clone(), modified_options.clone());
 
-        let context = CurrentContext {
-            uri,
-            options: modified_options,
-        };
+        self.spirc.load(req)?;
 
+        // Only a load that was accepted may become the context `resume_playback` falls back
+        // to; a rejected one must not overwrite the last good context.
         if let Some(mutex) = CURRENT_CONTEXT.get() {
             let mut guard = mutex.lock().unwrap();
-            *guard = Some(context);
+            *guard = Some(CurrentContext {
+                uri,
+                options: modified_options,
+            });
         }
 
-        self.spirc.load(req)
+        Ok(())
     }
 
     pub fn add_to_queue(&self, uri: SpotifyUri) -> Result<(), librespot_core::error::Error> {
@@ -521,16 +523,21 @@ fn handle_event(event: PlayerEvent) {
             notify_device_state(is_now_active);
         }
 
+        // librespot emits SessionConnected when this device becomes the active Connect
+        // device (`handle_activate`) and SessionDisconnected when it stops being it
+        // (`handle_disconnect`), so these two arms own `IS_DEVICE_ACTIVE`.
         PlayerEvent::SessionConnected {
             connection_id: _,
             user_name: _,
         } => {
+            IS_DEVICE_ACTIVE.store(true, std::sync::atomic::Ordering::Relaxed);
             notify_device_state(true);
         }
         PlayerEvent::SessionDisconnected {
             connection_id: _,
             user_name: _,
         } => {
+            IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
             notify_device_state(false);
         }
         PlayerEvent::VolumeChanged { volume } => {
@@ -569,6 +576,9 @@ pub async fn initialize_spirc(
     bitrate: Bitrate,
 ) -> Result<(), SpircError> {
     debug!("initializing spirc runtime");
+
+    // A fresh Spirc starts inactive until librespot reports SessionConnected.
+    IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
 
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
 
@@ -739,6 +749,7 @@ pub fn shutdown() {
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
     let mut guard = lock.write().unwrap();
     *guard = None;
+    IS_DEVICE_ACTIVE.store(false, std::sync::atomic::Ordering::Relaxed);
 
     info!("spirc runtime shut down");
 }

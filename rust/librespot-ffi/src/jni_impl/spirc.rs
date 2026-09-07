@@ -310,8 +310,12 @@ pub extern "system" fn set_queue(
         match env.get_string(&playing_track) {
             Ok(j) => {
                 let uri: String = j.into();
-                let outify_uri = OutifyUri::from_uri(&uri);
-                Some(PlayingTrack::Uri(outify_uri.to_uri()))
+                let uri_string = OutifyUri::from_uri(&uri).to_uri();
+                if uri_string == OutifyUri::NO_SESSION_URI {
+                    warn!("set_queue playing_track needs a collection uri but there is no session");
+                    return 0;
+                }
+                Some(PlayingTrack::Uri(uri_string))
             }
             Err(e) => {
                 error!("jni get_string failed for set_queue playing_track: {e}");
@@ -684,22 +688,27 @@ pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_nextTracks(
 
 // Resolves passed in JString or fallbacks to users collection
 fn resolve_uri_or_collection(env: &mut JNIEnv, juri: JString) -> Result<String, ()> {
-    if juri.is_null() {
-        let outify_uri = OutifyUri::Liked;
-        Ok(outify_uri.to_uri())
+    let outify_uri = if juri.is_null() {
+        OutifyUri::Liked
     } else {
         match env.get_string(&juri) {
             Ok(js) => {
                 let uri: String = js.into();
-                let outify_uri = OutifyUri::from_uri(&uri);
-                Ok(outify_uri.to_uri())
+                OutifyUri::from_uri(&uri)
             }
             Err(e) => {
                 warn!("jni get_string failed for resolve_uri: {e}");
-                Err(())
+                return Err(());
             }
         }
+    };
+
+    let uri_string = outify_uri.to_uri();
+    if uri_string == OutifyUri::NO_SESSION_URI {
+        warn!("cannot resolve a collection uri without a session");
+        return Err(());
     }
+    Ok(uri_string)
 }
 
 // Optional JString

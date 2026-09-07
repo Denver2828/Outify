@@ -1,6 +1,6 @@
 use std::{
     pin::Pin, sync::{
-        RwLock, atomic::{AtomicBool, Ordering},
+        RwLock, atomic::{AtomicBool, AtomicU64, Ordering},
     },
 };
 
@@ -12,6 +12,10 @@ use once_cell::sync::OnceCell;
 pub static SESSION: OnceCell<RwLock<Option<Session>>> = OnceCell::new();
 pub static SESSION_CALLBACK: OnceCell<RwLock<Option<GlobalRef>>> = OnceCell::new();
 static IS_AUTO_RESTARTING: AtomicBool = AtomicBool::new(false);
+/// Bumped by every [`initialize_session`]. A shutdown listener only acts for the session it
+/// was spawned with; an older session that shuts down later (e.g. one whose Spirc init failed
+/// during a restart attempt) must not restart the healthy one.
+static SESSION_GENERATION: AtomicU64 = AtomicU64::new(0);
 const MAX_RESTART_ATTEMPTS: u32 = 8;
 const MAX_RESTART_BACKOFF_SECS: u64 = 30;
 
@@ -64,11 +68,13 @@ pub async fn initialize_session() {
     };
     let session = Session::with_handle(session_config, Some(cache), handle);
 
+    let generation = SESSION_GENERATION.fetch_add(1, Ordering::AcqRel) + 1;
+
     let mut guard = container.write().unwrap();
     *guard = Some(session.clone());
 
-    start_shutdown_listener(session);
-    debug!("session initialized");
+    start_shutdown_listener(session, generation);
+    debug!("session initialized (generation {generation})");
 }
 
 // Connects the already initialized session
@@ -99,7 +105,7 @@ pub async fn connect() -> Result<Session, librespot_core::Error> {
 }
 
 // Listens for session shutdowns
-fn start_shutdown_listener(session: Session) {
+fn start_shutdown_listener(session: Session, generation: u64) {
     let rt = match TOKIO_RUNTIME.get() {
         Some(r) => r,
         None => {
@@ -111,6 +117,12 @@ fn start_shutdown_listener(session: Session) {
     rt.handle().spawn(async move {
         let mut shutdown_rx = session.subscribe_shutdown();
         shutdown_rx.changed().await.ok();
+
+        let current = SESSION_GENERATION.load(Ordering::Acquire);
+        if current != generation {
+            debug!("ignoring shutdown of superseded session {generation} (current {current})");
+            return;
+        }
 
         if IS_AUTO_RESTARTING.swap(true, Ordering::Acquire) {
             warn!("auto-restart already in progress, skipping");
@@ -152,6 +164,9 @@ fn start_shutdown_listener(session: Session) {
                         error!("auto-restart gave up; a manual restart is required");
                         return;
                     }
+                    // The session may already be connected when Spirc init fails; close its
+                    // socket so it does not linger as an orphan behind the next attempt.
+                    let _ = with_session(|s| s.shutdown());
                     cleanup().await;
                     let delay_secs = (2u64.pow(attempt)).min(MAX_RESTART_BACKOFF_SECS);
                     warn!("retrying session restart in {delay_secs} s");
@@ -231,7 +246,12 @@ async fn cleanup() {
 /// reconnect). Never panics: this runs on JNI threads where a panic aborts the whole app.
 pub fn get_username() -> Option<String> {
     match with_session(|session| session.username()) {
-        Ok(name) => Some(name),
+        Ok(name) if !name.is_empty() => Some(name),
+        Ok(_) => {
+            // `Session::username()` is "" until the session has connected.
+            warn!("username unavailable: session not connected yet");
+            None
+        }
         Err(e) => {
             warn!("username unavailable: {e}");
             None
