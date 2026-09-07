@@ -176,21 +176,24 @@ impl SpotifyClient {
         }
     }
 
+    /// Whether an account token is stored. Deliberately offline: "is the account connected?"
+    /// must not depend on a token refresh succeeding right now (no network, a 429 window),
+    /// which used to flip the UI to "connect with Spotify" every time the hourly token
+    /// expired while the network was unavailable. A revoked refresh token surfaces later as
+    /// an authentication error on the first real API call.
     pub async fn is_oauth_authenticated(&self) -> bool {
-        match self.load_token().await {
-            Ok(Some(_)) => true,
-            _ => false,
-        }
+        matches!(self.read_stored_token(), Ok(Some(_)))
     }
 
     pub async fn get_scope(&self) -> Option<String> {
-        match self.load_token().await {
+        match self.read_stored_token() {
             Ok(Some(t)) => Some(t.scope),
             _ => None,
         }
     }
 
-    pub async fn load_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
+    /// Reads the stored token without refreshing it.
+    fn read_stored_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
         let mut path = crate::FILES_DIR
             .get()
             .ok_or_else(|| SpotifyApiError::Generic("Android file path is not set!".to_string()))?
@@ -198,12 +201,19 @@ impl SpotifyClient {
 
         path.push("account.json");
 
-        let token = match std::fs::read_to_string(&path) {
-            Ok(contents) => serde_json::from_str::<WebApiToken>(&contents).map_err(|e| {
-                SpotifyApiError::Generic(format!("Failed to parse token JSON: {e}"))
-            })?,
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => return Ok(None),
-            Err(e) => return Err(SpotifyApiError::IO(e)),
+        match std::fs::read_to_string(&path) {
+            Ok(contents) => serde_json::from_str::<WebApiToken>(&contents)
+                .map(Some)
+                .map_err(|e| SpotifyApiError::Generic(format!("Failed to parse token JSON: {e}"))),
+            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Err(e) => Err(SpotifyApiError::IO(e)),
+        }
+    }
+
+    pub async fn load_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
+        let token = match self.read_stored_token()? {
+            Some(t) => t,
+            None => return Ok(None),
         };
 
         if token.is_expired() {
