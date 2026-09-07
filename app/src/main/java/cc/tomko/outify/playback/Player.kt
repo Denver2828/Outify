@@ -24,6 +24,7 @@ import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlayState
+import cc.tomko.outify.playback.model.RepeatMode
 import cc.tomko.outify.services.PlaybackService
 import coil3.Bitmap
 import coil3.ImageLoader
@@ -36,8 +37,13 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.drop
+import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
+import com.google.common.util.concurrent.SettableFuture
 import kotlinx.serialization.json.Json
 import java.io.ByteArrayOutputStream
 import javax.inject.Inject
@@ -53,11 +59,28 @@ class Player @Inject constructor(
     val spirc: SpircWrapper,
     val json: Json,
     val imageLoader: ImageLoader,
+    private val modeController: PlaybackModeController,
 ) : SimpleBasePlayer(application.mainLooper) {
 
     private val appContext: Context = application.applicationContext
 
     private val scope = CoroutineScope(Dispatchers.Main.immediate + SupervisorJob())
+
+    init {
+        // Repeat/shuffle can change from the in-app controls, the notification buttons or a
+        // remote controller; every writer lands in the state holder, so this is the single
+        // place that turns those changes into Media3 listener events.
+        // The current value is read directly by getState(); only later changes need an
+        // invalidation, and skipping the first emission keeps invalidateState() out of
+        // the constructor.
+        scope.launch {
+            stateHolder.state
+                .map { it.repeatMode to it.shuffleEnabled }
+                .distinctUntilChanged()
+                .drop(1)
+                .collect { invalidateState() }
+        }
+    }
     @Volatile
     var currentArtworkBitmap: Bitmap? = null
     @Volatile
@@ -286,6 +309,8 @@ class Player @Inject constructor(
             .setPlaybackState(STATE_IDLE)
             .setAvailableCommands(determineCommands())
             .setPlayWhenReady(false, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
+            .setRepeatMode(ps.repeatMode.toMediaRepeatMode())
+            .setShuffleModeEnabled(ps.shuffleEnabled)
             .setPlaylist(emptyList())
             .build()
 
@@ -335,6 +360,8 @@ class Player @Inject constructor(
             .setAvailableCommands(determineCommands())
             .setPlayWhenReady(ps.isPlaying, PLAY_WHEN_READY_CHANGE_REASON_USER_REQUEST)
             .setPlaybackParameters(PlaybackParameters(ps.playbackSpeed))
+            .setRepeatMode(ps.repeatMode.toMediaRepeatMode())
+            .setShuffleModeEnabled(ps.shuffleEnabled)
             .setCurrentMediaItemIndex(if (playlist.isNotEmpty()) 0 else C.INDEX_UNSET)
             .setContentPositionMs(ps.position.active.inWholeMilliseconds)
             .setIsLoading(ps.state == PlayState.BUFFERING)
@@ -390,21 +417,40 @@ class Player @Inject constructor(
         return Futures.immediateVoidFuture()
     }
 
-    // TODO: Handle repeat mode
-    override fun handleSetRepeatMode(repeatMode: Int): ListenableFuture<*> {
-//        spirc.setRepeatMode(when (repeatMode) {
-//            Player.REPEAT_MODE_ONE -> RepeatMode.ONE
-//            Player.REPEAT_MODE_ALL -> RepeatMode.ALL
-//            else -> RepeatMode.NONE
-//        })
-        return Futures.immediateVoidFuture()
-    }
-
-    override fun handleSetShuffleModeEnabled(shuffleModeEnabled: Boolean): ListenableFuture<*> {
-        scope.launch(Dispatchers.IO) {
-            spirc.shuffle(shuffleModeEnabled)
+    /**
+     * Standard Media3 repeat command (Android Auto, Bluetooth AVRCP, Wear, media buttons).
+     * Shares the exact path of the in-app control and the notification button, so the
+     * mode reported back through [getState] is the one Spirc is actually running.
+     */
+    override fun handleSetRepeatMode(repeatMode: Int): ListenableFuture<*> =
+        modeOperation("repeat=$repeatMode") {
+            modeController.setRepeatMode(RepeatMode.fromMediaRepeatMode(repeatMode))
         }
-        return Futures.immediateVoidFuture()
+
+    override fun handleSetShuffleModeEnabled(shuffleModeEnabled: Boolean): ListenableFuture<*> =
+        modeOperation("shuffle=$shuffleModeEnabled") {
+            modeController.setShuffleEnabled(shuffleModeEnabled)
+        }
+
+    /**
+     * Runs a mode change off the main thread and completes the future once Spirc has
+     * answered, so controllers do not see success before the change is issued. The JNI
+     * call is not cancellable: on timeout the future completes (the placeholder state is
+     * dropped and [getState] keeps reporting the last confirmed mode) while the native
+     * call finishes in the background and reconciles through the state holder.
+     */
+    private fun modeOperation(label: String, block: suspend () -> Boolean): ListenableFuture<*> {
+        val future = SettableFuture.create<Unit>()
+        scope.launch {
+            val accepted = withTimeoutOrNull(MODE_COMMAND_TIMEOUT_MS) { block() }
+            when (accepted) {
+                null -> Log.w("Player", "Mode change timed out: $label")
+                false -> Log.w("Player", "Mode change rejected by Spirc: $label")
+                true -> Unit
+            }
+            future.set(Unit)
+        }
+        return future
     }
 
     override fun handleSetPlaybackParameters(playbackParameters: PlaybackParameters): ListenableFuture<*> {
@@ -452,5 +498,10 @@ class Player @Inject constructor(
             .add(COMMAND_STOP)
 
         return builder.build()
+    }
+
+    private companion object {
+        /** Upper bound for a repeat/shuffle change before the controller is released. */
+        const val MODE_COMMAND_TIMEOUT_MS = 5_000L
     }
 }

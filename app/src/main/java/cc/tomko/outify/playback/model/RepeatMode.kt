@@ -34,5 +34,13 @@ enum class RepeatMode(
                 repeat -> ALL
                 else -> NONE
             }
+
+        /** Maps a Media3 [Player.RepeatMode] constant; unknown values fall back to [NONE]. */
+        fun fromMediaRepeatMode(@Player.RepeatMode mediaRepeatMode: Int): RepeatMode =
+            when (mediaRepeatMode) {
+                REPEAT_MODE_ONE -> ONE
+                REPEAT_MODE_ALL -> ALL
+                else -> NONE
+            }
     }
 }

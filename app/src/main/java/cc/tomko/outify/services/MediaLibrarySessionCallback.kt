@@ -129,7 +129,10 @@ class MediaLibrarySessionCallback @Inject constructor(
      */
     var toggleLike: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
     var toggleStartRadio: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
-    var toggleRepeatMode: () -> Unit = {}
+
+    /** Repeat/shuffle reach Spirc through JNI; same confirmed-outcome contract as above. */
+    var toggleRepeatMode: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
+    var toggleShuffle: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
 
     /** Results of the most recent [onSearch], served back by [onGetSearchResult]. */
     @Volatile
@@ -184,10 +187,8 @@ class MediaLibrarySessionCallback @Inject constructor(
         return when (customCommand.customAction) {
             MediaSessionConstants.ACTION_TOGGLE_LIKE -> confirmedResult(toggleLike())
             MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> confirmedResult(toggleStartRadio())
-            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> {
-                toggleRepeatMode()
-                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
-            }
+            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> confirmedResult(toggleRepeatMode())
+            MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> confirmedResult(toggleShuffle())
             else -> Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED))
         }
     }

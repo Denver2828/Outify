@@ -16,6 +16,7 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.playback.PlaybackModeController
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.playback.model.RepeatMode
@@ -58,6 +59,7 @@ class PlayerViewModel @Inject constructor(
     private val likedDao: LikedDao,
     private val likedRepository: LikedRepository,
     private val spClient: SpClient,
+    private val modeController: PlaybackModeController,
 ) : ViewModel() {
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
@@ -222,22 +224,14 @@ class PlayerViewModel @Inject constructor(
                     }
                 }
 
+                // Shared with the notification buttons and the Media3 commands, so the
+                // in-app control, remote controllers and Spirc report the same mode.
                 PlayerAction.RepeatToggle -> {
-                    val current = settingsRepository.repeatMode.first()
-                    val next = current.next()
-                    viewModelScope.launch {
-                        settingsRepository.setRepeat(next.repeat)
-                        settingsRepository.setRepeatTrack(next.repeatTrack)
-                        spirc.repeat(next.repeat, next.repeatTrack)
-                    }
+                    viewModelScope.launch { modeController.toggleRepeatMode() }
                 }
 
                 PlayerAction.ShuffleToggle -> {
-                    val newValue = !isShuffling.value
-                    viewModelScope.launch {
-                        settingsRepository.setShuffle(newValue)
-                        spirc.shuffle(newValue)
-                    }
+                    viewModelScope.launch { modeController.toggleShuffle() }
                 }
             }
         }

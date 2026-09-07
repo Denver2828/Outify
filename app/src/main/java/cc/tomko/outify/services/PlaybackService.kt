@@ -38,6 +38,7 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.playback.PlaybackModeController
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.playback.Player
 import cc.tomko.outify.playback.model.RepeatMode
@@ -54,6 +55,7 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
 import javax.inject.Singleton
 
 
@@ -71,6 +73,9 @@ class PlaybackService : MediaLibraryService(),
         const val SEARCH = "search"
         const val LIKED = "liked"
         const val RECENT = "recent"
+
+        /** Bound for the notification repeat/shuffle buttons; the Spirc call itself is not cancellable. */
+        private const val MODE_COMMAND_TIMEOUT_MS = 5_000L
 
         const val NOTIFICATION_ID = 4894
         const val CHANNEL_ID = "outify_channel_01"
@@ -126,6 +131,9 @@ class PlaybackService : MediaLibraryService(),
     @Inject
     lateinit var likedRepository: LikedRepository
 
+    @Inject
+    lateinit var modeController: PlaybackModeController
+
     private var mediaLibrarySession: MediaLibrarySession? = null
     private var keepAlive: Boolean = true
     private val binder = MusicBinder()
@@ -163,6 +171,7 @@ class PlaybackService : MediaLibraryService(),
             toggleLike = ::toggleLike
             toggleStartRadio = ::toggleStartRadio
             toggleRepeatMode = ::toggleRepeatMode
+            toggleShuffle = ::toggleShuffle
         }
 
         mediaLibrarySession = MediaLibrarySession.Builder(this, player, mediaLibrarySessionCallback)
@@ -265,17 +274,23 @@ class PlaybackService : MediaLibraryService(),
         }
     }
 
-    private fun toggleRepeatMode() {
-        val state = playbackStateHolder.state.value
-        val repeatMode = state.repeatMode.next()
+    /**
+     * Notification / Android Auto custom buttons. Both go through [PlaybackModeController],
+     * the same path as the in-app controls and the standard Media3 commands, so the
+     * button, the player state and Spirc cannot disagree. The Spirc call is not
+     * cancellable, hence the timeout only bounds how long the command callback waits.
+     */
+    private fun toggleRepeatMode(): Deferred<Boolean?> = offloadScope.async {
+        withTimeoutOrNull(MODE_COMMAND_TIMEOUT_MS) {
+            modeController.toggleRepeatMode()
+            true
+        }
+    }
 
-        player.repeatMode = repeatMode.toMediaRepeatMode()
-
-        scope.launch {
-            settings.setRepeat(repeatMode.repeat)
-            settings.setRepeatTrack(repeatMode.repeatTrack)
-            playbackStateHolder.setRepeatMode(repeatMode)
-            spirc.repeat(repeatMode.repeat, repeatMode.repeatTrack)
+    private fun toggleShuffle(): Deferred<Boolean?> = offloadScope.async {
+        withTimeoutOrNull(MODE_COMMAND_TIMEOUT_MS) {
+            modeController.toggleShuffle()
+            true
         }
     }
 
@@ -361,15 +376,14 @@ class PlaybackService : MediaLibraryService(),
         }
     }
 
+    // Persistence and Spirc are owned by PlaybackModeController; these listeners only
+    // refresh what the session shows. Re-issuing the command from here would loop.
     override fun onRepeatModeChanged(repeatMode: Int) {
         updateNotification()
-        offloadScope.launch {
-            settings.setRepeat(repeatMode != REPEAT_MODE_OFF)
-        }
     }
 
     override fun onShuffleModeEnabledChanged(shuffleModeEnabled: Boolean) {
-        player.shuffleModeEnabled = shuffleModeEnabled
+        updateNotification()
     }
 
     override fun onUpdateNotification(session: MediaSession, startInForegroundRequired: Boolean) {
