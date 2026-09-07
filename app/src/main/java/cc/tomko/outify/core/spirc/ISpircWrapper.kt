@@ -16,7 +16,10 @@ interface ISpircWrapper {
     fun repeat(repeat: Boolean, repeatTrack: Boolean): Boolean
     fun shuffleLoad(uri: String? = null): Boolean
     fun addToQueue(uri: String?): Boolean
+    /** Replaces the next tracks; with [playingTrackUri] it also replaces the current track. */
     fun setQueue(uris: Array<String>, playingTrackUri: String? = null): Boolean
+    /** Inserts [uris] ahead of the next tracks, never touching the current track. */
+    fun insertNext(uris: List<String>): InsertNextResult
     fun activate(): Boolean
     fun transfer(): Boolean
     fun smartTransfer(): Boolean
@@ -30,5 +33,6 @@ interface ISpircWrapper {
     fun playerPrevious(): Boolean
     fun previousTracks(): String
     fun nextTracks(): String
-    fun playNext(trackUri: String): Boolean
+    /** Single-track convenience over [insertNext]. */
+    fun playNext(trackUri: String): InsertNextResult
 }

@@ -15,6 +15,7 @@ pub mod outifyuri;
 mod playback;
 mod profile;
 mod spirc;
+pub mod queue_plan;
 
 use std::path::PathBuf;
 

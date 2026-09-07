@@ -132,6 +132,26 @@ class SpircWrapper @Inject constructor(
         return Spirc.setQueue(uris, playingTrackUri)
     }
 
+    /**
+     * Inserts [uris] ahead of the next tracks. The current track, its position and (when nothing
+     * is queued ahead) the history are preserved; the native side reports which path it took.
+     * Duplicates are allowed, as in Spotify. When nothing is playing there is no "next" to insert
+     * ahead of, so the request is refused instead of silently starting playback.
+     */
+    override fun insertNext(uris: List<String>): InsertNextResult {
+        if (uris.isEmpty()) return InsertNextResult.FAILED
+        if (playbackStateHolder.state.value.currentAudio == null) {
+            return InsertNextResult.NOTHING_PLAYING
+        }
+        return try {
+            InsertNextResult.fromNative(Spirc.insertNext(uris.toTypedArray()))
+        } catch (e: UnsatisfiedLinkError) {
+            // Native library predates insertNext; never fall back to setQueue with a playing
+            // track, which would replace the current track.
+            InsertNextResult.FAILED
+        }
+    }
+
     override fun localLoad(uri: String): Boolean {
         scope.launch {
             savedQueueRepository.setActiveQueueId(null)
@@ -329,18 +349,8 @@ class SpircWrapper @Inject constructor(
     }
 
     /**
-     * Adds a track to play next (inserts at the beginning of the queue)
+     * Adds a track to play next (inserts at the beginning of the next tracks).
      * @param trackUri the track URI to play next
-     * @return `true` if successful
      */
-    override fun playNext(trackUri: String): Boolean {
-        val nextTracksJson = nextTracks()
-        return try {
-            val nextTracks: List<String> = json.decodeFromString(nextTracksJson)
-            val newQueue = arrayOf(trackUri) + nextTracks.toTypedArray()
-            setQueue(newQueue, trackUri)
-        } catch (_: Exception) {
-            false
-        }
-    }
+    override fun playNext(trackUri: String): InsertNextResult = insertNext(listOf(trackUri))
 }

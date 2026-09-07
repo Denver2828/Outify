@@ -20,6 +20,17 @@ use tokio::sync::mpsc;
 
 use crate::session::with_session;
 
+/// Result of [`SpircRuntime::insert_next`].
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum InsertNextOutcome {
+    /// Inserted through `add_to_queue`: current track, position, history and
+    /// provider flags untouched.
+    Inserted,
+    /// Inserted by rewriting the next tracks: current track and position kept,
+    /// but the previous-tracks history was cleared by the native handler.
+    InsertedHistoryCleared,
+}
+
 #[derive(Error, Debug)]
 pub enum SpircError {
     #[error("Spirc not initialized")]
@@ -237,12 +248,52 @@ impl SpircRuntime {
         self.spirc.add_to_queue(uri)
     }
 
+    /// Replaces the queue. When `playing_track` is set the native handler also
+    /// changes the current track, so only use it for an explicit "replace what
+    /// is playing" request; inserting ahead of the current track goes through
+    /// [`SpircRuntime::insert_next`].
     pub fn set_queue(
         &self,
         tracks: Vec<SpotifyUri>,
         playing_track: Option<PlayingTrack>,
     ) -> Result<(), librespot_core::Error> {
         self.spirc.set_queue(tracks, playing_track)
+    }
+
+    /// Inserts `uris` in front of the next tracks without touching the current
+    /// track or its position. See [`crate::queue_plan`] for the trade-offs of
+    /// the two underlying primitives.
+    pub async fn insert_next(
+        &self,
+        uris: Vec<SpotifyUri>,
+    ) -> Result<InsertNextOutcome, librespot_core::Error> {
+        if uris.is_empty() {
+            return Err(librespot_core::Error::invalid_argument(
+                "insert_next needs at least one uri",
+            ));
+        }
+
+        let existing = self.next_tracks().await?;
+        let new_uris: Vec<String> = uris.iter().map(|u| u.to_uri()).collect();
+
+        match crate::queue_plan::plan_insert_next(&new_uris, &existing) {
+            crate::queue_plan::InsertNextPlan::AddToQueue => {
+                for uri in uris {
+                    self.spirc.add_to_queue(uri)?;
+                }
+                Ok(InsertNextOutcome::Inserted)
+            }
+            crate::queue_plan::InsertNextPlan::ReplaceNextTracks(merged) => {
+                let mut tracks = Vec::with_capacity(merged.len());
+                for uri in merged {
+                    tracks.push(SpotifyUri::from_uri(&uri)?);
+                }
+                // `None` keeps the current track and position; the history is
+                // cleared by the native handler, which the caller is told about.
+                self.spirc.set_queue(tracks, None)?;
+                Ok(InsertNextOutcome::InsertedHistoryCleared)
+            }
+        }
     }
 
     pub fn set_volume(&self, volume: u16) -> Result<(), librespot_core::error::Error> {

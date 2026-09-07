@@ -129,6 +129,9 @@
     <!-- In-app notifications -->
     <string name="ui_notif_added_to_queue">Added to queue</string>
     <string name="ui_notif_inserted_to_queue">Inserted to queue</string>
+    <string name="ui_notif_add_to_queue_failed">Could not add to queue</string>
+    <string name="ui_notif_play_next_failed">Could not insert into queue</string>
+    <string name="ui_notif_play_next_nothing_playing">Nothing is playing</string>
     <string name="ui_notif_radio_started">Radio started</string>
     <string name="ui_notif_radio_failed">Could not start the radio</string>
     <string name="ui_notif_favorite_failed">Failed to update favorite</string>

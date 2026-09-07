@@ -9,6 +9,7 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.EpisodeDetails
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
+import cc.tomko.outify.ui.notifications.QueueNotices
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
@@ -107,19 +108,24 @@ class MainViewModel @Inject constructor(
         )
 
     fun addToQueue(uri: String) {
-        spirc.addToQueue(uri)
-        InAppNotificationController.show(
-            context.getString(R.string.ui_notif_added_to_queue),
-            { Icon(Icons.Default.Queue, contentDescription = stringResource(R.string.ui_notif_added_to_queue)) },
-            1000L
-        )
+        val added = spirc.addToQueue(uri)
+        val message = if (added) R.string.ui_notif_added_to_queue else R.string.ui_notif_add_to_queue_failed
+        showQueueNotice(message)
     }
 
+    /**
+     * Inserts [uri] ahead of the next tracks. The notice reflects the confirmed outcome: a
+     * refused or failed insertion is never announced as "inserted".
+     */
     fun playNext(uri: String) {
-        spirc.playNext(uri)
+        val result = spirc.playNext(uri)
+        showQueueNotice(QueueNotices.forInsertNext(result))
+    }
+
+    private fun showQueueNotice(messageRes: Int) {
         InAppNotificationController.show(
-            context.getString(R.string.ui_notif_inserted_to_queue),
-            { Icon(Icons.Default.Queue, contentDescription = stringResource(R.string.ui_notif_inserted_to_queue)) },
+            context.getString(messageRes),
+            { Icon(Icons.Default.Queue, contentDescription = stringResource(messageRes)) },
             1000L
         )
     }

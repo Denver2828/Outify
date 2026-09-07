@@ -116,10 +116,20 @@ object Spirc {
     external fun addToQueue(spotifyUri: String?): Boolean
 
     /**
-     * Loads context of given uris
+     * Replaces the next tracks with the given uris. When [playingTrackUri] is set the native
+     * side also switches the current track (it resolves the index against the active context),
+     * so pass it only for an explicit "replace what is playing". Inserting ahead of the current
+     * track goes through [insertNext].
      */
     @JvmStatic
     external fun setQueue(uris: Array<String>, playingTrackUri: String?): Boolean
+
+    /**
+     * Inserts the given uris in front of the next tracks without changing the current track or
+     * its position. Returns a native result code, see [InsertNextResult.fromNative].
+     */
+    @JvmStatic
+    external fun insertNext(uris: Array<String>): Int
 
     /**
      * Activates current Spirc session

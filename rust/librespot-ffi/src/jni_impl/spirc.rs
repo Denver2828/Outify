@@ -333,6 +333,66 @@ pub extern "system" fn set_queue(
     }
 }
 
+/// Result codes shared with `Spirc.insertNext` on the Kotlin side.
+const INSERT_NEXT_FAILED: jint = 0;
+const INSERT_NEXT_INSERTED: jint = 1;
+const INSERT_NEXT_INSERTED_HISTORY_CLEARED: jint = 2;
+
+/// Inserts the given uris in front of the next tracks. Never changes the
+/// current track or its position. Returns one of the `INSERT_NEXT_*` codes.
+#[unsafe(export_name = "Java_cc_tomko_outify_core_spirc_Spirc_insertNext")]
+pub extern "system" fn insert_next(mut env: JNIEnv, _this: JClass, uris: jobjectArray) -> jint {
+    let rt = match crate::TOKIO_RUNTIME.get() {
+        Some(r) => r,
+        None => {
+            error!("tokio runtime not available for insert_next");
+            return INSERT_NEXT_FAILED;
+        }
+    };
+
+    let uris_array = unsafe { JObjectArray::from_raw(uris) };
+    let len = match env.get_array_length(&uris_array) {
+        Ok(l) => l,
+        Err(_) => return INSERT_NEXT_FAILED,
+    };
+
+    let mut parsed: Vec<SpotifyUri> = Vec::with_capacity(len as usize);
+    for i in 0..len {
+        let obj = match env.get_object_array_element(&uris_array, i) {
+            Ok(o) => o,
+            Err(_) => return INSERT_NEXT_FAILED,
+        };
+        let jstr = JString::from(obj);
+        let uri: String = match env.get_string(&jstr) {
+            Ok(s) => s.into(),
+            Err(_) => return INSERT_NEXT_FAILED,
+        };
+        let uri_string = OutifyUri::from_uri(&uri).to_uri();
+        match SpotifyUri::from_uri(&uri_string) {
+            Ok(s) => parsed.push(s),
+            Err(e) => {
+                error!("SpotifyUri::from_uri failed for insert_next: {e}");
+                return INSERT_NEXT_FAILED;
+            }
+        }
+    }
+
+    match with_spirc(|runtime| rt.block_on(async move { runtime.insert_next(parsed).await })) {
+        Ok(Ok(crate::spirc::InsertNextOutcome::Inserted)) => INSERT_NEXT_INSERTED,
+        Ok(Ok(crate::spirc::InsertNextOutcome::InsertedHistoryCleared)) => {
+            INSERT_NEXT_INSERTED_HISTORY_CLEARED
+        }
+        Ok(Err(e)) => {
+            warn!("with_spirc insert_next failed: {e:?}");
+            INSERT_NEXT_FAILED
+        }
+        Err(e) => {
+            warn!("with_spirc session error for insert_next: {e:?}");
+            INSERT_NEXT_FAILED
+        }
+    }
+}
+
 #[unsafe(no_mangle)]
 pub extern "system" fn Java_cc_tomko_outify_core_spirc_Spirc_setVolume(
     _env: JNIEnv,
