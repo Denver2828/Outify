@@ -30,14 +30,22 @@ object SyncErrorClassifier {
         "broken pipe", "no address associated", "software caused", "eof",
     )
 
-    private val rateLimitHints = listOf("429", "rate limit", "rate limited", "too many requests")
+    private val rateLimitHints = listOf("rate limit", "rate limited", "too many requests")
+
+    /**
+     * A bare "429" is not enough: track ids, URIs and byte counts contain it all the time.
+     * Only an HTTP status phrasing counts, e.g. "status 429", "status code: 429", "http 429".
+     */
+    private val status429 = Regex("""\b(?:status(?: code)?|http|code)\s*[:=]?\s*429\b""")
 
     fun classify(error: Throwable, gateLimited: Boolean): SyncFailure {
         if (error is SpClientException && error.error is NativeError.RateLimited) {
             return SyncFailure.RATE_LIMITED
         }
         val message = messageChain(error).lowercase()
-        if (rateLimitHints.any { message.contains(it) }) return SyncFailure.RATE_LIMITED
+        if (rateLimitHints.any { message.contains(it) } || status429.containsMatchIn(message)) {
+            return SyncFailure.RATE_LIMITED
+        }
         if (gateLimited) return SyncFailure.RATE_LIMITED
 
         if (error is TimeoutCancellationException) return SyncFailure.TRANSIENT
