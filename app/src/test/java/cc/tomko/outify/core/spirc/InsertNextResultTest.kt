@@ -13,7 +13,8 @@ class InsertNextResultTest {
     fun `native codes map to results and unknown codes are failures`() {
         assertEquals(InsertNextResult.FAILED, InsertNextResult.fromNative(0))
         assertEquals(InsertNextResult.INSERTED, InsertNextResult.fromNative(1))
-        assertEquals(InsertNextResult.INSERTED_HISTORY_CLEARED, InsertNextResult.fromNative(2))
+        // Code 2 ("inserted, history cleared") was retired once librespot gained play_next.
+        assertEquals(InsertNextResult.FAILED, InsertNextResult.fromNative(2))
         assertEquals(InsertNextResult.FAILED, InsertNextResult.fromNative(-1))
         assertEquals(InsertNextResult.FAILED, InsertNextResult.fromNative(99))
     }
@@ -21,7 +22,6 @@ class InsertNextResultTest {
     @Test
     fun `only insert outcomes count as success`() {
         assertTrue(InsertNextResult.INSERTED.succeeded)
-        assertTrue(InsertNextResult.INSERTED_HISTORY_CLEARED.succeeded)
         assertFalse(InsertNextResult.NOTHING_PLAYING.succeeded)
         assertFalse(InsertNextResult.FAILED.succeeded)
     }
@@ -29,10 +29,6 @@ class InsertNextResultTest {
     @Test
     fun `failures and refusals never show the inserted notice`() {
         assertEquals(R.string.ui_notif_inserted_to_queue, QueueNotices.forInsertNext(InsertNextResult.INSERTED))
-        assertEquals(
-            R.string.ui_notif_inserted_to_queue,
-            QueueNotices.forInsertNext(InsertNextResult.INSERTED_HISTORY_CLEARED),
-        )
         assertEquals(
             R.string.ui_notif_play_next_nothing_playing,
             QueueNotices.forInsertNext(InsertNextResult.NOTHING_PLAYING),

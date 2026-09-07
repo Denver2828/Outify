@@ -47,8 +47,10 @@ Legend: **Pre** precondition · **Steps** · **Expect** expected result · **Ref
   Pre: play a playlist; note track A and its position; confirm "previous" goes back. Steps: long-press track B → "Play next". Expect: A keeps playing at the same position; B is first in the queue sheet; the "inserted" notice appears; "previous" still works (history intact). Ref: Block E · 0f0ab13.
 - [ ] **Skip order after play next**
   Steps: skip → B plays; skip again. Expect: the playlist continues after A's original position. Ref: Block E · 0f0ab13.
-- [ ] **Play next with queued tracks at the front (known limitation)**
-  Steps: "Add to queue" C, then "Play next" D. Expect: D first, C after, A unchanged; the notice reports that history was cleared (this sub-case needs a librespot submodule change and is documented as blocked). Ref: Block E · 0f0ab13.
+- [ ] **Play next with queued tracks at the front**
+  Steps: "Add to queue" C, then "Play next" D. Expect: D first, C after, A unchanged at the same position; "previous" still goes back to the prior track (history preserved via the librespot `play_next` command). Ref: Block E · 0f0ab13, Block I (librespot submodule 2543678).
+- [ ] **Play next batch order with queued tracks at the front**
+  Pre: C is queued. Steps: multi-select D then E → "Play next". Expect: queue reads D, E, C. Ref: Block I.
 - [ ] **Duplicates**
   Steps: "Play next" the same track twice. Expect: it appears twice. Ref: Block E · 0f0ab13.
 - [ ] **Nothing playing**

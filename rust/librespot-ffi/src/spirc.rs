@@ -23,12 +23,9 @@ use crate::session::with_session;
 /// Result of [`SpircRuntime::insert_next`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InsertNextOutcome {
-    /// Inserted through `add_to_queue`: current track, position, history and
-    /// provider flags untouched.
+    /// Inserted through `add_to_queue` or `play_next`: current track, position,
+    /// history and provider flags untouched.
     Inserted,
-    /// Inserted by rewriting the next tracks: current track and position kept,
-    /// but the previous-tracks history was cleared by the native handler.
-    InsertedHistoryCleared,
 }
 
 #[derive(Error, Debug)]
@@ -283,15 +280,12 @@ impl SpircRuntime {
                 }
                 Ok(InsertNextOutcome::Inserted)
             }
-            crate::queue_plan::InsertNextPlan::ReplaceNextTracks(merged) => {
-                let mut tracks = Vec::with_capacity(merged.len());
-                for uri in merged {
-                    tracks.push(SpotifyUri::from_uri(&uri)?);
+            crate::queue_plan::InsertNextPlan::PlayNext(reversed) => {
+                // Already reversed by the planner: the last call lands first.
+                for uri in reversed {
+                    self.spirc.play_next(SpotifyUri::from_uri(&uri)?)?;
                 }
-                // `None` keeps the current track and position; the history is
-                // cleared by the native handler, which the caller is told about.
-                self.spirc.set_queue(tracks, None)?;
-                Ok(InsertNextOutcome::InsertedHistoryCleared)
+                Ok(InsertNextOutcome::Inserted)
             }
         }
     }

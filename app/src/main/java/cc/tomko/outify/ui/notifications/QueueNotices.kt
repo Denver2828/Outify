@@ -11,10 +11,7 @@ import cc.tomko.outify.core.spirc.InsertNextResult
 object QueueNotices {
     @StringRes
     fun forInsertNext(result: InsertNextResult): Int = when (result) {
-        // Both insert paths leave the current track alone; the history difference is not
-        // something the user acted on, so both read as a successful insertion.
-        InsertNextResult.INSERTED,
-        InsertNextResult.INSERTED_HISTORY_CLEARED -> R.string.ui_notif_inserted_to_queue
+        InsertNextResult.INSERTED -> R.string.ui_notif_inserted_to_queue
         InsertNextResult.NOTHING_PLAYING -> R.string.ui_notif_play_next_nothing_playing
         InsertNextResult.FAILED -> R.string.ui_notif_play_next_failed
     }

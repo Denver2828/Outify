@@ -1,22 +1,20 @@
 //! Planning for "play next" insertions.
 //!
-//! librespot exposes two queue primitives and neither is a plain "insert at the
-//! front of the next tracks":
+//! librespot (our fork) exposes two queue primitives that keep the current
+//! track, its position, the history and every provider flag intact:
 //!
 //! * `add_to_queue` inserts right after the last *queued* track, which is the
-//!   front of the list only while nothing else is queued. It keeps the current
-//!   track, its position, the history and every provider flag intact.
-//! * `set_queue(tracks, None)` replaces the next tracks wholesale. It keeps the
-//!   current track and its position but clears the history and drops the
-//!   queue provider flags of the existing next tracks.
+//!   front of the list only while nothing else is queued.
+//! * `play_next` inserts at index 0, ahead of every queued track. Each call
+//!   pushes the previous front one slot down, so a batch has to be sent in
+//!   reverse to end up in the requested order.
 //!
-//! Passing a `playing_track` to `set_queue` must never be used for an insert:
-//! the native handler resolves it as an index into the *previous* context and
-//! replaces the current track.
+//! `set_queue` is never used for an insert: with a `playing_track` the native
+//! handler resolves it as an index into the *previous* context and replaces
+//! the current track, and even with `None` it clears the history.
 //!
-//! This module decides, from the current next tracks, which primitive gives the
-//! caller the requested order with the least collateral damage. It is pure so
-//! it can be unit tested without a Spirc session.
+//! This module decides, from the current next tracks, which primitive to use.
+//! It is pure so it can be unit tested without a Spirc session.
 
 use librespot_protocol::player::ProvidedTrack;
 
@@ -29,10 +27,10 @@ pub enum InsertNextPlan {
     /// Nothing is queued ahead: `add_to_queue` in order lands the new tracks
     /// at the front while preserving everything else.
     AddToQueue,
-    /// Queued tracks already sit at the front: the only way to put the new
-    /// tracks before them is to rewrite the next tracks. Carries the full
-    /// list to push (new tracks first, then the existing next tracks).
-    ReplaceNextTracks(Vec<String>),
+    /// Queued tracks already sit at the front: `play_next` per uri, in the
+    /// carried order (already reversed, so the first requested uri ends up
+    /// first).
+    PlayNext(Vec<String>),
 }
 
 fn is_queued(track: &ProvidedTrack) -> bool {
@@ -56,15 +54,9 @@ pub fn plan_insert_next(new_uris: &[String], existing_next: &[ProvidedTrack]) ->
         return InsertNextPlan::AddToQueue;
     }
 
-    let mut merged: Vec<String> = Vec::with_capacity(new_uris.len() + existing_next.len());
-    merged.extend(new_uris.iter().cloned());
-    merged.extend(
-        existing_next
-            .iter()
-            .map(|t| t.uri.clone())
-            .filter(|uri| !uri.is_empty()),
-    );
-    InsertNextPlan::ReplaceNextTracks(merged)
+    let mut reversed: Vec<String> = new_uris.to_vec();
+    reversed.reverse();
+    InsertNextPlan::PlayNext(reversed)
 }
 
 #[cfg(test)]
@@ -100,22 +92,17 @@ mod tests {
     }
 
     #[test]
-    fn queued_tracks_at_front_replace_next_tracks_keeping_order() {
+    fn queued_tracks_at_front_use_play_next_in_reverse_order() {
         let existing = vec![
             track("spotify:track:q1", "queue"),
             track("spotify:track:q2", "queue"),
             track("spotify:track:c1", "context"),
         ];
         let plan = plan_insert_next(&["spotify:track:b".into(), "spotify:track:b2".into()], &existing);
+        // play_next(b2) then play_next(b) leaves b first, b2 second, then q1, q2, c1.
         assert_eq!(
             plan,
-            InsertNextPlan::ReplaceNextTracks(vec![
-                "spotify:track:b".into(),
-                "spotify:track:b2".into(),
-                "spotify:track:q1".into(),
-                "spotify:track:q2".into(),
-                "spotify:track:c1".into(),
-            ])
+            InsertNextPlan::PlayNext(vec!["spotify:track:b2".into(), "spotify:track:b".into()])
         );
     }
 
@@ -123,26 +110,20 @@ mod tests {
     fn is_queued_metadata_counts_as_queued() {
         let existing = vec![queued_by_metadata("spotify:track:q1")];
         let plan = plan_insert_next(&["spotify:track:b".into()], &existing);
-        assert!(matches!(plan, InsertNextPlan::ReplaceNextTracks(_)));
+        assert!(matches!(plan, InsertNextPlan::PlayNext(_)));
     }
 
     #[test]
     fn duplicates_are_preserved() {
         let existing = vec![track("spotify:track:b", "queue")];
         let plan = plan_insert_next(&["spotify:track:b".into()], &existing);
-        assert_eq!(
-            plan,
-            InsertNextPlan::ReplaceNextTracks(vec!["spotify:track:b".into(), "spotify:track:b".into()])
-        );
+        assert_eq!(plan, InsertNextPlan::PlayNext(vec!["spotify:track:b".into()]));
     }
 
     #[test]
-    fn empty_uris_in_existing_are_dropped() {
+    fn single_uri_is_not_reordered() {
         let existing = vec![track("spotify:track:q1", "queue"), track("", "context")];
         let plan = plan_insert_next(&["spotify:track:b".into()], &existing);
-        assert_eq!(
-            plan,
-            InsertNextPlan::ReplaceNextTracks(vec!["spotify:track:b".into(), "spotify:track:q1".into()])
-        );
+        assert_eq!(plan, InsertNextPlan::PlayNext(vec!["spotify:track:b".into()]));
     }
 }

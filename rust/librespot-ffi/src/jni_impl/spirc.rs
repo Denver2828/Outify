@@ -336,7 +336,6 @@ pub extern "system" fn set_queue(
 /// Result codes shared with `Spirc.insertNext` on the Kotlin side.
 const INSERT_NEXT_FAILED: jint = 0;
 const INSERT_NEXT_INSERTED: jint = 1;
-const INSERT_NEXT_INSERTED_HISTORY_CLEARED: jint = 2;
 
 /// Inserts the given uris in front of the next tracks. Never changes the
 /// current track or its position. Returns one of the `INSERT_NEXT_*` codes.
@@ -379,9 +378,6 @@ pub extern "system" fn insert_next(mut env: JNIEnv, _this: JClass, uris: jobject
 
     match with_spirc(|runtime| rt.block_on(async move { runtime.insert_next(parsed).await })) {
         Ok(Ok(crate::spirc::InsertNextOutcome::Inserted)) => INSERT_NEXT_INSERTED,
-        Ok(Ok(crate::spirc::InsertNextOutcome::InsertedHistoryCleared)) => {
-            INSERT_NEXT_INSERTED_HISTORY_CLEARED
-        }
         Ok(Err(e)) => {
             warn!("with_spirc insert_next failed: {e:?}");
             INSERT_NEXT_FAILED
