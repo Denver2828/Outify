@@ -5,6 +5,7 @@ import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.R
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.UserProfile
@@ -13,17 +14,26 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.SearchRepository
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.data.repository.SyncErrorClassifier
+import cc.tomko.outify.data.repository.SyncFailure
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.reccobeats.RecommendationConfig
 import cc.tomko.outify.reccobeats.Recommendations
 import cc.tomko.outify.ui.model.search.SearchHistoryItem
 import cc.tomko.outify.ui.model.search.SearchResultType
+import cc.tomko.outify.ui.viewmodel.search.SearchErrorKind
+import cc.tomko.outify.ui.viewmodel.search.SearchOrchestrator
+import cc.tomko.outify.ui.viewmodel.search.SearchSection
+import cc.tomko.outify.ui.viewmodel.search.SearchUiState
+import cc.tomko.outify.ui.viewmodel.search.SectionStatus
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -31,6 +41,7 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -38,25 +49,15 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-import kotlin.collections.List
-import kotlin.collections.distinct
-import kotlin.collections.drop
-import kotlin.collections.emptyList
-import kotlin.collections.filterNotNull
-import kotlin.collections.first
-import kotlin.collections.firstOrNull
-import kotlin.collections.indexOfLast
-import kotlin.collections.isNotEmpty
-import kotlin.collections.listOf
-import kotlin.collections.map
-import kotlin.collections.mapIndexed
-import kotlin.collections.mapNotNull
-import kotlin.collections.toMutableList
-import kotlin.collections.toTypedArray
-import kotlin.sequences.filterNotNull
-import kotlin.text.get
-import kotlin.text.isBlank
-import kotlin.text.set
+
+private val SEARCH_SECTIONS = listOf(
+    SearchSection("track", R.string.search_section_tracks),
+    SearchSection("artist", R.string.search_section_artists),
+    SearchSection("album", R.string.search_section_albums),
+    SearchSection("playlist", R.string.search_section_playlists),
+    SearchSection("show", R.string.search_section_shows),
+    SearchSection("episode", R.string.search_section_episodes),
+)
 
 @OptIn(FlowPreview::class)
 @HiltViewModel
@@ -71,8 +72,12 @@ class SearchViewModel @Inject constructor(
     private val likedDao: LikedDao,
     private val json: Json,
     private val userProfile: UserProfile,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
-    private val queryFlow = MutableStateFlow("")
+    /** A query plus an attempt counter so [retry] can re-issue an unchanged query. */
+    private data class SearchRequest(val query: String = "", val attempt: Int = 0)
+
+    private val searchRequests = MutableStateFlow(SearchRequest())
 
     private val _results = MutableStateFlow<List<SearchUiModel>>(emptyList())
     val results: StateFlow<List<SearchUiModel>> = _results
@@ -118,115 +123,42 @@ class SearchViewModel @Inject constructor(
     private val _authors = MutableStateFlow<Map<String, Profile>>(emptyMap())
     val authors: StateFlow<Map<String, Profile>> = _authors
 
+    /**
+     * Latest-only search. The orchestrator tags every publication with the query captured at
+     * launch and drops anything older, so a slow response can never overwrite a newer search.
+     */
+    private val orchestrator = SearchOrchestrator<SearchUiModel>(
+        sections = SEARCH_SECTIONS,
+        fetchSection = ::fetchSection,
+        isRateLimited = rateLimitGate::isLimited,
+        classify = ::classifySearchError,
+    )
+
+    val searchState: StateFlow<SearchUiState<SearchUiModel>> = orchestrator.state
+
+    /** Seconds left on the Spotify rate-limit window; 0 when searching is allowed. */
+    val rateLimitRemainingSeconds: StateFlow<Int> = flow {
+        while (true) {
+            emit(rateLimitGate.remainingSeconds())
+            delay(1_000L)
+        }
+    }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
+
     init {
         _isLoggedIn.value = spClient.isOAuthAuthenticated()
 
         viewModelScope.launch {
-            queryFlow
+            searchRequests
                 .debounce(500)
                 .distinctUntilChanged()
-                .collectLatest { query ->
+                // collectLatest cancels the previous search (and its section fetches, which are
+                // children of this block) as soon as a new request arrives.
+                .collectLatest { request -> orchestrator.search(request.query) }
+        }
 
-                    if (query.isBlank()) {
-                        _results.value = emptyList()
-                        return@collectLatest
-                    }
-
-                    _results.value = listOf(
-                        SearchUiModel.SectionHeader(R.string.search_section_tracks),
-                        SearchUiModel.SkeletonItem(0),
-                        SearchUiModel.SectionHeader(R.string.search_section_artists),
-                        SearchUiModel.SkeletonItem(1),
-                        SearchUiModel.SectionHeader(R.string.search_section_albums),
-                        SearchUiModel.SkeletonItem(2),
-                        SearchUiModel.SectionHeader(R.string.search_section_playlists),
-                        SearchUiModel.SkeletonItem(3),
-                        SearchUiModel.SectionHeader(R.string.search_section_shows),
-                        SearchUiModel.SkeletonItem(4),
-                        SearchUiModel.SectionHeader(R.string.search_section_episodes),
-                        SearchUiModel.SkeletonItem(5),
-                    )
-
-                    launch {
-                        searchSection("track", R.string.search_section_tracks) { uris ->
-                            withContext(Dispatchers.IO) {
-                                metadata.getTrackMetadata(uris).map { track ->
-                                    SearchUiModel.TrackItem(track.uri, track)
-                                }
-                            }
-                        }
-                    }
-
-                    launch {
-                        searchSection("artist", R.string.search_section_artists) { uris ->
-                            withContext(Dispatchers.IO) {
-                                uris.mapNotNull { uri ->
-                                    runCatching {
-                                        metadata.getArtistMetadata(uri)
-                                    }.getOrNull()?.let { artist ->
-                                        SearchUiModel.ArtistItem(uri, artist)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    launch {
-                        searchSection("album", R.string.search_section_albums) { uris ->
-                            withContext(Dispatchers.IO) {
-                                uris.mapNotNull { uri ->
-                                    runCatching {
-                                        metadata.getAlbumMetadata(uri)
-                                    }.getOrNull()?.let { album ->
-                                        SearchUiModel.AlbumItem(uri, album)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    launch {
-                        searchSection("playlist", R.string.search_section_playlists) { uris ->
-                            withContext(Dispatchers.IO) {
-                                uris.mapNotNull { uri ->
-                                    runCatching {
-                                        metadata.getPlaylistMetadata(uri, true)
-                                    }.getOrNull()?.let { playlist ->
-                                        SearchUiModel.PlaylistItem(uri, playlist)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    launch {
-                        searchSection("show", R.string.search_section_shows) { uris ->
-                            withContext(Dispatchers.IO) {
-                                uris.mapNotNull { uri ->
-                                    runCatching {
-                                        metadata.getShowMetadata(uri)
-                                    }.getOrNull()?.let { show ->
-                                        SearchUiModel.ShowItem(uri, show)
-                                    }
-                                }
-                            }
-                        }
-                    }
-
-                    launch {
-                        searchSection("episode", R.string.search_section_episodes) { uris ->
-                            withContext(Dispatchers.IO) {
-                                runCatching {
-                                    metadata.getEpisodeMetadata(uris)
-                                }.getOrNull()
-                                    ?.mapIndexed { index, episode ->
-                                        SearchUiModel.EpisodeItem(uris[index], episode)
-                                    }
-                                    ?: emptyList()
-                            }
-                        }
-                    }
-                }
+        viewModelScope.launch {
+            orchestrator.state.collect { state -> _results.value = state.toUiList() }
         }
 
         viewModelScope.launch {
@@ -286,45 +218,103 @@ class SearchViewModel @Inject constructor(
         }
     }
 
-    private suspend fun searchSection(
-        type: String,
-        headerRes: Int,
-        fetch: suspend (List<String>) -> List<SearchUiModel>,
-    ) {
-        try {
-            val results = repository.searchByType(queryFlow.value, type)
-            val items = if (results.isNotEmpty()) {
-                fetch(results.map { it.uri })
-            } else emptyList()
-            replaceSkeleton(headerRes, items)
-        } catch (e: Exception) {
-            Log.w("SearchViewModel", "$type search failed", e)
-            replaceSkeleton(headerRes, emptyList())
+    /**
+     * Resolves one section for an immutable [query]. Runs as a child of the search, so a query
+     * change cancels it; per-item metadata misses are skipped, a failed search or a failed
+     * batch lookup surfaces as a section failure.
+     */
+    private suspend fun fetchSection(query: String, section: SearchSection): List<SearchUiModel> {
+        val uris = repository.searchByType(query, section.type).map { it.uri }
+        if (uris.isEmpty()) return emptyList()
+
+        return withContext(Dispatchers.IO) {
+            when (section.type) {
+                "track" -> metadata.getTrackMetadata(uris).map { track ->
+                    SearchUiModel.TrackItem(track.uri, track)
+                }
+
+                "artist" -> uris.mapNotNull { uri ->
+                    lookup { metadata.getArtistMetadata(uri) }?.let { SearchUiModel.ArtistItem(uri, it) }
+                }
+
+                "album" -> uris.mapNotNull { uri ->
+                    lookup { metadata.getAlbumMetadata(uri) }?.let { SearchUiModel.AlbumItem(uri, it) }
+                }
+
+                "playlist" -> uris.mapNotNull { uri ->
+                    lookup { metadata.getPlaylistMetadata(uri, true) }
+                        ?.let { SearchUiModel.PlaylistItem(uri, it) }
+                }
+
+                "show" -> uris.mapNotNull { uri ->
+                    lookup { metadata.getShowMetadata(uri) }?.let { SearchUiModel.ShowItem(uri, it) }
+                }
+
+                "episode" -> metadata.getEpisodeMetadata(uris).mapIndexed { index, episode ->
+                    SearchUiModel.EpisodeItem(uris[index], episode)
+                }
+
+                else -> emptyList()
+            }
         }
     }
 
-    private fun replaceSkeleton(headerRes: Int, items: List<SearchUiModel>) {
-        _results.update { current ->
-            val out = current.toMutableList()
-            val headerIdx =
-                out.indexOfLast { it is SearchUiModel.SectionHeader && it.titleRes == headerRes }
-            if (headerIdx < 0) return@update current
-            val skeletonIdx = headerIdx + 1
-            if (skeletonIdx >= out.size || out[skeletonIdx] !is SearchUiModel.SkeletonItem) return@update current
+    /** A single missing item must not fail the section; cancellation still propagates. */
+    private inline fun <R> lookup(block: () -> R?): R? = try {
+        block()
+    } catch (e: CancellationException) {
+        throw e
+    } catch (e: Exception) {
+        null
+    }
 
-            if (items.isEmpty()) {
-                out.removeAt(skeletonIdx)
-                out.removeAt(headerIdx)
-            } else {
-                out[skeletonIdx] = items.first()
-                out.addAll(skeletonIdx + 1, items.drop(1))
+    private fun classifySearchError(error: Throwable): SearchErrorKind {
+        Log.w("SearchViewModel", "search section failed", error)
+        return when (SyncErrorClassifier.classify(error, rateLimitGate.isLimited())) {
+            SyncFailure.RATE_LIMITED -> SearchErrorKind.RATE_LIMITED
+            SyncFailure.TRANSIENT -> SearchErrorKind.NETWORK
+            SyncFailure.FATAL -> SearchErrorKind.OTHER
+        }
+    }
+
+    /**
+     * Renders the sectioned list the screen already understands: a header per section, a
+     * skeleton while it is pending, its items once done, nothing when empty or failed.
+     */
+    private fun SearchUiState<SearchUiModel>.toUiList(): List<SearchUiModel> {
+        val sections = when (this) {
+            is SearchUiState.InProgress -> sections
+            is SearchUiState.Results -> sections
+            SearchUiState.Idle, is SearchUiState.Error -> return emptyList()
+        }
+        return buildList {
+            sections.forEachIndexed { index, snapshot ->
+                when (val status = snapshot.status) {
+                    SectionStatus.Pending -> {
+                        add(SearchUiModel.SectionHeader(snapshot.section.headerRes))
+                        add(SearchUiModel.SkeletonItem(index))
+                    }
+
+                    is SectionStatus.Done -> if (status.items.isNotEmpty()) {
+                        add(SearchUiModel.SectionHeader(snapshot.section.headerRes))
+                        addAll(status.items)
+                    }
+
+                    is SectionStatus.Failed -> Unit
+                }
             }
-            out
         }
     }
 
     fun onQueryChange(query: String) {
-        queryFlow.value = query
+        searchRequests.update { it.copy(query = query) }
+    }
+
+    /** Re-runs the current query after an error; a no-op while the query is blank. */
+    fun retry() {
+        searchRequests.update { current ->
+            if (current.query.isBlank()) current else current.copy(attempt = current.attempt + 1)
+        }
     }
 
     fun fetchRecommendations(seedIds: List<String>, config: RecommendationConfig) {

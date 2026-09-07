@@ -64,6 +64,10 @@
     <string name="screen_search_select_filters_cd">Select filters</string>
     <string name="screen_search_nothing_found">Nothing found…</string>
     <string name="screen_search_type_and_filter">Type the query and select filters</string>
+    <string name="screen_search_error_network">Search failed. Check your connection.</string>
+    <string name="screen_search_error_generic">Search failed. Try again.</string>
+    <string name="screen_search_error_rate_limited">Spotify is rate limiting requests. Try again in %1$d s.</string>
+    <string name="screen_search_partial_error">Some results could not be loaded.</string>
     <string name="screen_search_placeholder">Search Spotify</string>
     <string name="screen_search_clear_query_cd">Clear query</string>
     <string name="screen_search_field_title">Title</string>

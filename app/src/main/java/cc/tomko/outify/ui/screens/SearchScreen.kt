@@ -103,6 +103,8 @@ import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.viewmodel.SearchUiModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
+import cc.tomko.outify.ui.viewmodel.search.SearchErrorKind
+import cc.tomko.outify.ui.viewmodel.search.SearchUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -116,6 +118,8 @@ fun SharedTransitionScope.SearchScreen(
     showSearchUi: Boolean = true,
 ) {
     val results by viewModel.results.collectAsState()
+    val searchState by viewModel.searchState.collectAsState()
+    val rateLimitRemainingSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
     val isLoggedIn by viewModel.isLoggedIn.collectAsState()
     val searchHistory by viewModel.searchHistory.collectAsState()
@@ -572,7 +576,16 @@ fun SharedTransitionScope.SearchScreen(
                             }
                         }
                     }
-                } else if (filteredResults.isEmpty()) {
+                } else if (searchState is SearchUiState.Error) {
+                    // A failed search is not "nothing found": say what happened and offer a retry.
+                    item {
+                        SearchErrorBox(
+                            kind = (searchState as SearchUiState.Error).kind,
+                            rateLimitRemainingSeconds = rateLimitRemainingSeconds,
+                            onRetry = { viewModel.retry() },
+                        )
+                    }
+                } else if (filteredResults.isEmpty() && searchState is SearchUiState.Results) {
                     item {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -602,6 +615,19 @@ fun SharedTransitionScope.SearchScreen(
                                 )
                             }
                         }
+                    }
+                }
+
+                val partialFailure = (searchState as? SearchUiState.Results)
+                    ?.takeIf { it.failedKinds.isNotEmpty() }
+                if (partialFailure != null) {
+                    // Some sections came back, others failed: keep the content, flag the gap.
+                    item(key = "search_partial_failure") {
+                        SearchPartialFailureNotice(
+                            rateLimited = SearchErrorKind.RATE_LIMITED in partialFailure.failedKinds,
+                            rateLimitRemainingSeconds = rateLimitRemainingSeconds,
+                            onRetry = { viewModel.retry() },
+                        )
                     }
                 }
 
@@ -1158,6 +1184,80 @@ private fun buildAdvancedQuery(
         parts.isEmpty() -> ""
         parts.size == 1 || matchAll -> parts.joinToString(" ")
         else -> parts.joinToString(" OR ")
+    }
+}
+
+@Composable
+private fun searchErrorMessage(kind: SearchErrorKind, rateLimitRemainingSeconds: Int): String =
+    when (kind) {
+        SearchErrorKind.NETWORK -> stringResource(R.string.screen_search_error_network)
+        SearchErrorKind.RATE_LIMITED -> stringResource(
+            R.string.screen_search_error_rate_limited,
+            rateLimitRemainingSeconds.coerceAtLeast(1),
+        )
+
+        SearchErrorKind.OTHER -> stringResource(R.string.screen_search_error_generic)
+    }
+
+@Composable
+private fun SearchErrorBox(
+    kind: SearchErrorKind,
+    rateLimitRemainingSeconds: Int,
+    onRetry: () -> Unit,
+) {
+    val rateLimited = kind == SearchErrorKind.RATE_LIMITED && rateLimitRemainingSeconds > 0
+    Box(
+        modifier = Modifier.fillMaxSize(),
+        contentAlignment = Alignment.Center
+    ) {
+        Column(horizontalAlignment = Alignment.CenterHorizontally) {
+            Icon(
+                imageVector = Icons.Default.SearchOff,
+                contentDescription = null,
+                modifier = Modifier.size(64.dp)
+            )
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            Text(
+                text = searchErrorMessage(kind, rateLimitRemainingSeconds),
+                style = MaterialTheme.typography.titleMedium,
+                modifier = Modifier.padding(horizontal = 16.dp),
+            )
+
+            TextButton(onClick = onRetry, enabled = !rateLimited) {
+                Text(stringResource(R.string.ui_action_retry))
+            }
+        }
+    }
+}
+
+@Composable
+private fun SearchPartialFailureNotice(
+    rateLimited: Boolean,
+    rateLimitRemainingSeconds: Int,
+    onRetry: () -> Unit,
+) {
+    val waiting = rateLimited && rateLimitRemainingSeconds > 0
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        verticalAlignment = Alignment.CenterVertically,
+    ) {
+        Text(
+            text = if (waiting) {
+                searchErrorMessage(SearchErrorKind.RATE_LIMITED, rateLimitRemainingSeconds)
+            } else {
+                stringResource(R.string.screen_search_partial_error)
+            },
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier.weight(1f),
+        )
+        TextButton(onClick = onRetry, enabled = !waiting) {
+            Text(stringResource(R.string.ui_action_retry))
+        }
     }
 }
 

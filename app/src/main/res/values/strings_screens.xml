@@ -64,6 +64,10 @@
     <string name="screen_search_select_filters_cd">Elegí filtros</string>
     <string name="screen_search_nothing_found">No encontramos nada…</string>
     <string name="screen_search_type_and_filter">Escribí algo y elegí filtros</string>
+    <string name="screen_search_error_network">No pudimos buscar. Revisá tu conexión.</string>
+    <string name="screen_search_error_generic">La búsqueda falló. Probá de nuevo.</string>
+    <string name="screen_search_error_rate_limited">Spotify limitó los pedidos. Reintentá en %1$d s.</string>
+    <string name="screen_search_partial_error">Algunos resultados no se pudieron cargar.</string>
     <string name="screen_search_placeholder">Buscar en Spotify</string>
     <string name="screen_search_clear_query_cd">Borrar búsqueda</string>
     <string name="screen_search_field_title">Título</string>
