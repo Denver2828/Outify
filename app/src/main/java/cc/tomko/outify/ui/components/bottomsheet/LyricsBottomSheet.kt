@@ -41,6 +41,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -98,6 +99,7 @@ fun LyricsBottomSheet(
     val hasSyncedContent by viewModel.hasSyncedContent.collectAsState()
     val lyricsSource by viewModel.lyricsSource.collectAsState()
     val isLoadingLyrics by viewModel.isLoading.collectAsState()
+    val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
 
     val showPlaybackControls = hasSyncedContent && isCurrentTrack
@@ -227,13 +229,11 @@ fun LyricsBottomSheet(
                         .padding(horizontal = 20.dp),
                     contentAlignment = Alignment.Center
                 ) {
-                    Text(
-                        text = stringResource(
-                            if (isLoadingLyrics) R.string.sheet_lyrics_loading else R.string.sheet_lyrics_not_found
-                        ),
-                        style = MaterialTheme.typography.bodyLarge,
+                    LyricsStatusMessage(
+                        isLoading = isLoadingLyrics,
+                        isError = lyricsError,
                         color = inactiveTextColor,
-                        textAlign = TextAlign.Center
+                        onRetry = viewModel::retryLyrics
                     )
                 }
             } else {
@@ -356,6 +356,42 @@ internal fun LyricsSourceBadge(
         maxLines = 1,
         modifier = modifier.padding(top = 2.dp)
     )
+}
+
+/**
+ * Placeholder drawn where the lyrics list would be: looking up, definitive "no lyrics",
+ * or a transient failure with a retry action. Only [isError] offers the retry.
+ */
+@Composable
+internal fun LyricsStatusMessage(
+    isLoading: Boolean,
+    isError: Boolean,
+    color: Color,
+    onRetry: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier,
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Text(
+            text = stringResource(
+                when {
+                    isLoading -> R.string.sheet_lyrics_loading
+                    isError -> R.string.sheet_lyrics_error
+                    else -> R.string.sheet_lyrics_not_found
+                }
+            ),
+            style = MaterialTheme.typography.bodyLarge,
+            color = color,
+            textAlign = TextAlign.Center
+        )
+        if (isError && !isLoading) {
+            TextButton(onClick = onRetry) {
+                Text(text = stringResource(R.string.ui_action_retry))
+            }
+        }
+    }
 }
 
 @Composable

@@ -41,6 +41,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.bottomsheet.LyricsList
 import cc.tomko.outify.ui.components.bottomsheet.LyricsSourceBadge
+import cc.tomko.outify.ui.components.bottomsheet.LyricsStatusMessage
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
 /**
@@ -69,6 +70,7 @@ fun LandscapeLyricsScreen(
     val hasSyncedContent by viewModel.hasSyncedContent.collectAsState()
     val lyricsSource by viewModel.lyricsSource.collectAsState()
     val isLoadingLyrics by viewModel.isLoading.collectAsState()
+    val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
 
     val isSynced = lyricsSynced && hasSyncedContent && isCurrentTrack
@@ -156,13 +158,11 @@ fun LandscapeLyricsScreen(
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             } else if (isLoadingLyrics || lyrics.isEmpty()) {
-                Text(
-                    text = stringResource(
-                        if (isLoadingLyrics) R.string.sheet_lyrics_loading else R.string.sheet_lyrics_not_found
-                    ),
-                    style = MaterialTheme.typography.bodyLarge,
+                LyricsStatusMessage(
+                    isLoading = isLoadingLyrics,
+                    isError = lyricsError,
                     color = inactiveTextColor,
-                    textAlign = TextAlign.Center,
+                    onRetry = viewModel::retryLyrics,
                     modifier = Modifier.padding(horizontal = 24.dp)
                 )
             } else {

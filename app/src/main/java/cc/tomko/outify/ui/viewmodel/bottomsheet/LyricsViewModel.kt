@@ -45,8 +45,11 @@ sealed class LyricsUiState {
         val synced: Boolean,
     ) : LyricsUiState()
 
-    /** Nothing to show: no provider had lyrics, or every lookup failed. */
+    /** Definitive answer: no provider has lyrics for this track. */
     data object Missing : LyricsUiState()
+
+    /** Transient failure (timeout, network); the lookup can be retried. */
+    data object Error : LyricsUiState()
 }
 
 @HiltViewModel
@@ -75,6 +78,11 @@ class LyricsViewModel @Inject constructor(
 
     val isLoading: StateFlow<Boolean> = _lyricsState
         .map { it is LyricsUiState.Loading }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /** True when the last lookup failed for a transient reason and can be retried. */
+    val hasError: StateFlow<Boolean> = _lyricsState
+        .map { it is LyricsUiState.Error }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
 
     /**
@@ -221,7 +229,7 @@ class LyricsViewModel @Inject constructor(
     private fun fetchLyrics(track: Track) {
         fetchJob?.cancel()
 
-        val cached = lyricsRepository.cached(track)
+        val cached = lyricsRepository.peek(track)
         if (cached != null) {
             _lyricsState.value = cached.toUiState()
             return
@@ -245,7 +253,15 @@ class LyricsViewModel @Inject constructor(
 
     private fun LyricsResult.toUiState(): LyricsUiState = when (this) {
         is LyricsResult.Found -> LyricsUiState.Found(lines, source, synced)
-        LyricsResult.NotFound, LyricsResult.Error -> LyricsUiState.Missing
+        LyricsResult.NotFound -> LyricsUiState.Missing
+        LyricsResult.Error -> LyricsUiState.Error
+    }
+
+    /** Re-runs the lookup for the displayed track after a transient failure. */
+    fun retryLyrics() {
+        if (_isEpisode.value) return
+        val track = _displayedTrack.value ?: return
+        fetchLyrics(track)
     }
 
     fun toggleLiked() {

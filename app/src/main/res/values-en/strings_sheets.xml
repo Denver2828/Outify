@@ -134,6 +134,7 @@
     <string name="sheet_lyrics_no_lyrics_episodes">No lyrics for episodes</string>
     <string name="sheet_lyrics_loading">Looking for the lyrics…</string>
     <string name="sheet_lyrics_not_found">We could not find the lyrics for this song.</string>
+    <string name="sheet_lyrics_error">We could not look up the lyrics. Check your connection and try again.</string>
     <string name="sheet_lyrics_provided_by">Lyrics provided by %1$s</string>
 
     <!-- Playback devices -->
