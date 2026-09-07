@@ -65,6 +65,16 @@ import javax.inject.Singleton
 class PlaybackService : MediaLibraryService(),
     androidx.media3.common.Player.Listener {
     companion object {
+        /**
+         * True between onCreate and onDestroy. Callers use it to avoid re-issuing
+         * startForegroundService() for a service that is already alive: every such call
+         * obliges the service to answer with startForeground() within the system timeout,
+         * and Media3 only does that while the player is playing.
+         */
+        @Volatile
+        var isRunning: Boolean = false
+            private set
+
         const val ROOT = "root"
         const val TRACK = "track"
         const val ARTIST = "artist"
@@ -157,14 +167,8 @@ class PlaybackService : MediaLibraryService(),
 
         createNotificationChannel()
 
-        startForeground(
-            NOTIFICATION_ID,
-            NotificationCompat.Builder(this, CHANNEL_ID)
-                .setContentTitle(getString(R.string.app_name))
-                .setContentText(getString(R.string.sys_notification_loading))
-                .setSmallIcon(R.drawable.ic_launcher_foreground)
-                .build()
-        )
+        startForeground(NOTIFICATION_ID, placeholderNotification())
+        isRunning = true
 
         mediaLibrarySessionCallback.apply {
             service = this@PlaybackService
@@ -393,8 +397,34 @@ class PlaybackService : MediaLibraryService(),
         super.onUpdateNotification(session, startInForegroundRequired)
     }
 
+    private fun placeholderNotification() =
+        NotificationCompat.Builder(this, CHANNEL_ID)
+            .setContentTitle(getString(R.string.app_name))
+            .setContentText(getString(R.string.sys_notification_loading))
+            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .build()
+
+    override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Every startForegroundService() must be answered with startForeground(), or the
+        // system raises "did not then call Service.startForeground()" after its timeout,
+        // even when the service is already alive. Media3 answers media-button starts itself
+        // and promotes the service while playing; explicit starts from the app while the
+        // player is paused had no answer at all, which is the ANR seen in the field.
+        val isMediaButtonStart = intent?.action == Intent.ACTION_MEDIA_BUTTON
+        if (!isMediaButtonStart) {
+            try {
+                startForeground(NOTIFICATION_ID, placeholderNotification())
+            } catch (e: IllegalStateException) {
+                // ForegroundServiceStartNotAllowedException (API 31+) extends this.
+                Log.w(TAG, "Could not promote PlaybackService to foreground", e)
+            }
+        }
+        return super.onStartCommand(intent, flags, startId)
+    }
+
     override fun onDestroy() {
         Log.i(TAG, "Terminating PlaybackService")
+        isRunning = false
 
         mediaLibrarySession?.run {
             player.stop()

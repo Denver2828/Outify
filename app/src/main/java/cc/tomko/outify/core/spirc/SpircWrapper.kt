@@ -2,6 +2,7 @@ package cc.tomko.outify.core.spirc
 
 import android.content.Context
 import android.content.Intent
+import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
@@ -94,8 +95,17 @@ class SpircWrapper @Inject constructor(
 
     @OptIn(UnstableApi::class)
     fun startPlaybackService() {
+        // A live service needs no new start request. Re-issuing startForegroundService()
+        // on every playback command obliged the service to call startForeground() again
+        // within the system timeout, which nobody did while the player was paused (ANR).
+        if (PlaybackService.isRunning) return
         val intent = Intent(context, PlaybackService::class.java)
-        ContextCompat.startForegroundService(context, intent)
+        try {
+            ContextCompat.startForegroundService(context, intent)
+        } catch (e: IllegalStateException) {
+            // Background start not allowed (API 31+ ForegroundServiceStartNotAllowedException).
+            Log.w("SpircWrapper", "Could not start PlaybackService in the foreground", e)
+        }
     }
 
     @OptIn(UnstableApi::class)
