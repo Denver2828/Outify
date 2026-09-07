@@ -90,11 +90,65 @@ object ProcessExitDiagnostics {
     private fun readTrace(exit: ApplicationExitInfo): String {
         return try {
             val stream = exit.traceInputStream ?: return "trace unavailable: no trace attached"
-            val raw = BufferedReader(InputStreamReader(stream)).use { it.readText() }
-            if (raw.isBlank()) "trace unavailable: empty" else truncateTrace(raw)
+            val bytes = stream.use { it.readBytes() }
+            if (bytes.isEmpty()) return "trace unavailable: empty"
+            // ANR traces are plain text; native crash traces are a binary tombstone protobuf.
+            if (looksBinary(bytes)) {
+                "(binary tombstone, ${bytes.size} bytes; printable strings follow)\n" +
+                    truncateTrace(printableStrings(bytes))
+            } else {
+                truncateTrace(String(bytes, Charsets.UTF_8))
+            }
         } catch (e: Exception) {
             "trace unavailable: ${e.message ?: e}"
         }
+    }
+
+    /** Pids of the most recent abnormal exits (ANR, crash, native crash), newest first. */
+    fun abnormalExitPids(context: Context, max: Int = 2): List<Int> {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.R) return emptyList()
+        return try {
+            historicalExits(context)
+                .filter {
+                    it.reason == ApplicationExitInfo.REASON_ANR ||
+                        it.reason == ApplicationExitInfo.REASON_CRASH ||
+                        it.reason == ApplicationExitInfo.REASON_CRASH_NATIVE
+                }
+                .map { it.pid }
+                .take(max)
+        } catch (e: Exception) {
+            emptyList()
+        }
+    }
+
+    internal fun looksBinary(bytes: ByteArray): Boolean {
+        val sample = bytes.size.coerceAtMost(512)
+        var control = 0
+        for (i in 0 until sample) {
+            val b = bytes[i].toInt() and 0xFF
+            if (b == 0 || (b < 0x20 && b != 0x09 && b != 0x0A && b != 0x0D)) control++
+        }
+        return control > sample / 16
+    }
+
+    /**
+     * Extracts runs of printable ASCII (length >= [minRun]) from a binary blob, one per line,
+     * the way `strings` does. Enough to read frames, abort messages and library paths from a
+     * tombstone without a protobuf parser.
+     */
+    internal fun printableStrings(bytes: ByteArray, minRun: Int = 6): String {
+        val out = StringBuilder()
+        val run = StringBuilder()
+        fun flush() {
+            if (run.length >= minRun) out.append(run).append('\n')
+            run.setLength(0)
+        }
+        for (b in bytes) {
+            val c = b.toInt() and 0xFF
+            if (c in 0x20..0x7E) run.append(c.toChar()) else flush()
+        }
+        flush()
+        return out.toString()
     }
 
     /**

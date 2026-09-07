@@ -25,6 +25,7 @@ object AudioDiagnostics {
     private const val TAG = "AudioDiagnostics"
     private const val MAX_EVENTS = 400
     private const val LOGCAT_LINES = 800
+    private const val PREVIOUS_LOGCAT_LINES = 400
 
     private val events = ArrayDeque<String>(MAX_EVENTS)
     private val timeFormat = SimpleDateFormat("HH:mm:ss.SSS", Locale.US)
@@ -82,8 +83,17 @@ object AudioDiagnostics {
         append(ProcessExitDiagnostics.describe(context))
         appendLine()
 
+        // The logcat buffer is system-wide, and an app may read every line its own UID wrote,
+        // so the lines of a process that just crashed or ANR'd are still there. That is where
+        // the Rust panic hook and the last actions before the death live.
+        ProcessExitDiagnostics.abnormalExitPids(context).forEach { pid ->
+            appendLine("--- logcat (previous process $pid, last $PREVIOUS_LOGCAT_LINES lines) ---")
+            appendLine(readLogcat(pid, PREVIOUS_LOGCAT_LINES))
+            appendLine()
+        }
+
         appendLine("--- logcat (this process, last $LOGCAT_LINES lines) ---")
-        appendLine(readLogcat())
+        appendLine(readLogcat(android.os.Process.myPid(), LOGCAT_LINES))
     }
 
     private fun describeAudioManager(context: Context): String = buildString {
@@ -146,12 +156,12 @@ object AudioDiagnostics {
         else -> "TYPE_$type"
     }
 
-    /** Reads this process' own logcat buffer; no permission needed for the caller's pid. */
-    private fun readLogcat(): String {
+    /** Reads the logcat lines of [pid]; no permission needed for pids of the caller's own UID. */
+    private fun readLogcat(pid: Int, lines: Int): String {
         return try {
             val process = ProcessBuilder(
-                "logcat", "-d", "-v", "threadtime", "-t", LOGCAT_LINES.toString(),
-                "--pid=${android.os.Process.myPid()}",
+                "logcat", "-d", "-v", "threadtime", "-t", lines.toString(),
+                "--pid=$pid",
             ).redirectErrorStream(true).start()
             val text = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
             process.waitFor()

@@ -57,3 +57,25 @@ class ProcessExitDiagnosticsTest {
         assertTrue(result.length < 2_200)
     }
 }
+
+class ProcessExitBinaryTraceTest {
+    @org.junit.Test
+    fun `text traces are not binary`() {
+        val text = "Subject: ANR\n\"main\" prio=5 tid=1 Native\n".toByteArray()
+        org.junit.Assert.assertFalse(ProcessExitDiagnostics.looksBinary(text))
+    }
+
+    @org.junit.Test
+    fun `tombstone-like blobs are binary and yield their strings`() {
+        val blob = byteArrayOf(0x0A, 0x12, 0x00, 0x03) +
+            "SIGABRT".toByteArray() + byteArrayOf(0x00, 0x01) +
+            "panic: called Option::unwrap() on a None value".toByteArray() +
+            byteArrayOf(0x00, 0x7F.toByte()) + "ab".toByteArray()
+        org.junit.Assert.assertTrue(ProcessExitDiagnostics.looksBinary(blob))
+        val strings = ProcessExitDiagnostics.printableStrings(blob)
+        org.junit.Assert.assertEquals(
+            "SIGABRT\npanic: called Option::unwrap() on a None value\n",
+            strings,
+        )
+    }
+}
