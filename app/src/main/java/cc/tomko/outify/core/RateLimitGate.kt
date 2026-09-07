@@ -8,6 +8,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.getAndUpdate
+import kotlinx.coroutines.flow.updateAndGet
 import kotlin.math.max
 
 /**
@@ -51,8 +53,9 @@ class RateLimitGate(
     /** Adopts a window end read from storage, when it is still in the future and later than ours. */
     fun restoreFrom(savedUntilMs: Long) {
         restored = true
-        if (savedUntilMs > clock() && savedUntilMs > _untilMs.value) {
-            _untilMs.value = savedUntilMs
+        if (savedUntilMs <= clock()) return
+        val previous = _untilMs.getAndUpdate { max(it, savedUntilMs) }
+        if (savedUntilMs > previous) {
             Log.i(TAG, "Restored a Spotify rate-limit window ending in ${(savedUntilMs - clock()) / 1000L} s")
         }
     }
@@ -75,8 +78,8 @@ class RateLimitGate(
         val seconds = (retryAfterSeconds ?: DEFAULT_RETRY_AFTER_SECONDS).coerceAtLeast(1L)
         val until = clock() + seconds * 1000L
         restoreOnce()
-        if (until > _untilMs.value) {
-            _untilMs.value = until
+        val previous = _untilMs.getAndUpdate { max(it, until) }
+        if (until > previous) {
             runCatching { persist(until) }
             Log.w(TAG, "Spotify rate limited, holding requests for $seconds s")
         }
@@ -86,8 +89,7 @@ class RateLimitGate(
     fun effectiveUntilMs(): Long {
         restoreOnce()
         val native = runCatching { nativeUntilMs() }.getOrDefault(0L)
-        if (native > _untilMs.value) _untilMs.value = native
-        val until = _untilMs.value
+        val until = _untilMs.updateAndGet { max(it, native) }
         return if (until > clock()) until else 0L
     }
 

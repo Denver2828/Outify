@@ -79,8 +79,8 @@ class AudioDiagnosticsViewModel @Inject constructor(
             _lastProbeResult.value = "probing…"
             val lines = listOf(
                 "/me" to { spClient.getCurrentUserProfile() },
-                "/me/top/artists" to { spClient.getUserTop("artists") },
-                "/me/top/tracks" to { spClient.getUserTop("tracks") },
+                "/me/top/artists" to { spClient.getUserTop("artists", "medium_term") },
+                "/me/top/tracks" to { spClient.getUserTop("tracks", "medium_term") },
             ).map { (name, call) ->
                 val summary = summarizeProbe(runCatching { call() })
                 AudioDiagnostics.record("WebApiProbe", "$name -> $summary")

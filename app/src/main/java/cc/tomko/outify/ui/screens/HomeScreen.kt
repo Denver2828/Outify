@@ -104,155 +104,153 @@ fun SharedTransitionScope.HomeScreen(
         val state = uiState
         // The error state is rendered below the header on purpose: the header carries the
         // settings and account entries, and a full-screen error must never hide them.
-        run {
-            PullToRefreshBox(
-                isRefreshing = isRefreshing,
-                onRefresh = { viewModel.refresh() },
-                modifier = Modifier
-                    .fillMaxSize()
-                    .padding(top = innerPaddings.calculateTopPadding()),
+        PullToRefreshBox(
+            isRefreshing = isRefreshing,
+            onRefresh = { viewModel.refresh() },
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(top = innerPaddings.calculateTopPadding()),
+        ) {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize(),
+                contentPadding = PaddingValues(bottom = 24.dp)
             ) {
-                LazyColumn(
-                    modifier = Modifier.fillMaxSize(),
-                    contentPadding = PaddingValues(bottom = 24.dp)
-                ) {
+                item {
+                    HeaderSection(
+                        username = username,
+                        userAvatarUrl = userAvatarUrl,
+                        isPlaybackLoggedIn = isPlaybackLoggedIn,
+                        selectedDuration = selectedDuration,
+                        onDurationChange = { viewModel.setDuration(it) },
+                        onSettingsClick = { backStack.add(Route.SettingsScreen) },
+                        onAccountClick = { backStack.add(Route.AccountsScreen) },
+                        durationExpanded = durationExpanded,
+                        onDurationExpandedChange = { durationExpanded = it }
+                    )
+                }
+
+                refreshFailure?.let { kind ->
                     item {
-                        HeaderSection(
-                            username = username,
-                            userAvatarUrl = userAvatarUrl,
-                            isPlaybackLoggedIn = isPlaybackLoggedIn,
-                            selectedDuration = selectedDuration,
-                            onDurationChange = { viewModel.setDuration(it) },
-                            onSettingsClick = { backStack.add(Route.SettingsScreen) },
-                            onAccountClick = { backStack.add(Route.AccountsScreen) },
-                            durationExpanded = durationExpanded,
-                            onDurationExpandedChange = { durationExpanded = it }
+                        RefreshNotice(
+                            kind = kind,
+                            rateLimitRemainingSeconds = rateLimitSeconds,
+                            onRetry = { viewModel.refresh() },
                         )
                     }
+                }
 
-                    refreshFailure?.let { kind ->
+                when (state) {
+                    is HomeUiState.Loading -> {
                         item {
-                            RefreshNotice(
-                                kind = kind,
-                                rateLimitRemainingSeconds = rateLimitSeconds,
-                                onRetry = { viewModel.refresh() },
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                text = stringResource(R.string.screen_home_top_artists),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 24.dp)
+                            )
+                        }
+                        item { SkeletonArtistRow() }
+                        item {
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.screen_home_top_tracks),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 24.dp)
+                            )
+                        }
+                        items(10) { SwipeableTrackRowConfigured(track = null) }
+                    }
+
+                    is HomeUiState.NotAuthenticated -> {
+                        item { Spacer(Modifier.height(32.dp)) }
+                        item {
+                            ConnectSpotifyCard(
+                                onConnectClick = { backStack.add(Route.AccountsScreen) }
                             )
                         }
                     }
 
-                    when (state) {
-                        is HomeUiState.Loading -> {
-                            item {
-                                Spacer(Modifier.height(24.dp))
-                                Text(
-                                    text = stringResource(R.string.screen_home_top_artists),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
-                            }
-                            item { SkeletonArtistRow() }
-                            item {
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    text = stringResource(R.string.screen_home_top_tracks),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
-                            }
-                            items(10) { SwipeableTrackRowConfigured(track = null) }
+                    is HomeUiState.EmptyResult -> {
+                        item { Spacer(Modifier.height(32.dp)) }
+                        item {
+                            EmptyResultCard()
                         }
+                    }
 
-                        is HomeUiState.NotAuthenticated -> {
-                            item { Spacer(Modifier.height(32.dp)) }
-                            item {
-                                ConnectSpotifyCard(
-                                    onConnectClick = { backStack.add(Route.AccountsScreen) }
-                                )
-                            }
+                    is HomeUiState.Success -> {
+                        item {
+                            Spacer(Modifier.height(24.dp))
+                            Text(
+                                text = stringResource(R.string.screen_home_top_artists),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 24.dp)
+                            )
                         }
-
-                        is HomeUiState.EmptyResult -> {
-                            item { Spacer(Modifier.height(32.dp)) }
+                        if (state.topArtists.isNotEmpty()) {
                             item {
-                                EmptyResultCard()
-                            }
-                        }
-
-                        is HomeUiState.Success -> {
-                            item {
-                                Spacer(Modifier.height(24.dp))
-                                Text(
-                                    text = stringResource(R.string.screen_home_top_artists),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
-                            }
-                            if (state.topArtists.isNotEmpty()) {
-                                item {
-                                    LazyRow(
-                                        contentPadding = PaddingValues(
-                                            horizontal = 24.dp,
-                                            vertical = 12.dp
-                                        ),
-                                        horizontalArrangement = Arrangement.spacedBy(16.dp)
-                                    ) {
-                                        items(state.topArtists.take(10)) { artist ->
-                                            TopArtistItem(
-                                                artist = artist,
-                                                modifier = Modifier.clickable {
-                                                    backStack.add(Route.ArtistScreen(artist.uri))
-                                                }
-                                            )
-                                        }
+                                LazyRow(
+                                    contentPadding = PaddingValues(
+                                        horizontal = 24.dp,
+                                        vertical = 12.dp
+                                    ),
+                                    horizontalArrangement = Arrangement.spacedBy(16.dp)
+                                ) {
+                                    items(state.topArtists.take(10)) { artist ->
+                                        TopArtistItem(
+                                            artist = artist,
+                                            modifier = Modifier.clickable {
+                                                backStack.add(Route.ArtistScreen(artist.uri))
+                                            }
+                                        )
                                     }
                                 }
                             }
-
-                            item {
-                                Spacer(Modifier.height(16.dp))
-                                Text(
-                                    text = stringResource(R.string.screen_home_top_tracks),
-                                    style = MaterialTheme.typography.titleLarge,
-                                    fontWeight = FontWeight.Bold,
-                                    modifier = Modifier.padding(horizontal = 24.dp)
-                                )
-                            }
-                            if (state.topTracks.isNotEmpty()) {
-                                items(state.topTracks.take(10)) { track ->
-                                    SwipeableTrackRowConfigured(
-                                        track,
-                                        currentAudio = currentTrack,
-                                        isPlaybackPlaying = isPlaybackPlaying,
-                                        onRowClick = remember(track.uri) {
-                                            { viewModel.loadTrack(track.toPlayableAudio()) }
-                                        },
-                                        onArtworkClick = {
-                                            backStack.add(Route.AlbumScreen(track.album!!.uri))
-                                        },
-                                        onArtistClick = { artist ->
-                                            backStack.add(Route.ArtistScreen(artist.uri))
-                                        },
-                                        trailingContent = {},
-                                        modifier = Modifier.animateItem()
-                                    )
-                                }
-                            }
                         }
 
-                        is HomeUiState.Error -> {
-                            item {
-                                ErrorScreen(
-                                    message = state.kind?.let {
-                                        loadFailureMessage(it, rateLimitSeconds, state.message)
-                                    } ?: state.message,
-                                    onRetry = { viewModel.retry() },
-                                    // A lazy item cannot fill an unbounded height; take most of the viewport.
-                                    modifier = Modifier.fillParentMaxHeight(0.7f),
+                        item {
+                            Spacer(Modifier.height(16.dp))
+                            Text(
+                                text = stringResource(R.string.screen_home_top_tracks),
+                                style = MaterialTheme.typography.titleLarge,
+                                fontWeight = FontWeight.Bold,
+                                modifier = Modifier.padding(horizontal = 24.dp)
+                            )
+                        }
+                        if (state.topTracks.isNotEmpty()) {
+                            items(state.topTracks.take(10)) { track ->
+                                SwipeableTrackRowConfigured(
+                                    track,
+                                    currentAudio = currentTrack,
+                                    isPlaybackPlaying = isPlaybackPlaying,
+                                    onRowClick = remember(track.uri) {
+                                        { viewModel.loadTrack(track.toPlayableAudio()) }
+                                    },
+                                    onArtworkClick = {
+                                        backStack.add(Route.AlbumScreen(track.album!!.uri))
+                                    },
+                                    onArtistClick = { artist ->
+                                        backStack.add(Route.ArtistScreen(artist.uri))
+                                    },
+                                    trailingContent = {},
+                                    modifier = Modifier.animateItem()
                                 )
                             }
+                        }
+                    }
+
+                    is HomeUiState.Error -> {
+                        item {
+                            ErrorScreen(
+                                message = state.kind?.let {
+                                    loadFailureMessage(it, rateLimitSeconds, state.message)
+                                } ?: state.message,
+                                onRetry = { viewModel.retry() },
+                                // A lazy item cannot fill an unbounded height; take most of the viewport.
+                                modifier = Modifier.fillParentMaxHeight(0.7f),
+                            )
                         }
                     }
                 }

@@ -2,6 +2,7 @@ package cc.tomko.outify.data.repository
 
 import android.util.Log
 import cc.tomko.outify.core.RateLimitGate
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 
@@ -57,7 +58,7 @@ class LikedSyncCoordinator(
     private suspend fun restoreOnce() {
         if (restored) return
         restored = true
-        val saved = runCatching { restore() }.getOrNull() ?: return
+        val saved = runCatching { restore() }.rethrowCancellation().getOrNull() ?: return
         if (saved > lastSyncStartedMs && saved <= clock()) lastSyncStartedMs = saved
     }
 
@@ -88,11 +89,16 @@ class LikedSyncCoordinator(
             }
 
             lastSyncStartedMs = clock()
-            runCatching { persist(lastSyncStartedMs) }
+            runCatching { persist(lastSyncStartedMs) }.rethrowCancellation()
             Log.i(TAG, "running ($reason, force=$force)")
             val tracksSynced = runner.run(force, onProgress)
             SyncOutcome.Ran(tracksSynced)
         }
+    }
+
+    /** Storage failures are tolerated; a cancelled caller is not a storage failure. */
+    private fun <T> Result<T>.rethrowCancellation(): Result<T> = onFailure {
+        if (it is CancellationException) throw it
     }
 
     companion object {
