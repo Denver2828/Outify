@@ -189,7 +189,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> confirmedResult(toggleStartRadio())
             MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> confirmedResult(toggleRepeatMode())
             MediaSessionConstants.ACTION_TOGGLE_SHUFFLE -> confirmedResult(toggleShuffle())
-            else -> Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED))
+            else -> Futures.immediateFuture(SessionResult(SessionError.ERROR_NOT_SUPPORTED))
         }
     }
 
@@ -203,9 +203,9 @@ class MediaLibrarySessionCallback @Inject constructor(
         scope.future {
             val code = when (withTimeoutOrNull(CUSTOM_COMMAND_TIMEOUT_MS) { outcome.await() }) {
                 true -> SessionResult.RESULT_SUCCESS
-                false -> SessionResult.RESULT_ERROR_UNKNOWN
-                null -> if (outcome.isCompleted) SessionResult.RESULT_INFO_SKIPPED
-                else SessionResult.RESULT_ERROR_UNKNOWN // still pending after the timeout
+                false -> SessionError.ERROR_UNKNOWN
+                null -> if (outcome.isCompleted) SessionError.INFO_CANCELLED // nothing to act on
+                else SessionError.ERROR_UNKNOWN // still pending after the timeout
             }
             SessionResult(code)
         }

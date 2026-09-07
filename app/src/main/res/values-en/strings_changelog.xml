@@ -3,6 +3,21 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.3 -->
+    <string name="changelog_1_7_3_date">September 6, 2026</string>
+    <string name="changelog_1_7_3_title">Code audit fixes</string>
+    <string-array name="changelog_1_7_3_bullets">
+        <item>Removing a song from Liked Songs touched the episodes table and the song stayed marked. Every heart (player, detail, notification and Android Auto) now uses the same operation and ends up showing the same state.</item>
+        <item>Starting a radio and liking from the notification or the car did network work on the main thread. They run in the background, and the "done" notice appears only once the operation is confirmed.</item>
+        <item>In search, an earlier query finishing late overwrote the results of the newer one. Each search is bound to its text: only the results of what you typed last are shown, and clearing the field discards whatever was in flight. A network error is told apart from "no matches".</item>
+        <item>If a lyric was not found while the LRCLIB lookup was off, the app kept treating it as missing after you turned it on. Cache validity is now decided in one place, "not found" entries expire after six hours and a network error offers a retry.</item>
+        <item>Repeat and shuffle buttons on an external controller (Android Auto, headphones) did nothing even though they were advertised. They now work and show the same state as the in-app buttons.</item>
+        <item>"Play next" could change the current song, its position and the history. It now inserts the track ahead of the queue without touching what is playing, and reports when nothing was playing or the insert failed.</item>
+        <item>When an audio write was cut short or the output died (for example on Bluetooth loss), samples were lost with no recovery. Pending samples are now kept, the output is rebuilt with a bounded number of attempts and the diagnostics report shows the recovery counters.</item>
+        <item>Stored playlists show instantly and refresh in the background; if the network fails you keep what you had, with a notice to retry.</item>
+        <item>Home, Liked, playlists and search show clear waiting, error and retry notices, including Spotify rate limits with a countdown. A network error is no longer presented as "no content".</item>
+    </string-array>
+
     <!-- 1.7.2 -->
     <string name="changelog_1_7_2_date">September 6, 2026</string>
     <string name="changelog_1_7_2_title">The app respects Spotify rate limits</string>
