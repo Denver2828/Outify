@@ -31,22 +31,35 @@ sealed class SyncOutcome {
  *
  * Every screen and service that used to call the repository directly goes through here, so:
  * - concurrent requests coalesce into one run (a second caller waits for the first),
- * - non-forced requests are debounced (default 60 s between runs),
+ * - non-forced requests are debounced (default 15 min between runs),
  * - nothing touches the network while [RateLimitGate] is armed, forced or not.
  *
- * Clock is injectable for tests. Debounce state is per process, which is what we want: a
- * fresh process may sync once.
+ * Clock is injectable for tests. The last start time is handed to [persist] and read back
+ * through [restore] on the first request, so a process restart does not re-sync a library
+ * that was synced minutes ago: every launch used to pay three Web API bursts.
  */
 class LikedSyncCoordinator(
     private val runner: LikedSyncRunner,
     private val gate: RateLimitGate,
     private val clock: () -> Long = System::currentTimeMillis,
     private val debounceMs: Long = DEFAULT_DEBOUNCE_MS,
+    private val persist: suspend (Long) -> Unit = {},
+    private val restore: suspend () -> Long? = { null },
 ) {
     private val mutex = Mutex()
 
     @Volatile
     private var lastSyncStartedMs: Long = 0L
+
+    @Volatile
+    private var restored = false
+
+    private suspend fun restoreOnce() {
+        if (restored) return
+        restored = true
+        val saved = runCatching { restore() }.getOrNull() ?: return
+        if (saved > lastSyncStartedMs && saved <= clock()) lastSyncStartedMs = saved
+    }
 
     suspend fun requestSync(
         reason: String,
@@ -66,6 +79,7 @@ class LikedSyncCoordinator(
                 return@withLock SyncOutcome.SkippedRateLimited(left)
             }
 
+            restoreOnce()
             val sinceLast = clock() - lastSyncStartedMs
             if (!force && lastSyncStartedMs != 0L && sinceLast < debounceMs) {
                 val left = ((debounceMs - sinceLast + 999L) / 1000L).toInt()
@@ -74,6 +88,7 @@ class LikedSyncCoordinator(
             }
 
             lastSyncStartedMs = clock()
+            runCatching { persist(lastSyncStartedMs) }
             Log.i(TAG, "running ($reason, force=$force)")
             val tracksSynced = runner.run(force, onProgress)
             SyncOutcome.Ran(tracksSynced)
@@ -82,6 +97,7 @@ class LikedSyncCoordinator(
 
     companion object {
         private const val TAG = "LikedSync"
-        const val DEFAULT_DEBOUNCE_MS = 60_000L
+        const val SYNC_DEBOUNCE_MS = 15L * 60_000L
+        const val DEFAULT_DEBOUNCE_MS = SYNC_DEBOUNCE_MS
     }
 }

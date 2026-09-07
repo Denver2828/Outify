@@ -102,6 +102,53 @@ class RateLimitGateTest {
     }
 
     @Test
+    fun `a restored window from storage is honoured after a restart`() {
+        val clock = FakeClock()
+        val saved = clock.now + 40_000L
+        val gate = RateLimitGate(clock = clock, restore = { saved })
+
+        assertTrue(gate.isLimited())
+        assertEquals(40, gate.remainingSeconds())
+    }
+
+    @Test
+    fun `an expired stored window is ignored`() {
+        val clock = FakeClock()
+        val gate = RateLimitGate(clock = clock, restore = { clock.now - 1L })
+
+        assertFalse(gate.isLimited())
+    }
+
+    @Test
+    fun `noteRateLimited persists the window end and reset persists zero`() {
+        val clock = FakeClock()
+        val written = mutableListOf<Long>()
+        val gate = RateLimitGate(clock = clock, persist = { written += it })
+
+        gate.noteRateLimited(15)
+        gate.noteRateLimited(5) // shorter: no new window, nothing written
+        gate.reset()
+
+        assertEquals(listOf(clock.now + 15_000L, 0L), written)
+    }
+
+    @Test
+    fun `restoreFrom adopts a later future window and drops the rest`() {
+        val clock = FakeClock()
+        val gate = RateLimitGate(clock = clock)
+        gate.noteRateLimited(10)
+
+        gate.restoreFrom(clock.now + 5_000L) // earlier than ours: ignored
+        assertEquals(10, gate.remainingSeconds())
+
+        gate.restoreFrom(clock.now + 20_000L)
+        assertEquals(20, gate.remainingSeconds())
+
+        gate.restoreFrom(clock.now - 1L) // past: ignored
+        assertEquals(20, gate.remainingSeconds())
+    }
+
+    @Test
     fun `remainingSecondsFlow counts down to zero and dedupes`() = runBlocking {
         val clock = FakeClock()
         val gate = RateLimitGate(clock = clock)

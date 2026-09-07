@@ -24,8 +24,48 @@ import kotlin.math.max
 class RateLimitGate(
     private val clock: () -> Long = System::currentTimeMillis,
     private val nativeUntilMs: () -> Long = { 0L },
+    persist: (Long) -> Unit = {},
+    restore: () -> Long? = { null },
 ) {
     private val _untilMs = MutableStateFlow(0L)
+
+    @Volatile
+    private var persist: (Long) -> Unit = persist
+
+    @Volatile
+    private var restore: () -> Long? = restore
+
+    @Volatile
+    private var restored = false
+
+    /**
+     * Attaches durable storage after construction. [shared] is created before Hilt exists,
+     * so the application wires the DataStore-backed writer here once; [write] receives every
+     * new window end and 0 on [reset]. The saved value is handed back through [restoreFrom]
+     * from a background coroutine, so no lookup ever blocks on disk.
+     */
+    fun attachPersistence(write: (Long) -> Unit) {
+        persist = write
+    }
+
+    /** Adopts a window end read from storage, when it is still in the future and later than ours. */
+    fun restoreFrom(savedUntilMs: Long) {
+        restored = true
+        if (savedUntilMs > clock() && savedUntilMs > _untilMs.value) {
+            _untilMs.value = savedUntilMs
+            Log.i(TAG, "Restored a Spotify rate-limit window ending in ${(savedUntilMs - clock()) / 1000L} s")
+        }
+    }
+
+    private fun restoreOnce() {
+        if (restored) return
+        val saved = runCatching { restore() }.getOrNull()
+        if (saved == null) {
+            restored = true
+            return
+        }
+        restoreFrom(saved)
+    }
 
     /** Wall-clock timestamp (ms) until which the Web API is off limits, 0 when it is not. */
     val untilMs: StateFlow<Long> = _untilMs.asStateFlow()
@@ -34,14 +74,17 @@ class RateLimitGate(
     fun noteRateLimited(retryAfterSeconds: Long?) {
         val seconds = (retryAfterSeconds ?: DEFAULT_RETRY_AFTER_SECONDS).coerceAtLeast(1L)
         val until = clock() + seconds * 1000L
+        restoreOnce()
         if (until > _untilMs.value) {
             _untilMs.value = until
+            runCatching { persist(until) }
             Log.w(TAG, "Spotify rate limited, holding requests for $seconds s")
         }
     }
 
     /** Latest of the Kotlin-side and native-side windows, 0 when neither is active. */
     fun effectiveUntilMs(): Long {
+        restoreOnce()
         val native = runCatching { nativeUntilMs() }.getOrDefault(0L)
         if (native > _untilMs.value) _untilMs.value = native
         val until = _untilMs.value
@@ -59,7 +102,9 @@ class RateLimitGate(
 
     /** Clears the window; used by tests and after a logout. */
     fun reset() {
+        restored = true
         _untilMs.value = 0L
+        runCatching { persist(0L) }
     }
 
     /**

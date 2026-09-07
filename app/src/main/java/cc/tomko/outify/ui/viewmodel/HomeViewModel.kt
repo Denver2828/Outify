@@ -18,6 +18,8 @@ import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.metadata.RefreshFailure
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.ui.viewmodel.home.TopsDecision
+import cc.tomko.outify.ui.viewmodel.home.TopsFreshness
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -170,7 +172,7 @@ class HomeViewModel @Inject constructor(
     fun refresh() {
         viewModelScope.launch {
             isRefreshing.value = true
-            loadData()
+            loadData(force = true)
             isRefreshing.value = false
         }
     }
@@ -179,7 +181,7 @@ class HomeViewModel @Inject constructor(
         viewModelScope.launch {
             isRefreshing.value = true
             spirc.restart()
-            loadData()
+            loadData(force = true)
             isRefreshing.value = false
         }
     }
@@ -191,7 +193,11 @@ class HomeViewModel @Inject constructor(
         playbackStateHolder.setAudio(audio)
     }
 
-    fun loadData() {
+    /**
+     * @param force pull-to-refresh / retry: bypass the tops TTL and hit the network even when
+     *   the cache is fresh. Plain launches serve a fresh cache without any Web API call.
+     */
+    fun loadData(force: Boolean = false) {
         loadJob?.cancel()
         loadJob = viewModelScope.launch {
             _refreshFailure.value = null
@@ -219,6 +225,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 val duration = _selectedDuration.value
+                val cacheSavedAtMs = settingsRepository.cachedTopsSavedAtMs.first()
 
                 settingsRepository.cachedTops.first()?.let { raw ->
                     try {
@@ -235,6 +242,17 @@ class HomeViewModel @Inject constructor(
                         }
                     } catch (_: Exception) {
                     }
+                }
+
+                val decision = TopsFreshness.decide(
+                    hasCache = hasContent,
+                    savedAtMs = cacheSavedAtMs,
+                    nowMs = System.currentTimeMillis(),
+                    forced = force,
+                )
+                if (decision == TopsDecision.SERVE_CACHE) {
+                    loadUserProfile()
+                    return@launch
                 }
 
                 if (rateLimitGate.isLimited()) {

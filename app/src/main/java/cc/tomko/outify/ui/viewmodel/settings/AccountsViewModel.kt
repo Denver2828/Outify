@@ -149,6 +149,8 @@ class AccountsViewModel @Inject constructor(
         _isPlaybackLoggedIn.value = false
         _isAccountLoggedIn.value = false
         _scopes.value = emptyList()
+        // A fresh login should not inherit the previous session's 429 window.
+        rateLimitGate.reset()
 
         viewModelScope.launch {
             try {

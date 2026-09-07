@@ -19,12 +19,14 @@ import cc.tomko.outify.data.dao.TrackFileDao
 import cc.tomko.outify.data.database.AppDatabase
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LikedSyncCoordinator
+import cc.tomko.outify.data.repository.SettingsRepository
 import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
 import coil3.memory.MemoryCache
 import coil3.request.crossfade
 import dagger.Module
+import kotlinx.coroutines.flow.first
 import dagger.Provides
 import dagger.hilt.InstallIn
 import dagger.hilt.android.qualifiers.ApplicationContext
@@ -83,7 +85,13 @@ object AppModule {
     fun provideLikedSyncCoordinator(
         likedRepository: LikedRepository,
         rateLimitGate: RateLimitGate,
-    ): LikedSyncCoordinator = LikedSyncCoordinator(likedRepository, rateLimitGate)
+        settingsRepository: SettingsRepository,
+    ): LikedSyncCoordinator = LikedSyncCoordinator(
+        runner = likedRepository,
+        gate = rateLimitGate,
+        persist = { startedAtMs -> settingsRepository.setLikedSyncLastStartedMs(startedAtMs) },
+        restore = { settingsRepository.likedSyncLastStartedMs.first() },
+    )
 
     @Provides
     @Named("metadataConcurrency")

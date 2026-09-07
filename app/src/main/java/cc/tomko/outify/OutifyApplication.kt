@@ -7,6 +7,7 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import androidx.glance.GlanceId
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.R
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
@@ -76,6 +77,15 @@ class OutifyApplication : Application() {
         }
 
         appScope.launch { ProcessExitDiagnostics.logLastExit(applicationContext) }
+
+        // The shared gate exists before Hilt does; give it durable storage so a Spotify 429
+        // window survives the frequent restarts that otherwise re-trigger it.
+        RateLimitGate.shared.attachPersistence { untilMs ->
+            appScope.launch { settingsRepository.setRateLimitUntilMs(untilMs) }
+        }
+        appScope.launch {
+            RateLimitGate.shared.restoreFrom(settingsRepository.rateLimitUntilMs.first())
+        }
 
         appScope.launch {
             // A custom Client ID/Secret saved in settings must survive a process restart;

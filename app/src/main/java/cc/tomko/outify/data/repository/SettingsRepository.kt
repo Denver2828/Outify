@@ -145,6 +145,15 @@ class SettingsRepository @Inject constructor(
 
         object Cached {
             val CACHED_TOPS = stringPreferencesKey("cached_tops_v1")
+            val CACHED_TOPS_SAVED_AT_MS = longPreferencesKey("cached_tops_saved_at_ms")
+        }
+
+        object Throttle {
+            /** Wall-clock end of the last Spotify 429 window; survives process restarts. */
+            val RATE_LIMIT_UNTIL_MS = longPreferencesKey("rate_limit_until_ms")
+
+            /** Wall-clock start of the last liked-library sync; survives process restarts. */
+            val LIKED_SYNC_LAST_STARTED_MS = longPreferencesKey("liked_sync_last_started_ms")
         }
 
         val CLIENT_ID = stringPreferencesKey("client_id")
@@ -606,7 +615,37 @@ class SettingsRepository @Inject constructor(
     }
 
     suspend fun saveCachedTops(json: String) {
-        dataStore.edit { it[Keys.Cached.CACHED_TOPS] = json }
+        dataStore.edit {
+            it[Keys.Cached.CACHED_TOPS] = json
+            it[Keys.Cached.CACHED_TOPS_SAVED_AT_MS] = System.currentTimeMillis()
+        }
+    }
+
+    /** When [cachedTops] was last written, 0 when unknown (legacy cache without a stamp). */
+    val cachedTopsSavedAtMs: Flow<Long> = dataStore.data.map { prefs ->
+        prefs[Keys.Cached.CACHED_TOPS_SAVED_AT_MS] ?: 0L
+    }
+
+    val rateLimitUntilMs: Flow<Long> = dataStore.data.map { prefs ->
+        prefs[Keys.Throttle.RATE_LIMIT_UNTIL_MS] ?: 0L
+    }
+
+    suspend fun setRateLimitUntilMs(untilMs: Long) {
+        dataStore.edit { prefs ->
+            if (untilMs <= 0L) prefs.remove(Keys.Throttle.RATE_LIMIT_UNTIL_MS)
+            else prefs[Keys.Throttle.RATE_LIMIT_UNTIL_MS] = untilMs
+        }
+    }
+
+    val likedSyncLastStartedMs: Flow<Long> = dataStore.data.map { prefs ->
+        prefs[Keys.Throttle.LIKED_SYNC_LAST_STARTED_MS] ?: 0L
+    }
+
+    suspend fun setLikedSyncLastStartedMs(startedAtMs: Long) {
+        dataStore.edit { prefs ->
+            if (startedAtMs <= 0L) prefs.remove(Keys.Throttle.LIKED_SYNC_LAST_STARTED_MS)
+            else prefs[Keys.Throttle.LIKED_SYNC_LAST_STARTED_MS] = startedAtMs
+        }
     }
 
     val clientId: Flow<String?> = dataStore.data.map { it[Keys.CLIENT_ID] }
