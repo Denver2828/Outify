@@ -225,7 +225,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 val duration = _selectedDuration.value
-                val cacheSavedAtMs = settingsRepository.cachedTopsSavedAtMs.first()
+                val cacheSavedAtMs = settingsRepository.cachedTopsSavedAtMs(duration.value).first()
 
                 settingsRepository.cachedTops.first()?.let { raw ->
                     try {
@@ -356,7 +356,7 @@ class HomeViewModel @Inject constructor(
             TopItemsDuration.MEDIUM_TERM -> cache.copy(mediumTerm = durationCache)
             TopItemsDuration.LONG_TERM -> cache.copy(longTerm = durationCache)
         }
-        settingsRepository.saveCachedTops(json.encodeToString(updated))
+        settingsRepository.saveCachedTops(json.encodeToString(updated), duration.value)
     }
 
     private fun loadUserProfile() {

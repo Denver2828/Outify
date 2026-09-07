@@ -145,7 +145,16 @@ class SettingsRepository @Inject constructor(
 
         object Cached {
             val CACHED_TOPS = stringPreferencesKey("cached_tops_v1")
-            val CACHED_TOPS_SAVED_AT_MS = longPreferencesKey("cached_tops_saved_at_ms")
+
+            /**
+             * Single stamp for the whole blob, superseded by [cachedTopsSavedAt]: one refresh
+             * used to mark every duration fresh. Only removed now, never read.
+             */
+            val LEGACY_CACHED_TOPS_SAVED_AT_MS = longPreferencesKey("cached_tops_saved_at_ms")
+
+            /** When the entry for [duration] (a `TopItemsDuration.value`) was last refreshed. */
+            fun cachedTopsSavedAt(duration: String) =
+                longPreferencesKey("cached_tops_saved_at_${duration}_ms")
         }
 
         object Throttle {
@@ -614,16 +623,24 @@ class SettingsRepository @Inject constructor(
         prefs[Keys.Cached.CACHED_TOPS]
     }
 
-    suspend fun saveCachedTops(json: String) {
+    /**
+     * Stores the whole tops blob and stamps only [refreshedDuration] (a `TopItemsDuration.value`)
+     * as fresh; the other durations keep their own stamps.
+     */
+    suspend fun saveCachedTops(json: String, refreshedDuration: String) {
         dataStore.edit {
             it[Keys.Cached.CACHED_TOPS] = json
-            it[Keys.Cached.CACHED_TOPS_SAVED_AT_MS] = System.currentTimeMillis()
+            it[Keys.Cached.cachedTopsSavedAt(refreshedDuration)] = System.currentTimeMillis()
+            it.remove(Keys.Cached.LEGACY_CACHED_TOPS_SAVED_AT_MS)
         }
     }
 
-    /** When [cachedTops] was last written, 0 when unknown (legacy cache without a stamp). */
-    val cachedTopsSavedAtMs: Flow<Long> = dataStore.data.map { prefs ->
-        prefs[Keys.Cached.CACHED_TOPS_SAVED_AT_MS] ?: 0L
+    /**
+     * When the [cachedTops] entry for [duration] was last refreshed, 0 when unknown (a legacy
+     * cache without a per-duration stamp, treated as stale).
+     */
+    fun cachedTopsSavedAtMs(duration: String): Flow<Long> = dataStore.data.map { prefs ->
+        prefs[Keys.Cached.cachedTopsSavedAt(duration)] ?: 0L
     }
 
     val rateLimitUntilMs: Flow<Long> = dataStore.data.map { prefs ->
