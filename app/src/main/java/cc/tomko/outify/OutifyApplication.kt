@@ -10,6 +10,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.diagnostics.ProcessExitDiagnostics
 import cc.tomko.outify.ui.viewmodel.detail.DetailViewModelStore
 import cc.tomko.outify.ui.viewmodel.detail.setDetailViewModelStore
@@ -18,6 +19,7 @@ import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.launch
 import javax.inject.Inject
 
@@ -42,6 +44,9 @@ class OutifyApplication : Application() {
 
     @Inject
     lateinit var exceptionCollector: ExceptionCollector
+
+    @Inject
+    lateinit var settingsRepository: SettingsRepository
 
     @UnstableApi
     override fun onCreate() {
@@ -73,7 +78,15 @@ class OutifyApplication : Application() {
         appScope.launch { ProcessExitDiagnostics.logLastExit(applicationContext) }
 
         appScope.launch {
-            LibrespotFfi.libInit(applicationContext, spotifyId, spotifySecret)
+            // A custom Client ID/Secret saved in settings must survive a process restart;
+            // otherwise the app silently falls back to the build-time credentials.
+            val customId = settingsRepository.clientId.first()?.trim().orEmpty()
+            val customSecret = settingsRepository.clientSecret.first()?.trim().orEmpty()
+            val useCustom = customId.isNotEmpty() && customSecret.isNotEmpty()
+            val effectiveId = if (useCustom) customId else spotifyId
+            val effectiveSecret = if (useCustom) customSecret else spotifySecret
+            Log.i("OutifyApplication", "Spotify client credentials: ${if (useCustom) "custom" else "build-time"}")
+            LibrespotFfi.libInit(applicationContext, effectiveId, effectiveSecret)
 
             spircController.start()
             spircWrapper.setRestartCallback { spircController.restart() }

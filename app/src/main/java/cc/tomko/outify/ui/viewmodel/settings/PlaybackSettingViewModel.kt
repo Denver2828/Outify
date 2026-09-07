@@ -2,6 +2,7 @@ package cc.tomko.outify.ui.viewmodel.settings
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.BuildConfig
 import cc.tomko.outify.LibrespotFfi
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.repository.PlaybackSettings
@@ -151,12 +152,14 @@ class PlaybackSettingViewModel @Inject constructor(
         viewModelScope.launch {
             val id = settingsRepository.clientId.first()
             val secret = settingsRepository.clientSecret.first()
-            if (id != null && secret != null) {
-                LibrespotFfi.updateClientCredentials(id, secret)
+            if (!id.isNullOrBlank() && !secret.isNullOrBlank()) {
+                LibrespotFfi.updateClientCredentials(id.trim(), secret.trim())
             } else {
+                // Clearing the custom credentials returns to the build-time ones,
+                // never to a hardcoded third-party Client ID.
                 LibrespotFfi.updateClientCredentials(
-                    "819a62c83de24821b2654387bc84f136",
-                    "6db424c706d34cf7810a5c8c59324182"
+                    BuildConfig.SPOTIFY_CLIENT_ID,
+                    BuildConfig.SPOTIFY_CLIENT_SECRET
                 )
             }
             spirc.restart()

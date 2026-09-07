@@ -8,6 +8,7 @@
     <string name="changelog_1_7_3_date">6 de septiembre de 2026</string>
     <string name="changelog_1_7_3_title">Correcciones de la auditoría de código</string>
     <string-array name="changelog_1_7_3_bullets">
+        <item>El Client ID y el Client Secret propios cargados en Ajustes se perdían al reiniciar la app, que volvía en silencio a los credenciales compilados. Ahora se aplican en cada arranque, y vaciarlos vuelve a los compilados, nunca a un ID de terceros.</item>
         <item>Quitar una canción de Me gusta tocaba la tabla de episodios y la canción seguía marcada. Ahora todos los corazones (reproductor, detalle, notificación y Android Auto) usan la misma operación y terminan mostrando el mismo estado.</item>
         <item>Iniciar una radio y el Me gusta desde la notificación o el auto hacían red en el hilo principal. Corren en segundo plano, y el aviso de "listo" aparece recién cuando la operación se confirmó.</item>
         <item>En la búsqueda, una consulta anterior que terminaba tarde pisaba los resultados de la nueva. Cada búsqueda queda atada a su texto: solo se muestran los resultados de lo último que escribiste, y borrar el campo descarta lo que venía en camino. Un error de red se distingue de "sin coincidencias".</item>

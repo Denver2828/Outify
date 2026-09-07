@@ -7,6 +7,7 @@
     <string name="changelog_1_7_3_date">September 6, 2026</string>
     <string name="changelog_1_7_3_title">Code audit fixes</string>
     <string-array name="changelog_1_7_3_bullets">
+        <item>Custom Client ID and Client Secret entered in Settings were lost on app restart, silently falling back to the build-time credentials. They are now applied on every launch, and clearing them returns to the build-time ones, never to a third-party ID.</item>
         <item>Removing a song from Liked Songs touched the episodes table and the song stayed marked. Every heart (player, detail, notification and Android Auto) now uses the same operation and ends up showing the same state.</item>
         <item>Starting a radio and liking from the notification or the car did network work on the main thread. They run in the background, and the "done" notice appears only once the operation is confirmed.</item>
         <item>In search, an earlier query finishing late overwrote the results of the newer one. Each search is bound to its text: only the results of what you typed last are shown, and clearing the field discards whatever was in flight. A network error is told apart from "no matches".</item>
