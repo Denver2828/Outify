@@ -12,6 +12,8 @@ use once_cell::sync::OnceCell;
 pub static SESSION: OnceCell<RwLock<Option<Session>>> = OnceCell::new();
 pub static SESSION_CALLBACK: OnceCell<RwLock<Option<GlobalRef>>> = OnceCell::new();
 static IS_AUTO_RESTARTING: AtomicBool = AtomicBool::new(false);
+const MAX_RESTART_ATTEMPTS: u32 = 8;
+const MAX_RESTART_BACKOFF_SECS: u64 = 30;
 
 pub fn init_session_container() {
     SESSION.get_or_init(|| RwLock::new(None));
@@ -132,13 +134,30 @@ fn start_shutdown_listener(session: Session) {
             .expect("BITRATE not initialized");
         let bitrate = *bitrate_mutex.lock().unwrap();
 
-        initialize_session().await;
-        if let Err(e) =
-            crate::spirc::initialize_spirc(device_name, gapless, normalise, bitrate).await
-        {
-            IS_AUTO_RESTARTING.store(false, Ordering::Release);
-            error!("spirc init after reconnect failed: {e}");
-            return;
+        // A reconnect right after a network drop usually fails on DNS or on the access point;
+        // retry with a bounded backoff instead of giving up on the first error, which used
+        // to leave the app without a session until the next manual restart.
+        let mut attempt: u32 = 0;
+        loop {
+            attempt += 1;
+            initialize_session().await;
+            match crate::spirc::initialize_spirc(device_name.clone(), gapless, normalise, bitrate)
+                .await
+            {
+                Ok(()) => break,
+                Err(e) => {
+                    error!("spirc init after reconnect failed (attempt {attempt}/{MAX_RESTART_ATTEMPTS}): {e}");
+                    if attempt >= MAX_RESTART_ATTEMPTS {
+                        IS_AUTO_RESTARTING.store(false, Ordering::Release);
+                        error!("auto-restart gave up; a manual restart is required");
+                        return;
+                    }
+                    cleanup().await;
+                    let delay_secs = (2u64.pow(attempt)).min(MAX_RESTART_BACKOFF_SECS);
+                    warn!("retrying session restart in {delay_secs} s");
+                    tokio::time::sleep(std::time::Duration::from_secs(delay_secs)).await;
+                }
+            }
         }
         let _ = crate::spirc::with_spirc(|spirc| {
             info!("auto-transferring session after reconnect");
@@ -202,13 +221,22 @@ async fn cleanup() {
         guard.take();
     }
 
-    let _ = crate::spirc::with_spirc(|spirc| {
-        spirc.cleanup();
-    });
+    // `crate::spirc::shutdown()` takes the runtime lock itself. Calling a method that needs
+    // the write lock from inside `with_spirc` (which holds the read lock) deadlocked the
+    // auto-restart task forever, leaving the app without a session after any network drop.
+    crate::spirc::shutdown();
 }
 
-pub fn get_username() -> String {
-    with_session(|session| session.username()).expect("failed to get username")
+/// Username of the connected session, `None` while there is no session (e.g. during a
+/// reconnect). Never panics: this runs on JNI threads where a panic aborts the whole app.
+pub fn get_username() -> Option<String> {
+    match with_session(|session| session.username()) {
+        Ok(name) => Some(name),
+        Err(e) => {
+            warn!("username unavailable: {e}");
+            None
+        }
+    }
 }
 
 // Helper function to retrieve &Session

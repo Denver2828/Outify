@@ -402,15 +402,6 @@ impl SpircRuntime {
         }
     }
 
-    pub fn cleanup(&self) {
-        self.shutdown();
-
-        let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
-        let mut guard = lock.write().unwrap();
-        if let Some(spirc) = guard.take() {
-            spirc.shutdown();
-        }
-    }
 }
 
 // Handles each player event accordingly
