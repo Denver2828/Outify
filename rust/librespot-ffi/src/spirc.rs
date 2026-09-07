@@ -186,7 +186,22 @@ impl SpircRuntime {
     }
 
     pub fn play_pause(&self) -> Result<(), librespot_core::Error> {
+        // librespot drops PlayPause while this device is not the active Connect device.
+        // Bring the session here instead, which resumes whatever was playing.
+        if !IS_DEVICE_ACTIVE.load(std::sync::atomic::Ordering::Relaxed) {
+            info!("play/pause while inactive: transferring playback to this device");
+            return self.transfer();
+        }
         self.spirc.play_pause()
+    }
+
+    /// librespot ignores `Load` while the device is not the active Connect device (seen after
+    /// a cluster update reported the previous device as gone). `Activate` is idempotent (a
+    /// warning when already active) and is queued ahead of the load on the same channel.
+    fn ensure_active(&self) {
+        if let Err(e) = self.spirc.activate() {
+            warn!("activate before load failed: {e}");
+        }
     }
 
     pub fn pause(&self) -> Result<(), librespot_core::Error> {
@@ -206,6 +221,7 @@ impl SpircRuntime {
         uri: String,
         options: LoadRequestOptions,
     ) -> Result<(), librespot_core::Error> {
+        self.ensure_active();
         let shuffle = IS_SHUFFLING.load(std::sync::atomic::Ordering::Relaxed);
         let repeat_mode =
             RepeatMode::from_u8(REPEAT_MODE.load(std::sync::atomic::Ordering::Relaxed));
