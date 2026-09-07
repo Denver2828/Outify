@@ -3,7 +3,6 @@ package cc.tomko.outify.playback
 import android.content.Context
 import android.media.AudioAttributes
 import android.media.AudioFormat
-import android.media.AudioManager
 import android.media.AudioTrack
 import android.os.Build
 import android.os.Handler
@@ -16,7 +15,9 @@ import androidx.media3.common.C
 import androidx.media3.common.audio.AudioProcessor
 import androidx.media3.common.audio.SonicAudioProcessor
 import androidx.media3.common.util.UnstableApi
-import cc.tomko.outify.core.spirc.VolumeController.Companion.SPOTIFY_MAX_VOLUME
+import cc.tomko.outify.playback.audio.AudioSink
+import cc.tomko.outify.playback.audio.AudioTrackSink
+import cc.tomko.outify.playback.audio.PcmWriter
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
@@ -32,6 +33,12 @@ enum class PcmFormat {
 
 /**
  * Plays the received PCM audio using modern AudioAttributes/AudioFormat API.
+ *
+ * Ownership: the AudioTrack lives inside a [PcmWriter], which is the only code that
+ * writes to it. This class creates tracks (initially and on rebuild after
+ * `ERROR_DEAD_OBJECT`), feeds PCM to the writer and reports what it sees to the
+ * diagnostics log. [writeLock] serializes the PCM path against pause/flush/release from
+ * other threads; the writer has its own lock for the sink handle.
  */
 @UnstableApi
 class AudioEngine(
@@ -39,19 +46,20 @@ class AudioEngine(
     eventCallback: PlayerEventCallback,
     private val stateHolder: PlaybackStateHolder,
 ) {
+    /** Current sink, kept here only for diagnostics and volume/pause/flush; writes go through [writer]. */
     @Volatile
-    private var audioTrack: AudioTrack? = null
+    private var sink: AudioTrackSink? = null
     private var currentSampleRate = -1
     private var currentChannels = -1
     private var currentFormat: PcmFormat? = null
 
+    /** Last volume requested by the player, reapplied to every newly created track. */
+    @Volatile
+    private var lastVolume: Float? = null
+
     // Diagnostics counters, read by AudioDiagnostics when a report is built.
     @Volatile private var framesReceived = 0L
-    @Volatile private var bytesWritten = 0L
-    @Volatile private var writeErrors = 0L
-    @Volatile private var partialWrites = 0L
     @Volatile private var droppedFrames = 0L
-    @Volatile private var lastWriteResult = 0
     @Volatile private var lastPcmSampleRate = -1
     @Volatile private var lastPcmChannels = -1
     @Volatile private var lastPcmSize = -1
@@ -71,6 +79,15 @@ class AudioEngine(
     @Volatile
     private var outputFailureReported = false
 
+    /** When the writer last gave up on the output; gates how soon a fresh track is attempted. */
+    @Volatile
+    private var gaveUpAtMs = 0L
+
+    private val writer = PcmWriter(
+        rebuildSink = ::rebuildSinkForWriter,
+        listener = ::onWriterEvent,
+    )
+
     init {
         // Registers this class as the PCM callback.
         // Rust stores the GlobalRef and calls the onPcm method
@@ -83,9 +100,17 @@ class AudioEngine(
     }
 
     private fun diagnosticSnapshot(): String = buildString {
-        val track = audioTrack
+        val track = sink?.track
+        val w = writer.snapshot()
         appendLine("pcm: frames=$framesReceived lastSize=$lastPcmSize lastRate=$lastPcmSampleRate lastChannels=$lastPcmChannels")
-        appendLine("writes: bytes=$bytesWritten errors=$writeErrors partial=$partialWrites dropped=$droppedFrames lastResult=$lastWriteResult")
+        appendLine(
+            "writes: bytes=${w.bytesWritten} errors=${w.writeErrors} partial=${w.partialWrites} " +
+                "dropped=$droppedFrames lastResult=${w.lastWriteResult}"
+        )
+        appendLine(
+            "recovery: rebuilds=${w.rebuilds} zeroWrites=${w.zeroWrites} stalls=${w.stalls} " +
+                "pendingBytes=${w.pendingBytes} droppedBytes=${w.droppedBytes} gaveUp=${w.gaveUp}"
+        )
         appendLine("outputFailureReported=$outputFailureReported speed=${stateHolder.state.value.playbackSpeed}")
         if (track == null) {
             appendLine("audioTrack: none")
@@ -100,97 +125,162 @@ class AudioEngine(
         }
     }
 
+    /**
+     * Makes sure a track with this format exists and is attached to the writer.
+     * A format change releases the old track and discards pending samples of the old format.
+     */
     private fun ensureAudioTrack(sampleRate: Int, channels: Int, format: PcmFormat): Boolean {
         writeLock.withLock {
-            val existing = audioTrack
+            val existing = sink
             if (existing != null
                 && sampleRate == currentSampleRate
                 && channels == currentChannels
                 && format == currentFormat
-                && existing.state == AudioTrack.STATE_INITIALIZED
+                && existing.track.state == AudioTrack.STATE_INITIALIZED
+                && writer.hasSink()
             ) {
                 return true
             }
 
-            // Otherwise recreate
+            // After the writer exhausted its rebuild budget, do not recreate the track on
+            // every frame: wait one window before trying the output again.
+            val sameFormat = sampleRate == currentSampleRate && channels == currentChannels && format == currentFormat
+            if (sameFormat && writer.snapshot().gaveUp &&
+                System.currentTimeMillis() - gaveUpAtMs < PcmWriter.DEFAULT_REBUILD_WINDOW_MS
+            ) {
+                return false
+            }
+
+            // Otherwise recreate; samples of a different format must not be replayed.
             releaseAudioTrack()
 
-            val channelMask = when (channels) {
-                1 -> AudioFormat.CHANNEL_OUT_MONO
-                2 -> AudioFormat.CHANNEL_OUT_STEREO
-                else -> {
-                    // fallback to stereo for unknown channel counts
-                    Log.w(TAG, "Unsupported channel count $channels, falling back to stereo")
-                    AudioFormat.CHANNEL_OUT_STEREO
+            val newSink = createTrack(sampleRate, channels, format) ?: return false
+            sink = newSink
+            currentSampleRate = sampleRate
+            currentChannels = channels
+            currentFormat = format
+            writer.attach(newSink)
+            outputFailureReported = false
+            return true
+        }
+    }
+
+    /** Builds and starts an AudioTrack for the given format; null (and a user warning) on failure. */
+    private fun createTrack(sampleRate: Int, channels: Int, format: PcmFormat): AudioTrackSink? {
+        val channelMask = when (channels) {
+            1 -> AudioFormat.CHANNEL_OUT_MONO
+            2 -> AudioFormat.CHANNEL_OUT_STEREO
+            else -> {
+                // fallback to stereo for unknown channel counts
+                Log.w(TAG, "Unsupported channel count $channels, falling back to stereo")
+                AudioFormat.CHANNEL_OUT_STEREO
+            }
+        }
+
+        val encoding = when (format) {
+            PcmFormat.S16 -> AudioFormat.ENCODING_PCM_16BIT
+        }
+
+        val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelMask, encoding)
+        if (minBufferSize <= 0) {
+            Log.e(TAG, "Invalid min buffer size: $minBufferSize")
+            reportOutputFailure("minBufferSize=$minBufferSize")
+            return null
+        }
+
+        val bytesPerSample = when (encoding) {
+            AudioFormat.ENCODING_PCM_16BIT -> 2
+            AudioFormat.ENCODING_PCM_8BIT -> 1
+            AudioFormat.ENCODING_PCM_FLOAT -> 4
+            else -> 2
+        }
+        val frameSize = bytesPerSample * max(1, channels)
+        val bufferSize = max(minBufferSize, frameSize * 1024)
+
+        return try {
+            val attrs = AudioAttributes.Builder()
+                .setUsage(AudioAttributes.USAGE_MEDIA)
+                .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                .build()
+
+            val formatBuilder = AudioFormat.Builder()
+                .setSampleRate(sampleRate)
+                .setEncoding(encoding)
+                .setChannelMask(channelMask)
+                .build()
+
+            val newTrack = AudioTrack.Builder()
+                .setAudioAttributes(attrs)
+                .setAudioFormat(formatBuilder)
+                .setBufferSizeInBytes(bufferSize)
+                .setTransferMode(AudioTrack.MODE_STREAM)
+                .build()
+
+            if (newTrack.state != AudioTrack.STATE_INITIALIZED) {
+                Log.e(TAG, "Failed to initialize AudioTrack: state=${newTrack.state}")
+                newTrack.release()
+                reportOutputFailure("state=${newTrack.state}")
+                return null
+            }
+
+            lastVolume?.let { newTrack.setVolume(it) }
+            newTrack.play()
+
+            AudioDiagnostics.record(
+                TAG,
+                "AudioTrack created: sampleRate=$sampleRate, channels=$channels, encoding=$encoding, " +
+                    "buffer=$bufferSize, minBuffer=$minBufferSize, playState=${newTrack.playState}, " +
+                    "route=${describeRoute(newTrack)}"
+            )
+            AudioTrackSink(newTrack)
+        } catch (t: Throwable) {
+            Log.e(TAG, "Exception while creating AudioTrack", t)
+            AudioDiagnostics.record(TAG, "AudioTrack creation threw $t")
+            reportOutputFailure(t.javaClass.simpleName + ": " + (t.message ?: ""))
+            null
+        }
+    }
+
+    /**
+     * Called by the writer (under its lock, on the PCM thread) after `ERROR_DEAD_OBJECT`.
+     * The dead track was already released by the writer; recreate one with the same format.
+     */
+    private fun rebuildSinkForWriter(): AudioSink? {
+        val sampleRate = currentSampleRate
+        val channels = currentChannels
+        val format = currentFormat
+        if (sampleRate <= 0 || channels <= 0 || format == null) {
+            sink = null
+            return null
+        }
+        val replacement = createTrack(sampleRate, channels, format)
+        sink = replacement
+        return replacement
+    }
+
+    /** Writer events arrive outside the writer lock; they only log and warn. */
+    private fun onWriterEvent(event: PcmWriter.Event) {
+        when (event) {
+            is PcmWriter.Event.WriteProblem -> {
+                val w = writer.snapshot()
+                if (w.writeErrors + w.partialWrites <= 5 || (w.writeErrors + w.partialWrites) % 500 == 0L) {
+                    AudioDiagnostics.record(
+                        TAG,
+                        "AudioTrack.write ${event.message} (result=${event.result}, playState=${sink?.track?.playState})"
+                    )
                 }
             }
-
-            val encoding = when (format) {
-                PcmFormat.S16 -> AudioFormat.ENCODING_PCM_16BIT
-            }
-
-            val minBufferSize = AudioTrack.getMinBufferSize(sampleRate, channelMask, encoding)
-            if (minBufferSize <= 0) {
-                Log.e(TAG, "Invalid min buffer size: $minBufferSize")
-                reportOutputFailure("minBufferSize=$minBufferSize")
-                return false
-            }
-
-            val bytesPerSample = when (encoding) {
-                AudioFormat.ENCODING_PCM_16BIT -> 2
-                AudioFormat.ENCODING_PCM_8BIT -> 1
-                AudioFormat.ENCODING_PCM_FLOAT -> 4
-                else -> 2
-            }
-            val frameSize = bytesPerSample * max(1, channels)
-            val bufferSize = max(minBufferSize, frameSize * 1024)
-
-            try {
-                val attrs = AudioAttributes.Builder()
-                    .setUsage(AudioAttributes.USAGE_MEDIA)
-                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                    .build()
-
-                val formatBuilder = AudioFormat.Builder()
-                    .setSampleRate(sampleRate)
-                    .setEncoding(encoding)
-                    .setChannelMask(channelMask)
-                    .build()
-
-                val newTrack = AudioTrack.Builder()
-                    .setAudioAttributes(attrs)
-                    .setAudioFormat(formatBuilder)
-                    .setBufferSizeInBytes(bufferSize)
-                    .setTransferMode(AudioTrack.MODE_STREAM)
-                    .build()
-
-                if (newTrack.state != AudioTrack.STATE_INITIALIZED) {
-                    Log.e(TAG, "Failed to initialize AudioTrack: state=${newTrack.state}")
-                    newTrack.release()
-                    reportOutputFailure("state=${newTrack.state}")
-                    return false
+            is PcmWriter.Event.SinkRebuilt ->
+                AudioDiagnostics.record(TAG, "audio output rebuilt after dead object (attempt ${event.attempt})")
+            is PcmWriter.Event.Stalled -> {
+                val w = writer.snapshot()
+                if (w.stalls <= 5 || w.stalls % 100 == 0L) {
+                    AudioDiagnostics.record(TAG, "audio output stalled, ${event.pendingBytes} bytes retained")
                 }
-
-                newTrack.play()
-
-                audioTrack = newTrack
-                currentSampleRate = sampleRate
-                currentChannels = channels
-                currentFormat = format
-
-                outputFailureReported = false
-                AudioDiagnostics.record(
-                    TAG,
-                    "AudioTrack created: sampleRate=$sampleRate, channels=$channels, encoding=$encoding, " +
-                        "buffer=$bufferSize, minBuffer=$minBufferSize, playState=${newTrack.playState}, " +
-                        "route=${describeRoute(newTrack)}"
-                )
-                return true
-            } catch (t: Throwable) {
-                Log.e(TAG, "Exception while creating AudioTrack", t)
-                AudioDiagnostics.record(TAG, "AudioTrack creation threw $t")
-                reportOutputFailure(t.javaClass.simpleName + ": " + (t.message ?: ""))
-                return false
+            }
+            is PcmWriter.Event.OutputFailure -> {
+                gaveUpAtMs = System.currentTimeMillis()
+                reportOutputFailure(event.reason)
             }
         }
     }
@@ -218,34 +308,15 @@ class AudioEngine(
         return "${device.productName} (type=${device.type})"
     }
 
+    /** Explicit stop: releases the track and drops any samples still pending. */
     fun releaseAudioTrack() {
         writeLock.withLock {
             drainSonic()
-            val t = audioTrack ?: return
-            try {
-                if (t.playState == AudioTrack.PLAYSTATE_PLAYING) {
-                    try {
-                        t.stop()
-                    } catch (ignored: IllegalStateException) {
-                        // ignore - may happen if already stopped
-                    }
-                } else if (t.playState == AudioTrack.PLAYSTATE_PAUSED) {
-                    try {
-                        t.stop()
-                    } catch (ignored: IllegalStateException) {
-                    }
-                }
-            } catch (ignored: Exception) {
-            } finally {
-                try {
-                    t.release()
-                } catch (ignored: Exception) {
-                }
-                audioTrack = null
-                currentSampleRate = -1
-                currentChannels = -1
-                currentFormat = null
-            }
+            writer.close()
+            sink = null
+            currentSampleRate = -1
+            currentChannels = -1
+            currentFormat = null
         }
     }
 
@@ -260,7 +331,7 @@ class AudioEngine(
 
     fun pause() {
         writeLock.withLock {
-            audioTrack?.let {
+            sink?.track?.let {
                 try {
                     it.pause()
                 } catch (e: IllegalStateException) {
@@ -271,15 +342,17 @@ class AudioEngine(
     }
 
     fun setVolume(volume: Float) {
-        audioTrack?.setVolume(
-            volume.coerceIn(0.0f, AudioTrack.getMaxVolume())
-        )
+        val clamped = volume.coerceIn(0.0f, AudioTrack.getMaxVolume())
+        lastVolume = clamped
+        sink?.track?.setVolume(clamped)
     }
 
+    /** Explicit flush (seek): pending samples belong to the old position and are dropped. */
     fun flush() {
         writeLock.withLock {
             drainSonic()
-            audioTrack?.let {
+            writer.discardPending()
+            sink?.track?.let {
                 try {
                     it.flush()
                 } catch (e: IllegalStateException) {
@@ -306,11 +379,13 @@ class AudioEngine(
             lastPcmSampleRate = sampleRate
             lastPcmChannels = channels
             if (framesReceived == 1L || framesReceived % 500 == 0L) {
+                val w = writer.snapshot()
                 AudioDiagnostics.record(
                     TAG,
                     "pcm frame #$framesReceived size=$size rate=$sampleRate channels=$channels " +
-                        "written=$bytesWritten errors=$writeErrors dropped=$droppedFrames " +
-                        "head=${audioTrack?.playbackHeadPosition ?: -1} underruns=${audioTrack?.underrunCount ?: -1}"
+                        "written=${w.bytesWritten} errors=${w.writeErrors} dropped=$droppedFrames " +
+                        "rebuilds=${w.rebuilds} pending=${w.pendingBytes} " +
+                        "head=${sink?.track?.playbackHeadPosition ?: -1} underruns=${sink?.track?.underrunCount ?: -1}"
                 )
             }
 
@@ -322,6 +397,7 @@ class AudioEngine(
 
             val cap = pcmBuffer.capacity()
             if (size > cap) {
+                droppedFrames++
                 Log.w(TAG, "pcm size $size > buffer capacity $cap; dropping frame")
                 return
             }
@@ -330,22 +406,19 @@ class AudioEngine(
             pcmBuffer.limit(size)
 
             try {
-                val track = audioTrack ?: run {
-                    Log.w(TAG, "audioTrack is null in onPcmReady")
-                    return
-                }
-
                 val speed = stateHolder.state.value.playbackSpeed.coerceAtLeast(0.1f)
                 if (speed == 1f) {
-                    writeToTrack(pcmBuffer, size, track)
+                    writeToSink(pcmBuffer, size)
                 } else {
                     prepareSonic(sampleRate, channels, speed)
                     sonic.queueInput(pcmBuffer)
-                    drainSonicTo(track)
+                    drainSonicToSink()
                 }
             } catch (ise: IllegalStateException) {
                 Log.e(TAG, "AudioTrack write failed", ise)
             } finally {
+                // Safe to reset: whatever the sink did not take was copied into the writer's
+                // pending store, so nothing is lost here.
                 pcmBuffer.position(0)
                 pcmBuffer.limit(pcmBuffer.capacity())
             }
@@ -382,10 +455,10 @@ class AudioEngine(
         sonic.flush(AudioProcessor.StreamMetadata.DEFAULT)
     }
 
-    private fun drainSonicTo(track: AudioTrack) {
+    private fun drainSonicToSink() {
         var output = sonic.getOutput()
         while (output.hasRemaining()) {
-            writeToTrack(output, output.remaining(), track)
+            writeToSink(output, output.remaining())
             output = sonic.getOutput()
         }
     }
@@ -393,30 +466,19 @@ class AudioEngine(
     private fun drainSonic() {
         if (sonicSampleRate < 0) return
         sonic.queueEndOfStream()
-        val track = audioTrack
         var output = sonic.getOutput()
-        while (track != null && output.hasRemaining()) {
-            writeToTrack(output, output.remaining(), track)
+        while (writer.hasSink() && output.hasRemaining()) {
+            writeToSink(output, output.remaining())
             output = sonic.getOutput()
         }
         sonic.flush(AudioProcessor.StreamMetadata.DEFAULT)
         sonicCommittedSpeed = 1f
     }
 
-    private fun writeToTrack(buffer: ByteBuffer, size: Int, track: AudioTrack) {
-        val written = track.write(buffer, size, AudioTrack.WRITE_BLOCKING)
-        lastWriteResult = written
-        if (written < 0) {
-            writeErrors++
-            if (writeErrors <= 5 || writeErrors % 500 == 0L) {
-                AudioDiagnostics.record(TAG, "AudioTrack.write returned error $written (playState=${track.playState})")
-            }
-        } else {
-            bytesWritten += written
-            if (written < size) {
-                partialWrites++
-                Log.w(TAG, "AudioTrack wrote $written / $size bytes (partial write)")
-            }
+    private fun writeToSink(buffer: ByteBuffer, size: Int) {
+        when (writer.write(buffer, size)) {
+            PcmWriter.Outcome.COMPLETE, PcmWriter.Outcome.STALLED -> Unit
+            PcmWriter.Outcome.FAILED, PcmWriter.Outcome.DROPPED, PcmWriter.Outcome.CLOSED -> droppedFrames++
         }
     }
 
