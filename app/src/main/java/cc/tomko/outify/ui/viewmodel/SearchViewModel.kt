@@ -33,7 +33,6 @@ import kotlinx.coroutines.FlowPreview
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -41,7 +40,6 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
@@ -137,12 +135,7 @@ class SearchViewModel @Inject constructor(
     val searchState: StateFlow<SearchUiState<SearchUiModel>> = orchestrator.state
 
     /** Seconds left on the Spotify rate-limit window; 0 when searching is allowed. */
-    val rateLimitRemainingSeconds: StateFlow<Int> = flow {
-        while (true) {
-            emit(rateLimitGate.remainingSeconds())
-            delay(1_000L)
-        }
-    }.distinctUntilChanged()
+    val rateLimitRemainingSeconds: StateFlow<Int> = rateLimitGate.remainingSecondsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
 
     init {

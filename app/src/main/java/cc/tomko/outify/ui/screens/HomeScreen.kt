@@ -64,6 +64,8 @@ import androidx.navigation3.runtime.NavKey
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.ui.components.ErrorScreen
+import cc.tomko.outify.ui.components.RefreshNotice
+import cc.tomko.outify.ui.components.loadFailureMessage
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -88,6 +90,8 @@ fun SharedTransitionScope.HomeScreen(
     val currentTrack by viewModel.currentAudio.collectAsState(initial = null)
     val isPlaybackPlaying by viewModel.isPlaying.collectAsState(initial = false)
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val refreshFailure by viewModel.refreshFailure.collectAsState()
+    val rateLimitSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
     var durationExpanded by remember { mutableStateOf(false) }
 
     LaunchedEffect(Unit) {
@@ -100,7 +104,8 @@ fun SharedTransitionScope.HomeScreen(
         val state = uiState
         if (state is HomeUiState.Error) {
             ErrorScreen(
-                message = state.message,
+                message = state.kind?.let { loadFailureMessage(it, rateLimitSeconds, state.message) }
+                    ?: state.message,
                 onRetry = { viewModel.retry() },
                 modifier = Modifier.padding(top = innerPaddings.calculateTopPadding()),
             )
@@ -128,6 +133,16 @@ fun SharedTransitionScope.HomeScreen(
                             durationExpanded = durationExpanded,
                             onDurationExpandedChange = { durationExpanded = it }
                         )
+                    }
+
+                    refreshFailure?.let { kind ->
+                        item {
+                            RefreshNotice(
+                                kind = kind,
+                                rateLimitRemainingSeconds = rateLimitSeconds,
+                                onRetry = { viewModel.refresh() },
+                            )
+                        }
                     }
 
                     when (state) {

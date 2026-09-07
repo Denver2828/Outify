@@ -70,6 +70,7 @@ import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.CollapsingHeader
+import cc.tomko.outify.ui.components.RefreshNotice
 import cc.tomko.outify.ui.components.bottomsheet.FilterSortBottomSheet
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -142,6 +143,8 @@ fun SharedTransitionScope.LikedScreen(
     val searchQuery by viewModel.query.collectAsState()
     var transitioningTrackUri by remember { mutableStateOf<String?>(null) }
     val isRefreshing by viewModel.isRefreshing.collectAsState()
+    val syncFailure by viewModel.syncFailure.collectAsState()
+    val rateLimitSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
 
     val collapsingState = rememberCollapsingHeaderState()
     val atTop by remember {
@@ -231,6 +234,16 @@ fun SharedTransitionScope.LikedScreen(
                             contentDescription = stringResource(R.string.screen_liked_filter_sort_cd)
                         )
                     }
+                }
+            }
+
+            syncFailure?.let { kind ->
+                item {
+                    RefreshNotice(
+                        kind = kind,
+                        rateLimitRemainingSeconds = rateLimitSeconds,
+                        onRetry = { viewModel.refresh() },
+                    )
                 }
             }
 

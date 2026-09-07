@@ -199,6 +199,10 @@ class Metadata @Inject constructor(
         return playlistMetadataHelper.getPlaylistMetadata(uri, allowCached)
     }
 
+    /** Cache-first playlist load; see [PlaylistMetadataHelper.loadPlaylist]. */
+    fun loadPlaylist(uri: String, force: Boolean = false) =
+        playlistMetadataHelper.loadPlaylist(uri, force)
+
     fun observePlaylist(uri: String) =
         playlistMetadataHelper.observePlaylist(uri)
 

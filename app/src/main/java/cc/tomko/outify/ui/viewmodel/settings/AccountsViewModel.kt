@@ -20,10 +20,7 @@ import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
-import kotlinx.coroutines.flow.distinctUntilChanged
-import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -51,12 +48,7 @@ class AccountsViewModel @Inject constructor(
      * Seconds until Spotify accepts Web API calls again, 0 when it is not rate limiting us.
      * Ticks once per second while someone is collecting it.
      */
-    val rateLimitRemainingSeconds: StateFlow<Int> = flow {
-        while (true) {
-            emit(rateLimitGate.remainingSeconds())
-            delay(1_000L)
-        }
-    }.distinctUntilChanged()
+    val rateLimitRemainingSeconds: StateFlow<Int> = rateLimitGate.remainingSecondsFlow()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
 
     private val _isPlaybackLoggedIn = MutableStateFlow(false)

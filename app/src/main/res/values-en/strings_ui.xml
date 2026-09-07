@@ -146,4 +146,9 @@
 
     <string name="ui_color_saturation">Saturation</string>
     <string name="ui_color_lightness">Lightness</string>
+
+    <!-- Refresh notices: the content on screen is still valid, only the refresh failed -->
+    <string name="ui_notice_refresh_failed_network">Couldn\'t refresh. Check your connection. Showing the last saved version.</string>
+    <string name="ui_notice_refresh_failed_generic">Couldn\'t refresh. Showing the last saved version.</string>
+    <string name="ui_error_load_network">Couldn\'t load. Check your connection.</string>
 </resources>

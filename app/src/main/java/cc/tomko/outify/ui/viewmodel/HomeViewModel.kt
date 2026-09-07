@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.AuthStateEvent
 import cc.tomko.outify.core.AuthStateEventBus
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.UserProfile
@@ -12,12 +13,16 @@ import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.toOutifyUri
+import cc.tomko.outify.data.metadata.NativeError
 import cc.tomko.outify.data.metadata.NativeErrorHandler
+import cc.tomko.outify.data.metadata.RefreshFailure
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -45,7 +50,9 @@ sealed class HomeUiState {
     ) : HomeUiState()
 
     data object EmptyResult : HomeUiState()
-    data class Error(val message: String) : HomeUiState()
+
+    /** Nothing to show; [kind] lets the screen pick the message (and the rate-limit countdown). */
+    data class Error(val message: String, val kind: RefreshFailure? = null) : HomeUiState()
 }
 
 @Serializable
@@ -85,10 +92,24 @@ class HomeViewModel @Inject constructor(
     private val userProfile: UserProfile,
     private val settingsRepository: SettingsRepository,
     private val authManager: AuthManager,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
     val uiState: StateFlow<HomeUiState> = _uiState
+
+    /**
+     * Set when the top items could not be refreshed while cached ones are on screen. The
+     * cached content stays; the screen shows a notice with Retry.
+     */
+    private val _refreshFailure = MutableStateFlow<RefreshFailure?>(null)
+    val refreshFailure: StateFlow<RefreshFailure?> = _refreshFailure.asStateFlow()
+
+    /** Seconds left on the Spotify rate-limit window; 0 when requests are allowed. */
+    val rateLimitRemainingSeconds: StateFlow<Int> = rateLimitGate.remainingSecondsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
+
+    private var loadJob: Job? = null
 
     private val _selectedDuration = MutableStateFlow(TopItemsDuration.SHORT_TERM)
     val selectedDuration: StateFlow<TopItemsDuration> = _selectedDuration.asStateFlow()
@@ -171,9 +192,23 @@ class HomeViewModel @Inject constructor(
     }
 
     fun loadData() {
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            _refreshFailure.value = null
             _uiState.value = HomeUiState.Loading
             delay(150)
+
+            // Flips to true as soon as something worth keeping is on screen; from then on a
+            // failed refresh becomes a notice instead of replacing the content.
+            var hasContent = false
+
+            fun fail(kind: RefreshFailure, message: String) {
+                if (hasContent) {
+                    _refreshFailure.value = kind
+                } else {
+                    _uiState.value = HomeUiState.Error(message, kind)
+                }
+            }
 
             try {
                 val isAuthenticated = withContext(Dispatchers.IO) { spClient.isOAuthAuthenticated() }
@@ -196,9 +231,16 @@ class HomeViewModel @Inject constructor(
                         if (hit.artists.isNotEmpty()) {
                             val cachedTracks = withContext(Dispatchers.IO) { trackMetadataHelper.getTrackMetadata(hit.trackUris) }
                             _uiState.value = HomeUiState.Success(hit.artists, cachedTracks)
+                            hasContent = true
                         }
                     } catch (_: Exception) {
                     }
+                }
+
+                if (rateLimitGate.isLimited()) {
+                    fail(RefreshFailure.RATE_LIMITED, "rate limited")
+                    loadUserProfile()
+                    return@launch
                 }
 
                 val durationsToTry = listOf(
@@ -212,28 +254,30 @@ class HomeViewModel @Inject constructor(
 
                     val topArtistsJson = withContext(Dispatchers.IO) { spClient.getUserTop("artists", durationValue) }
                     if (topArtistsJson == null) {
-                        _uiState.value = HomeUiState.NotAuthenticated
+                        // The native call failed without a payload (network, session); the
+                        // OAuth check above already passed, so this is not "not logged in".
+                        fail(RefreshFailure.OTHER, "top artists unavailable")
                         loadUserProfile()
                         return@launch
                     }
                     val topArtistsError =
                         NativeErrorHandler.handleErrorJson(topArtistsJson, "top artists")
                     if (topArtistsError != null) {
-                        _uiState.value = HomeUiState.NotAuthenticated
+                        handleTopItemsError(topArtistsError, ::fail)
                         loadUserProfile()
                         return@launch
                     }
 
                     val topTracksJson = withContext(Dispatchers.IO) { spClient.getUserTop("tracks", durationValue) }
                     if (topTracksJson == null) {
-                        _uiState.value = HomeUiState.NotAuthenticated
+                        fail(RefreshFailure.OTHER, "top tracks unavailable")
                         loadUserProfile()
                         return@launch
                     }
                     val topTracksError =
                         NativeErrorHandler.handleErrorJson(topTracksJson, "top tracks")
                     if (topTracksError != null) {
-                        _uiState.value = HomeUiState.NotAuthenticated
+                        handleTopItemsError(topTracksError, ::fail)
                         loadUserProfile()
                         return@launch
                     }
@@ -250,11 +294,28 @@ class HomeViewModel @Inject constructor(
                     }
                 }
 
-                _uiState.value = HomeUiState.EmptyResult
+                if (!hasContent) {
+                    _uiState.value = HomeUiState.EmptyResult
+                }
                 loadUserProfile()
+            } catch (e: CancellationException) {
+                throw e
             } catch (e: Exception) {
-                _uiState.value = HomeUiState.Error(e.message ?: "Unknown error")
+                fail(RefreshFailure.classify(e, rateLimitGate.isLimited()), e.message ?: "Unknown error")
             }
+        }
+    }
+
+    /**
+     * An error payload from the top-items call. Only an authentication error means the user
+     * is not connected; a 429 or an outage keeps whatever is on screen.
+     */
+    private fun handleTopItemsError(error: NativeError, fail: (RefreshFailure, String) -> Unit) {
+        when (error) {
+            is NativeError.AuthenticationError -> _uiState.value = HomeUiState.NotAuthenticated
+            is NativeError.RateLimited -> fail(RefreshFailure.RATE_LIMITED, error.message)
+            is NativeError.ServiceUnavailable -> fail(RefreshFailure.NETWORK, error.message)
+            is NativeError.Unknown -> fail(RefreshFailure.OTHER, error.message)
         }
     }
 

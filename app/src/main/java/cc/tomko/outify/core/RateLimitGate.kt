@@ -1,9 +1,13 @@
 package cc.tomko.outify.core
 
 import android.util.Log
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlin.math.max
 
 /**
@@ -57,6 +61,17 @@ class RateLimitGate(
     fun reset() {
         _untilMs.value = 0L
     }
+
+    /**
+     * [remainingSeconds] sampled every [tickMs], deduplicated. Screens turn it into a
+     * countdown next to their "rate limited" notice; it emits 0 as soon as the window closes.
+     */
+    fun remainingSecondsFlow(tickMs: Long = 1_000L): Flow<Int> = flow {
+        while (true) {
+            emit(remainingSeconds())
+            delay(tickMs)
+        }
+    }.distinctUntilChanged()
 
     companion object {
         private const val TAG = "RateLimitGate"

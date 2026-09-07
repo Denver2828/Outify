@@ -1,5 +1,10 @@
 package cc.tomko.outify.core
 
+import kotlinx.coroutines.flow.first
+import kotlinx.coroutines.flow.onEach
+import kotlinx.coroutines.flow.take
+import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
@@ -94,5 +99,27 @@ class RateLimitGateTest {
         gate.reset()
 
         assertFalse(gate.isLimited())
+    }
+
+    @Test
+    fun `remainingSecondsFlow counts down to zero and dedupes`() = runBlocking {
+        val clock = FakeClock()
+        val gate = RateLimitGate(clock = clock)
+        gate.noteRateLimited(2)
+
+        // Every tick moves the clock forward one second, so the flow sees 2, 1, 0.
+        val seen = gate.remainingSecondsFlow(tickMs = 1L)
+            .onEach { clock.now += 1_000L }
+            .take(3)
+            .toList()
+
+        assertEquals(listOf(2, 1, 0), seen)
+    }
+
+    @Test
+    fun `remainingSecondsFlow starts at zero when not limited`() = runBlocking {
+        val gate = RateLimitGate(clock = FakeClock())
+
+        assertEquals(0, gate.remainingSecondsFlow(tickMs = 1L).first())
     }
 }

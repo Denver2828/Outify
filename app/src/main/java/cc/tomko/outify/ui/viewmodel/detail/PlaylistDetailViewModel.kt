@@ -5,6 +5,7 @@ import androidx.lifecycle.SavedStateHandle
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.UserProfile
@@ -15,13 +16,17 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.metadata.CacheFirstResult
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.metadata.RefreshFailure
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -47,6 +52,7 @@ class PlaylistDetailViewModel @Inject constructor(
     val userProfile: UserProfile,
     val likedDao: LikedDao,
     val spClient: SpClient,
+    private val rateLimitGate: RateLimitGate,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
@@ -114,6 +120,19 @@ class PlaylistDetailViewModel @Inject constructor(
 
     val isRefreshing = MutableStateFlow(false)
 
+    /**
+     * Set when the last refresh failed while a stored copy is on screen. The content stays;
+     * the screen only shows a notice with Retry.
+     */
+    private val _refreshFailure = MutableStateFlow<RefreshFailure?>(null)
+    val refreshFailure: StateFlow<RefreshFailure?> = _refreshFailure.asStateFlow()
+
+    /** Seconds left on the Spotify rate-limit window; 0 when requests are allowed. */
+    val rateLimitRemainingSeconds: StateFlow<Int> = rateLimitGate.remainingSecondsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
+
+    private var loadJob: Job? = null
+
     val likedTrackIds: StateFlow<Set<String>> =
         likedDao.observeLikedIds()
             .map { it.toHashSet() }
@@ -133,21 +152,63 @@ class PlaylistDetailViewModel @Inject constructor(
     fun loadPlaylist(playlistUri: String, cleanFetch: Boolean) {
         val uri = playlistUri.substringAfterLast(":").let { "spotify:playlist:$it" }
 
-        viewModelScope.launch {
+        loadJob?.cancel()
+        loadJob = viewModelScope.launch {
+            val me = coroutineContext[Job]
             savedStateHandle[PLAYLIST_URI_KEY] = uri
             isRefreshing.value = true
-            _uiState.value = PlaylistUiState.Loading
+            _refreshFailure.value = null
 
-            runCatching {
-                metadata.getPlaylistMetadata(uri, !cleanFetch)
-            }.onSuccess { playlist ->
-                isRefreshing.value = false
-                _uiState.value = PlaylistUiState.Success(playlist)
-                _isSaved.value = false
-                checkIsSaved(uri)
-            }.onFailure { e ->
-                isRefreshing.value = false
-                _uiState.value = PlaylistUiState.Error(e.message ?: context.getString(R.string.screen_error_unknown))
+            // A refresh of the playlist already on screen keeps it visible; only a different
+            // playlist (or nothing yet) shows the skeleton.
+            val shown = (_uiState.value as? PlaylistUiState.Success)?.playlist
+            if (shown == null || shown.uri != uri) {
+                _uiState.value = PlaylistUiState.Loading
+            }
+
+            var hasContent = shown?.uri == uri
+            try {
+                metadata.loadPlaylist(uri, force = cleanFetch).collect { step ->
+                    when (step) {
+                        is CacheFirstResult.Cached -> {
+                            hasContent = true
+                            _uiState.value = PlaylistUiState.Success(step.value)
+                            checkIsSaved(uri)
+                        }
+
+                        is CacheFirstResult.Fresh -> {
+                            hasContent = true
+                            _uiState.value = PlaylistUiState.Success(step.value)
+                            checkIsSaved(uri)
+                        }
+
+                        is CacheFirstResult.RefreshFailed -> {
+                            if (hasContent) {
+                                _refreshFailure.value = step.kind
+                            } else {
+                                _uiState.value = PlaylistUiState.Error(
+                                    context.getString(R.string.screen_error_unknown),
+                                    step.kind,
+                                )
+                            }
+                        }
+                    }
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (e: Exception) {
+                val kind = RefreshFailure.classify(e, rateLimitGate.isLimited())
+                if (hasContent) {
+                    _refreshFailure.value = kind
+                } else {
+                    _uiState.value = PlaylistUiState.Error(
+                        e.message ?: context.getString(R.string.screen_error_unknown),
+                        kind,
+                    )
+                }
+            } finally {
+                // A newer load may already own the flag; only the current job clears it.
+                if (loadJob === me) isRefreshing.value = false
             }
         }
     }
@@ -255,5 +316,7 @@ data class PlaylistRow(
 sealed interface PlaylistUiState {
     object Loading : PlaylistUiState
     data class Success(val playlist: Playlist?) : PlaylistUiState
-    data class Error(val error: String) : PlaylistUiState
+
+    /** Nothing to show; [kind] lets the screen pick the message (and the rate-limit countdown). */
+    data class Error(val error: String, val kind: RefreshFailure? = null) : PlaylistUiState
 }

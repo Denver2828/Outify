@@ -4,12 +4,14 @@ import android.content.Context
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.database.toDomain
+import cc.tomko.outify.data.metadata.RefreshFailure
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LikedSyncCoordinator
 import cc.tomko.outify.data.repository.SyncOutcome
@@ -61,8 +63,20 @@ class LikedViewModel @Inject constructor(
     private val likedSyncCoordinator: LikedSyncCoordinator,
     private val playbackStateHolder: PlaybackStateHolder,
     private val syncNotificationManager: SyncNotificationManager,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
+
+    /**
+     * Why the last sync did not complete, shown as a notice above the local list (which
+     * stays visible: a failed sync never means there are no liked songs).
+     */
+    private val _syncFailure = MutableStateFlow<RefreshFailure?>(null)
+    val syncFailure: StateFlow<RefreshFailure?> = _syncFailure.asStateFlow()
+
+    /** Seconds left on the Spotify rate-limit window; 0 when requests are allowed. */
+    val rateLimitRemainingSeconds: StateFlow<Int> = rateLimitGate.remainingSecondsFlow()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
     private val _query = MutableStateFlow("")
     val query: StateFlow<String> = _query.asStateFlow()
 
@@ -137,6 +151,7 @@ class LikedViewModel @Inject constructor(
         if (spirc.isUsable) {
             viewModelScope.launch {
                 isRefreshing.value = true
+                _syncFailure.value = null
                 var totalTracks = 0
                 var showedProgress = false
                 val result = runCatching {
@@ -156,14 +171,23 @@ class LikedViewModel @Inject constructor(
                 }
                 result.onSuccess { outcome ->
                     when (outcome) {
-                        is SyncOutcome.Ran -> if (totalTracks > 0) {
-                            syncNotificationManager.showComplete(totalTracks)
-                        } else {
-                            syncNotificationManager.cancel()
+                        is SyncOutcome.Ran -> {
+                            if (totalTracks > 0) {
+                                syncNotificationManager.showComplete(totalTracks)
+                            } else {
+                                syncNotificationManager.cancel()
+                            }
+                            // The repository stops a run as soon as Spotify answers 429; the
+                            // gate is armed by then, so that is how the screen learns about it.
+                            _syncFailure.value =
+                                if (rateLimitGate.isLimited()) RefreshFailure.RATE_LIMITED else null
                         }
-                        is SyncOutcome.SkippedRateLimited -> syncNotificationManager.showError(
-                            context.getString(R.string.settings_sync_error_rate_limited, outcome.remainingSeconds)
-                        )
+                        is SyncOutcome.SkippedRateLimited -> {
+                            syncNotificationManager.showError(
+                                context.getString(R.string.settings_sync_error_rate_limited, outcome.remainingSeconds)
+                            )
+                            _syncFailure.value = RefreshFailure.RATE_LIMITED
+                        }
                         is SyncOutcome.Coalesced, is SyncOutcome.SkippedDebounce ->
                             syncNotificationManager.cancel()
                     }
@@ -171,6 +195,7 @@ class LikedViewModel @Inject constructor(
                     isRefreshing.value = false
                 }.onFailure {
                     syncNotificationManager.showError(it.message ?: context.getString(R.string.screen_error_sync_failed))
+                    _syncFailure.value = RefreshFailure.classify(it, rateLimitGate.isLimited())
 
                     isRefreshing.value = false
                 }

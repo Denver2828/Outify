@@ -2,6 +2,7 @@ package cc.tomko.outify.data.metadata
 
 import android.util.Log
 import androidx.room.withTransaction
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.core.model.PlaylistDiff
 import cc.tomko.outify.core.model.PlaylistItem
@@ -15,8 +16,10 @@ import cc.tomko.outify.data.database.playlist.toDomainOrNull
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.emitAll
 import kotlinx.coroutines.flow.flow
+import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.mapLatest
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
@@ -29,75 +32,93 @@ class PlaylistMetadataHelper @Inject constructor(
     private val db: AppDatabase,
     private val playlistDao: PlaylistDao,
     private val json: Json,
-    private val nativeMetadata: NativeMetadata
+    private val nativeMetadata: NativeMetadata,
+    private val rateLimitGate: RateLimitGate,
 ) {
+    private val loader = CacheFirstLoader<Playlist>(ttlMs = PLAYLIST_TTL_MS)
+
     /**
-     * Retrieves a playlist by URI. If not present locally, fetches and persists.
-     * Always tries to fetch remote to get latest revision and apply changes if available.
+     * Cache-first load of one playlist.
+     *
+     * Emits the locally stored playlist right away when there is one, then refreshes it from
+     * Spotify only when it is older than [PLAYLIST_TTL_MS] or [force] is set. A failed refresh
+     * reports its kind and never discards what is stored. Nothing touches the network while
+     * [RateLimitGate] is armed.
+     */
+    fun loadPlaylist(uri: String, force: Boolean = false): Flow<CacheFirstResult<Playlist>> {
+        if (uri.isBlank()) return flowOf(CacheFirstResult.RefreshFailed(RefreshFailure.OTHER, null))
+
+        val playlistId = uri.removePrefix("spotify:playlist:")
+        return loader.load(
+            force = force,
+            readCache = {
+                withContext(Dispatchers.IO) { playlistDao.getPlaylistWithItems(playlistId) }
+                    ?.let { CacheEntry(it.toDomain(), it.playlist.timestamp) }
+            },
+            refresh = { refreshFromRemote(uri, playlistId) },
+            classify = { RefreshFailure.classify(it, rateLimitGate.isLimited()) },
+        )
+    }
+
+    /**
+     * Retrieves a playlist by URI, serving the cached copy while it is fresh and refreshing it
+     * otherwise. [allowCached] = false forces a refresh; if that refresh fails the cached copy
+     * is still returned so callers never lose content over a network blip.
      */
     suspend fun getPlaylistMetadata(
         uri: String,
         allowCached: Boolean = true
-    ): Playlist? = coroutineScope {
-        if (uri.isBlank()) return@coroutineScope null
-
-        val playlistId = uri.removePrefix("spotify:playlist:")
-        val cached = if (allowCached) playlistDao.getPlaylistWithItems(playlistId) else null
-
-        val remotePlaylist = runCatching {
-            try {
-                val raw = withContext(Dispatchers.IO) {
-                    nativeMetadata.retryOnRateLimit {
-                        nativeMetadata.fetchMetadata(uri)
-                    }
+    ): Playlist? {
+        var result: Playlist? = null
+        loadPlaylist(uri, force = !allowCached).collect { step ->
+            when (step) {
+                is CacheFirstResult.Cached -> result = step.value
+                is CacheFirstResult.Fresh -> result = step.value
+                is CacheFirstResult.RefreshFailed -> {
+                    Log.w("Metadata", "getPlaylistMetadata: refresh failed (${step.kind}) for $uri")
+                    result = step.cached ?: result
                 }
-
-                withContext(Dispatchers.Default) {
-                    json.decodeFromString<Playlist>(raw.toString())
-                }
-            } catch (e: RateLimitException) {
-                Log.w("Metadata", "getPlaylistMetadata: rate-limited for $uri, giving up", e)
-                null
-            } catch (e: Exception) {
-                Log.e("Metadata", "getPlaylistMetadata: failed for $uri", e)
-                null
             }
-        }.getOrNull()
+        }
+        return result
+    }
 
-        if (remotePlaylist == null && cached == null) return@coroutineScope null
-
-        if (!allowCached) {
-            remotePlaylist?.let {
-                withContext(Dispatchers.IO) { persistPlaylist(it) }
-            }
-            return@coroutineScope remotePlaylist
+    /**
+     * One remote fetch, merged into the local copy. Throws on failure so the loader can
+     * classify it; a 429 is thrown straight through (no retry), the gate is armed by
+     * [NativeMetadata] itself.
+     */
+    private suspend fun refreshFromRemote(uri: String, playlistId: String): Playlist {
+        if (rateLimitGate.isLimited()) {
+            throw RateLimitException("rate limited", rateLimitGate.remainingSeconds().toLong())
         }
 
-        if (remotePlaylist != null) {
+        val raw = withContext(Dispatchers.IO) { nativeMetadata.fetchMetadata(uri) }
+        val remotePlaylist = withContext(Dispatchers.Default) {
+            json.decodeFromString<Playlist>(raw.toString())
+        }
+
+        return withContext(Dispatchers.IO) {
+            val cached = playlistDao.getPlaylistWithItems(playlistId)
             if (cached == null) {
-                withContext(Dispatchers.IO) { persistPlaylist(remotePlaylist) }
-                return@coroutineScope remotePlaylist
+                persistPlaylist(remotePlaylist)
+                return@withContext playlistDao.getPlaylistWithItems(playlistId)?.toDomain()
+                    ?: remotePlaylist
             }
 
-            val storedRevision = cached.playlist.revision
-            val remoteRevision = remotePlaylist.revision
-
-            if (storedRevision == remoteRevision) {
-                return@coroutineScope cached.toDomain()
+            if (cached.playlist.revision == remotePlaylist.revision) {
+                // Same content: only the freshness stamp moves, items stay untouched.
+                playlistDao.upsertPlaylist(cached.playlist.copy(timestamp = System.currentTimeMillis()))
+                return@withContext cached.toDomain()
             }
 
             val diff = remotePlaylist.diff
             if (diff != null) {
-                withContext(Dispatchers.IO) { applyDiffAndPersist(cached, diff, remotePlaylist) }
+                applyDiffAndPersist(cached, diff, remotePlaylist)
             } else {
-                withContext(Dispatchers.IO) { persistPlaylist(remotePlaylist) }
+                persistPlaylist(remotePlaylist)
             }
-
-            val updated =
-                withContext(Dispatchers.IO) { playlistDao.getPlaylistWithItems(playlistId) }
-            return@coroutineScope updated?.toDomain()
-        } else {
-            return@coroutineScope cached?.toDomain()
+            playlistDao.getPlaylistWithItems(playlistId)?.toDomain() ?: remotePlaylist
         }
     }
 
@@ -315,5 +336,10 @@ class PlaylistMetadataHelper @Inject constructor(
             playlistDao.deleteItems(playlistId)
             if (finalItems.isNotEmpty()) playlistDao.insertItems(finalItems)
         }
+    }
+
+    companion object {
+        /** A stored playlist younger than this is served without touching the network. */
+        const val PLAYLIST_TTL_MS = 15 * 60 * 1000L
     }
 }

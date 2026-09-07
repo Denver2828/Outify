@@ -76,6 +76,8 @@ import cc.tomko.outify.ui.components.ArtworkBackground
 import cc.tomko.outify.ui.components.AutoScrollingText
 import cc.tomko.outify.ui.components.CollapsingHeader
 import cc.tomko.outify.ui.components.ErrorScreen
+import cc.tomko.outify.ui.components.RefreshNotice
+import cc.tomko.outify.ui.components.loadFailureMessage
 import cc.tomko.outify.ui.components.PlaylistDetailSkeleton
 import cc.tomko.outify.ui.components.rememberCollapsingHeaderState
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
@@ -105,8 +107,11 @@ fun SharedTransitionScope.PlaylistScreen(
         }
 
         is PlaylistUiState.Error -> {
+            val error = uiState as PlaylistUiState.Error
+            val rateLimitSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
             ErrorScreen(
-                message = (uiState as PlaylistUiState.Error).error,
+                message = error.kind?.let { loadFailureMessage(it, rateLimitSeconds, error.error) }
+                    ?: error.error,
                 onRetry = { viewModel.retry() },
             )
         }
@@ -117,6 +122,8 @@ fun SharedTransitionScope.PlaylistScreen(
             val likedIds by viewModel.likedTrackIds.collectAsState(initial = emptySet())
             val isRefreshing by viewModel.isRefreshing.collectAsState()
             val isSaved by viewModel.isSaved.collectAsState()
+            val refreshFailure by viewModel.refreshFailure.collectAsState()
+            val rateLimitSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
 
             var searchQuery by remember { mutableStateOf("") }
             var showSearch by remember { mutableStateOf(false) }
@@ -221,7 +228,17 @@ fun SharedTransitionScope.PlaylistScreen(
                             )
                         }
                     }
-                    
+
+                    refreshFailure?.let { kind ->
+                        item {
+                            RefreshNotice(
+                                kind = kind,
+                                rateLimitRemainingSeconds = rateLimitSeconds,
+                                onRetry = { viewModel.refresh() },
+                            )
+                        }
+                    }
+
                     if(playlistRows.isEmpty()) {
                         item {
                             Box(
