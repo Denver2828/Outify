@@ -138,7 +138,7 @@ class Metadata @Inject constructor(
             return parsed
         } catch (e: Exception) {
             NativeErrorHandler.handleError(
-                NativeError.fromJson("unknown", e.message ?: "Failed to get liked URIs"),
+                NativeError.fromMessage(e.message ?: "Failed to get liked URIs"),
                 "getLikedUris"
             )
             return emptyList()
@@ -154,7 +154,7 @@ class Metadata @Inject constructor(
                 .filter { it.isNotBlank() }
         } catch (e: Exception) {
             NativeErrorHandler.handleError(
-                NativeError.fromJson("unknown", e.message ?: "Failed to get saved episode URIs"),
+                NativeError.fromMessage(e.message ?: "Failed to get saved episode URIs"),
                 "getSavedEpisodeUris"
             )
             return emptyList()
@@ -173,7 +173,7 @@ class Metadata @Inject constructor(
                 }
         } catch (e: Exception) {
             NativeErrorHandler.handleError(
-                NativeError.fromJson("unknown", e.message ?: "Failed to get saved episode info"),
+                NativeError.fromMessage(e.message ?: "Failed to get saved episode info"),
                 "getSavedEpisodeInfo"
             )
             return emptyList()
@@ -188,7 +188,7 @@ class Metadata @Inject constructor(
                 .filter { it.isNotBlank() }
         } catch (e: Exception) {
             NativeErrorHandler.handleError(
-                NativeError.fromJson("unknown", e.message ?: "Failed to get saved show URIs"),
+                NativeError.fromMessage(e.message ?: "Failed to get saved show URIs"),
                 "getSavedShowUris"
             )
             return emptyList()

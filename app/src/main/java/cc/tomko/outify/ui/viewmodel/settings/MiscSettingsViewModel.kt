@@ -10,6 +10,8 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.repository.BackupRepository
 import cc.tomko.outify.data.repository.LikedRepository
+import cc.tomko.outify.data.repository.LikedSyncCoordinator
+import cc.tomko.outify.data.repository.SyncOutcome
 import cc.tomko.outify.data.repository.PendingBackupImport
 import cc.tomko.outify.data.repository.SavedQueueRepository
 import cc.tomko.outify.data.repository.SettingsRepository
@@ -43,6 +45,7 @@ sealed class BackupStatus {
 @HiltViewModel
 class MiscSettingsViewModel @Inject constructor(
     private val likedRepository: LikedRepository,
+    private val likedSyncCoordinator: LikedSyncCoordinator,
     private val spClient: SpClient,
     private val syncNotificationManager: SyncNotificationManager,
     private val settingsRepository: SettingsRepository,
@@ -94,21 +97,39 @@ class MiscSettingsViewModel @Inject constructor(
             _syncStatus.value = SyncStatus.Syncing
             try {
                 var totalTracks = 0
-                val urisSynced = likedRepository.syncLikedTracks(
-                    forceSync = true,
+                // Forced: skips the debounce, still respects the rate-limit gate. Episodes and
+                // shows are synced by the coordinator right after the tracks.
+                val outcome = likedSyncCoordinator.requestSync(
+                    reason = "settings force sync",
+                    force = true,
                     onProgress = { current, total ->
                         totalTracks = total
                         _syncStatus.value = SyncStatus.Progress(current, total)
                         syncNotificationManager.showProgress(current, total)
                     }
                 )
-                if (urisSynced) {
-                    _syncStatus.value = SyncStatus.Success
-                    syncNotificationManager.showComplete(totalTracks)
-                } else {
-                    val message = context.getString(R.string.settings_sync_error_failed)
-                    _syncStatus.value = SyncStatus.Error(message)
-                    syncNotificationManager.showError(message)
+                when {
+                    outcome is SyncOutcome.Ran && outcome.tracksSynced -> {
+                        _syncStatus.value = SyncStatus.Success
+                        syncNotificationManager.showComplete(totalTracks)
+                    }
+                    outcome is SyncOutcome.SkippedRateLimited -> {
+                        val message = context.getString(
+                            R.string.settings_sync_error_rate_limited,
+                            outcome.remainingSeconds
+                        )
+                        _syncStatus.value = SyncStatus.Error(message)
+                        syncNotificationManager.showError(message)
+                    }
+                    outcome is SyncOutcome.Coalesced -> {
+                        _syncStatus.value = SyncStatus.Success
+                        syncNotificationManager.cancel()
+                    }
+                    else -> {
+                        val message = context.getString(R.string.settings_sync_error_failed)
+                        _syncStatus.value = SyncStatus.Error(message)
+                        syncNotificationManager.showError(message)
+                    }
                 }
             } catch (e: Exception) {
                 val message = e.message ?: context.getString(R.string.settings_unknown_error)
@@ -116,24 +137,6 @@ class MiscSettingsViewModel @Inject constructor(
                 syncNotificationManager.showError(message)
             } finally {
                 OAuthService.stop(context)
-            }
-
-            // Sync liked episodes in the background
-            launch {
-                runCatching {
-                    likedRepository.syncLikedEpisodes(forceSync = true)
-                }.onFailure {
-                    Log.w("MiscSettingsViewModel", "syncLikedEpisodes failed", it)
-                }
-            }
-
-            // Sync liked shows in the background
-            launch {
-                runCatching {
-                    likedRepository.syncLikedShows(forceSync = true)
-                }.onFailure {
-                    Log.w("MiscSettingsViewModel", "syncLikedShows failed", it)
-                }
             }
 
             launch {

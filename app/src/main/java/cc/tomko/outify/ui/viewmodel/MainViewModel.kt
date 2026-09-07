@@ -39,6 +39,8 @@ import android.content.Context
 import androidx.compose.ui.res.stringResource
 import cc.tomko.outify.R
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -170,10 +172,13 @@ class MainViewModel @Inject constructor(
                 if (isTrack) likedRepository.addLiked(id) else likedRepository.addLikedEpisode(id)
             }
 
-            val success = if (wasLiked) {
-                spClient.deleteItems(arrayOf(rawUri))
-            } else {
-                spClient.saveItems(arrayOf(rawUri))
+            // Blocking JNI network call: keep it off the main thread.
+            val success = withContext(Dispatchers.IO) {
+                if (wasLiked) {
+                    spClient.deleteItems(arrayOf(rawUri))
+                } else {
+                    spClient.saveItems(arrayOf(rawUri))
+                }
             }
 
             if(!success) {

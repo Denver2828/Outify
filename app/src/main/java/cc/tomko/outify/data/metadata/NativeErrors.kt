@@ -1,6 +1,7 @@
 package cc.tomko.outify.data.metadata
 
 import android.util.Log
+import cc.tomko.outify.core.RateLimitGate
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -34,9 +35,23 @@ sealed class NativeError {
     ) : NativeError()
 
     companion object {
+        private val retryAfterPattern = Regex("""rate limited, retry after (\d+) s""", RegexOption.IGNORE_CASE)
+
+        /**
+         * Classifies a plain exception message coming out of the native layer. JNI functions
+         * that throw (saved items, episode details, ...) carry the Rust error's Display text,
+         * which for a 429 reads "rate limited, retry after N s".
+         */
+        fun fromMessage(message: String): NativeError {
+            retryAfterPattern.find(message)?.let { match ->
+                return RateLimited(message, match.groupValues[1].toLongOrNull())
+            }
+            return fromJson("unknown", message)
+        }
+
         fun fromJson(type: String, message: String, retryAfterSeconds: Long? = null): NativeError {
             return when (type) {
-                "rate_limit" -> RateLimited(message, retryAfterSeconds)
+                "rate_limit", "rate_limited" -> RateLimited(message, retryAfterSeconds)
                 "authentication_error", "authentication" -> AuthenticationError(message)
                 "service_unavailable", "unavailable" -> ServiceUnavailable(message)
                 "unknown" -> {
@@ -121,6 +136,7 @@ object NativeErrorHandler {
 
     private fun handleRateLimit(error: NativeError.RateLimited) {
         Log.w(TAG, "Rate limited: ${error.message}, retry after ${error.retryAfterSeconds}s")
+        RateLimitGate.shared.noteRateLimited(error.retryAfterSeconds)
     }
 
     private fun handleServiceUnavailable(error: NativeError.ServiceUnavailable) {

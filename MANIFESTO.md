@@ -249,6 +249,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Lección.** Un informe de diagnóstico tiene que sobrevivir al reinicio del proceso. Todo lo que se pierda con la muerte del proceso hay que pedírselo al sistema en el arranque siguiente.
 
+### 2026-09-06 — 1.7.2: la app respeta los límites de Spotify
+
+**Causa.** Tras varias reinstalaciones y logins seguidos, Spotify devolvió 429 ("API rate limit exceeded") en el perfil, los artistas top y los guardados. La app no lo distinguía de un error cualquiera: la sincronización de Me gusta reintentaba tres veces con espera creciente ante cualquier excepción (`isTransient = true` fijo), varias pantallas la disparaban a la vez, y la cuenta aparecía como no conectada aunque el token OAuth estaba bien. El mismo informe mostró `get_current_user` corriendo en el hilo principal con "Skipped 44 frames": el origen del "Spoty no responde".
+
+**Decisión.** Cuatro capas. (1) En Rust, un único `ensure_success` para todas las llamadas a api.spotify.com: un 429 lee `Retry-After` (30 s si falta), arma una ventana global (`RATE_LIMIT_UNTIL_MS`, expuesta por JNI como `getRateLimitUntilMs`) y devuelve `SpotifyApiError::RateLimited`; el JSON de error lleva `retry_after_seconds`. (2) En Kotlin, `RateLimitGate` combina esa ventana con la que arma `NativeErrorHandler`; todo pedido de cuenta pregunta antes. (3) La sincronización clasifica el error (`SyncErrorClassifier`): 429 corta en seco, red reintenta, el resto falla rápido; y pasa por `LikedSyncCoordinator`, un solo punto con mutex, coalescencia y anti-rebote de 60 s. (4) La pantalla de Cuentas avisa con cuenta regresiva y deshabilita el botón de conectar mientras dure. Además, todas las llamadas JNI de red que vivían en `viewModelScope` sin `Dispatchers.IO` pasaron a segundo plano.
+
+**Qué se descartó.** Un reintento con espera exponencial ante el 429: Spotify ya dice cuánto esperar y reintentar solo alarga el castigo. Guardar la ventana en disco: un 429 dura segundos o minutos, no vale la pena sobrevivir al reinicio. Tocar el sync de playlists (`syncLikedPlaylists`), que va por otra vía.
+
+**Lección.** Un 429 no es un error, es una instrucción. El cliente que la ignora se convierte en el problema que Spotify está intentando frenar.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

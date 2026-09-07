@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use super::{check_response_json, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn search(
@@ -44,13 +44,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "search failed with status {status}, query '{query}': {body}"
-            )));
-        }
+        let res = ensure_success("search", res).await?;
 
         let text = res.text().await?;
 
@@ -75,14 +69,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "Request failed with status code: {}. Body: {}",
-                status, body
-            )));
-        }
+        let res = ensure_success("get_current_user", res).await?;
 
         let text = res.text().await?;
 

@@ -137,10 +137,13 @@ class TrackDetailViewModel @Inject constructor(
                 likedRepository.addLiked(trackId)
             }
 
-            val success = if (wasLiked) {
-                spClient.deleteItems(arrayOf(trackUri))
-            } else {
-                spClient.saveItems(arrayOf(trackUri))
+            // Blocking JNI network call: keep it off the main thread.
+            val success = withContext(Dispatchers.IO) {
+                if (wasLiked) {
+                    spClient.deleteItems(arrayOf(trackUri))
+                } else {
+                    spClient.saveItems(arrayOf(trackUri))
+                }
             }
 
             if (!success) {

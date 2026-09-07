@@ -19,6 +19,8 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.launch
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+import kotlinx.coroutines.withContext
+import kotlinx.coroutines.Dispatchers
 
 private const val PROFILE_STATE_KEY = "profile_state"
 
@@ -70,13 +72,14 @@ class ProfileDetailViewModel @Inject constructor(
             val uri = currentState.profile?.uri ?: return
             _uiState.value = currentState.copy(isFollowing = !currentState.isFollowing)
 
-            if (currentState.isFollowing) {
-                if (!spClient.saveItems(arrayOf(uri))) {
-                    _uiState.value = currentState.copy(isFollowing = false)
-                }
-            } else {
-                if (!spClient.deleteItems(arrayOf(uri))) {
-                    _uiState.value = currentState.copy(isFollowing = true)
+            viewModelScope.launch {
+                // Blocking JNI network call: keep it off the main thread.
+                if (currentState.isFollowing) {
+                    val ok = withContext(Dispatchers.IO) { spClient.saveItems(arrayOf(uri)) }
+                    if (!ok) _uiState.value = currentState.copy(isFollowing = false)
+                } else {
+                    val ok = withContext(Dispatchers.IO) { spClient.deleteItems(arrayOf(uri)) }
+                    if (!ok) _uiState.value = currentState.copy(isFollowing = true)
                 }
             }
         }

@@ -2,6 +2,7 @@ package cc.tomko.outify.di
 
 import android.content.Context
 import cc.tomko.outify.OutifyApplication
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.data.dao.AlbumArtistDao
 import cc.tomko.outify.data.dao.AlbumDao
 import cc.tomko.outify.data.dao.AlbumTrackDao
@@ -16,6 +17,8 @@ import cc.tomko.outify.data.dao.TrackArtistDao
 import cc.tomko.outify.data.dao.TrackDao
 import cc.tomko.outify.data.dao.TrackFileDao
 import cc.tomko.outify.data.database.AppDatabase
+import cc.tomko.outify.data.repository.LikedRepository
+import cc.tomko.outify.data.repository.LikedSyncCoordinator
 import coil3.ImageLoader
 import coil3.disk.DiskCache
 import coil3.disk.directory
@@ -70,6 +73,17 @@ object AppModule {
 
     @Provides
     fun provideIoScope(): CoroutineScope = CoroutineScope(Dispatchers.IO)
+
+    @Provides
+    @Singleton
+    fun provideRateLimitGate(): RateLimitGate = RateLimitGate.shared
+
+    @Provides
+    @Singleton
+    fun provideLikedSyncCoordinator(
+        likedRepository: LikedRepository,
+        rateLimitGate: RateLimitGate,
+    ): LikedSyncCoordinator = LikedSyncCoordinator(likedRepository, rateLimitGate)
 
     @Provides
     @Named("metadataConcurrency")

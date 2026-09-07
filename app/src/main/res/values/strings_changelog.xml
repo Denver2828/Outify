@@ -3,6 +3,18 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.2 -->
+    <string name="changelog_1_7_2_version" translatable="false">1.7.2</string>
+    <string name="changelog_1_7_2_date">6 de septiembre de 2026</string>
+    <string name="changelog_1_7_2_title">La app respeta los límites de Spotify</string>
+    <string-array name="changelog_1_7_2_bullets">
+        <item>Cuando Spotify responde "demasiados pedidos" (error 429), la app lee cuánto hay que esperar y no vuelve a llamar a la API hasta que pase ese tiempo. Antes reintentaba enseguida y empeoraba el bloqueo.</item>
+        <item>La sincronización de Me gusta ya no reintenta ante un 429: se frena de inmediato. Los reintentos quedan solo para cortes de red reales.</item>
+        <item>Hay un único punto de sincronización: si dos pantallas la piden a la vez se hace una sola, y no se repite si corrió hace menos de un minuto (salvo la sincronización forzada desde Ajustes).</item>
+        <item>En Ajustes → Cuentas aparece un aviso "Spotify limitó los pedidos. Reintentá en N s." con cuenta regresiva, y el botón de conectar espera a que termine.</item>
+        <item>Se corrigió la causa del "Spoty no responde": la consulta del perfil y varios Me gusta hacían red en el hilo principal. Ahora corren en segundo plano.</item>
+    </string-array>
+
     <!-- 1.7.1 -->
     <string name="changelog_1_7_1_version" translatable="false">1.7.1</string>
     <string name="changelog_1_7_1_date">6 de septiembre de 2026</string>

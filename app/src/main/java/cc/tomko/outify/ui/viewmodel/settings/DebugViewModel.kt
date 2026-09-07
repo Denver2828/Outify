@@ -8,17 +8,20 @@ import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CurrentUserProfile
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.utils.ExceptionCollector
 import dagger.hilt.android.lifecycle.HiltViewModel
 import dagger.hilt.android.qualifiers.ApplicationContext
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import java.io.File
 import javax.inject.Inject
@@ -108,8 +111,12 @@ class DebugViewModel @Inject constructor(
     private fun fetchProfile() {
         viewModelScope.launch {
             try {
-                val profile = spClient.getCurrentUserProfile()
+                // Blocking JNI call: keep it off the main thread.
+                val profile = withContext(Dispatchers.IO) { spClient.getCurrentUserProfile() }
                 if (profile == null) {
+                    return@launch
+                }
+                if (NativeErrorHandler.handleErrorJson(profile, "debug profile") != null) {
                     return@launch
                 }
                 val jsonObject = json.decodeFromString<CurrentUserProfile>(profile)

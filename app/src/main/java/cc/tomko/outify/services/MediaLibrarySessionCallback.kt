@@ -28,6 +28,7 @@ import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SearchRepository
 import cc.tomko.outify.ui.model.search.SearchResultType
 import com.google.common.collect.ImmutableList
@@ -508,6 +509,7 @@ class MediaLibrarySessionCallback @Inject constructor(
 
     private suspend fun getTopArtists(): List<MediaItem> {
         val raw = spClient.getUserTop("artists") ?: return emptyList()
+        if (NativeErrorHandler.handleErrorJson(raw, "android auto top artists") != null) return emptyList()
 
         // The Web API payload already carries name and portrait; use it and avoid one
         // native metadata call per artist.

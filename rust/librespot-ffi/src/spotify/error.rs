@@ -25,4 +25,9 @@ pub enum SpotifyApiError {
 
     #[error("HTTP {0}: {1}")]
     Http(u16, String),
+
+    /// Spotify answered 429. `retry_after_secs` comes from the Retry-After header
+    /// (30 when the header is missing or unparsable).
+    #[error("rate limited, retry after {retry_after_secs} s: {body}")]
+    RateLimited { retry_after_secs: u64, body: String },
 }

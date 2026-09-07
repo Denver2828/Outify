@@ -3,6 +3,17 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.2 -->
+    <string name="changelog_1_7_2_date">September 6, 2026</string>
+    <string name="changelog_1_7_2_title">The app respects Spotify rate limits</string>
+    <string-array name="changelog_1_7_2_bullets">
+        <item>When Spotify answers "too many requests" (HTTP 429) the app reads how long to wait and stays away from the API until then. It used to retry immediately, making the block worse.</item>
+        <item>Liked sync no longer retries on a 429: it stops at once. Retries are reserved for real network drops.</item>
+        <item>There is one sync entry point: two screens asking at the same time share a single run, and it does not repeat within a minute (except the forced sync from Settings).</item>
+        <item>Settings → Accounts shows "Spotify is rate limiting requests. Try again in N s." with a countdown, and the connect button waits for it.</item>
+        <item>Fixed the cause of "Spoty is not responding": the profile lookup and several like actions did network work on the main thread. They now run in the background.</item>
+    </string-array>
+
     <!-- 1.7.1 -->
     <string name="changelog_1_7_1_date">September 6, 2026</string>
     <string name="changelog_1_7_1_title">Diagnostics explain freezes</string>

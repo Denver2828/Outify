@@ -1,7 +1,7 @@
 use jni::{
     JNIEnv,
     objects::{JClass, JObject, JObjectArray, JString},
-    sys::{jboolean, jint, jobjectArray, jstring},
+    sys::{jboolean, jint, jlong, jobjectArray, jstring},
 };
 use librespot_core::{SpotifyId, SpotifyUri};
 use regex::Regex;
@@ -55,7 +55,7 @@ pub extern "system" fn get_current_user(env: JNIEnv, _class: JClass) -> jstring 
         },
         Err(e) => {
             error!("get_current_user api call failed: {e}");
-            return std::ptr::null_mut();
+            return rate_limit_json_or_null(&env, &e);
         }
     };
 
@@ -438,7 +438,7 @@ pub extern "system" fn get_user_top(
         },
         Err(e) => {
             error!("get_user_top api call failed: {e}");
-            std::ptr::null_mut()
+            rate_limit_json_or_null(&env, &e)
         }
     }
 }
@@ -1152,18 +1152,49 @@ pub extern "system" fn complete_oauth_flow(
         }
         Err(e) => {
             error!("complete_oauth_flow api call failed: {e}");
-            let err_type = classify_spclient_error(&e);
-            spclient_make_error_json(&env, err_type, &e.to_string())
+            match env.new_string(spclient_error_json_for(&e)) {
+                Ok(s) => s.into_raw(),
+                Err(_) => std::ptr::null_mut(),
+            }
         }
     }
 }
 
 fn spclient_make_error_json(env: &JNIEnv, error_type: &str, message: &str) -> jstring {
-    let json = format!(
-        r#"{{"error":{{"type":"{}","message":"{}"}}}}"#,
-        error_type, message
-    );
-    match env.new_string(json) {
+    match env.new_string(spclient_error_json(error_type, message, None)) {
+        Ok(s) => s.into_raw(),
+        Err(_) => std::ptr::null_mut(),
+    }
+}
+
+/// Builds the `{"error":{...}}` payload Kotlin's NativeErrorHandler parses.
+/// `retry_after_seconds` is only present for rate limits.
+fn spclient_error_json(error_type: &str, message: &str, retry_after_seconds: Option<u64>) -> String {
+    let message = serde_json::to_string(message).unwrap_or_else(|_| "\"error\"".to_string());
+    match retry_after_seconds {
+        Some(secs) => format!(
+            r#"{{"error":{{"type":"{error_type}","message":{message},"retry_after_seconds":{secs}}}}}"#
+        ),
+        None => format!(r#"{{"error":{{"type":"{error_type}","message":{message}}}}}"#),
+    }
+}
+
+/// Error JSON for a [`SpotifyApiError`], carrying `retry_after_seconds` on 429.
+fn spclient_error_json_for(err: &SpotifyApiError) -> String {
+    let retry_after = match err {
+        SpotifyApiError::RateLimited { retry_after_secs, .. } => Some(*retry_after_secs),
+        _ => None,
+    };
+    spclient_error_json(classify_spclient_error(err), &err.to_string(), retry_after)
+}
+
+/// Returns the error JSON as a Java string when `err` is a 429, so callers that
+/// otherwise answer `null` on failure can still surface the rate limit to Kotlin.
+fn rate_limit_json_or_null(env: &JNIEnv, err: &SpotifyApiError) -> jstring {
+    if !matches!(err, SpotifyApiError::RateLimited { .. }) {
+        return std::ptr::null_mut();
+    }
+    match env.new_string(spclient_error_json_for(err)) {
         Ok(s) => s.into_raw(),
         Err(_) => std::ptr::null_mut(),
     }
@@ -1177,6 +1208,9 @@ fn spclient_make_success_json(env: &JNIEnv) -> jstring {
 }
 
 fn classify_spclient_error(err: &crate::spotify::error::SpotifyApiError) -> &'static str {
+    if matches!(err, SpotifyApiError::RateLimited { .. }) {
+        return "rate_limit";
+    }
     let msg = err.to_string().to_lowercase();
     if msg.contains("unavailable") || msg.contains("service") {
         "service_unavailable"
@@ -1203,4 +1237,11 @@ pub extern "system" fn logout(_env: JNIEnv, _class: JClass) -> jboolean {
         }
         Err(_) => 0,
     }
+}
+
+/// Millisecond wall-clock timestamp until which the Spotify Web API is rate limited,
+/// 0 when no 429 is pending. Cheap: one atomic load, no network, no runtime.
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getRateLimitUntilMs")]
+pub extern "system" fn get_rate_limit_until_ms(_env: JNIEnv, _class: JClass) -> jlong {
+    crate::spotify::client::rate_limit_until_ms()
 }

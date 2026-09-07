@@ -11,6 +11,8 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.data.repository.LikedRepository
+import cc.tomko.outify.data.repository.LikedSyncCoordinator
+import cc.tomko.outify.data.repository.SyncOutcome
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.services.SyncNotificationManager
 import coil3.ImageLoader
@@ -56,6 +58,7 @@ class LikedViewModel @Inject constructor(
     val spirc: SpircWrapper,
     val imageLoader: ImageLoader,
     private val likedRepository: LikedRepository,
+    private val likedSyncCoordinator: LikedSyncCoordinator,
     private val playbackStateHolder: PlaybackStateHolder,
     private val syncNotificationManager: SyncNotificationManager,
 ) : ViewModel() {
@@ -132,24 +135,37 @@ class LikedViewModel @Inject constructor(
 
     fun refresh() {
         if (spirc.isUsable) {
-            syncNotificationManager.showIndeterminate()
             viewModelScope.launch {
                 isRefreshing.value = true
                 var totalTracks = 0
+                var showedProgress = false
                 val result = runCatching {
-                    likedRepository.syncLikedTracks(
+                    // Episodes and shows ride along inside the coordinator, sequentially.
+                    likedSyncCoordinator.requestSync(
+                        reason = "liked screen",
                         onProgress = { current, total ->
+                            if (!showedProgress) {
+                                showedProgress = true
+                                syncNotificationManager.showIndeterminate()
+                            }
                             totalTracks = total
                             _fetchedCount.value = current
                             syncNotificationManager.showProgress(current, total)
                         }
                     )
                 }
-                result.onSuccess {
-                    if (totalTracks > 0) {
-                        syncNotificationManager.showComplete(totalTracks)
-                    } else {
-                        syncNotificationManager.cancel()
+                result.onSuccess { outcome ->
+                    when (outcome) {
+                        is SyncOutcome.Ran -> if (totalTracks > 0) {
+                            syncNotificationManager.showComplete(totalTracks)
+                        } else {
+                            syncNotificationManager.cancel()
+                        }
+                        is SyncOutcome.SkippedRateLimited -> syncNotificationManager.showError(
+                            context.getString(R.string.settings_sync_error_rate_limited, outcome.remainingSeconds)
+                        )
+                        is SyncOutcome.Coalesced, is SyncOutcome.SkippedDebounce ->
+                            syncNotificationManager.cancel()
                     }
 
                     isRefreshing.value = false
@@ -157,24 +173,6 @@ class LikedViewModel @Inject constructor(
                     syncNotificationManager.showError(it.message ?: context.getString(R.string.screen_error_sync_failed))
 
                     isRefreshing.value = false
-                }
-
-                // Sync liked episodes in the background (no progress UI)
-                launch {
-                    runCatching {
-                        likedRepository.syncLikedEpisodes()
-                    }.onFailure {
-                        Log.w("LikedViewModel", "syncLikedEpisodes failed", it)
-                    }
-                }
-
-                // Sync liked shows in the background (no progress UI)
-                launch {
-                    runCatching {
-                        likedRepository.syncLikedShows()
-                    }.onFailure {
-                        Log.w("LikedViewModel", "syncLikedShows failed", it)
-                    }
                 }
             }
             // Kick off the first page

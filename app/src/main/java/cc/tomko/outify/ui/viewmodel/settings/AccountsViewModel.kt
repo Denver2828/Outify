@@ -8,6 +8,7 @@ import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.AuthCallbackServerManager
 import cc.tomko.outify.core.AuthManager
 import cc.tomko.outify.core.AuthStateEventBus
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.UserProfile
 import cc.tomko.outify.core.model.CurrentUserProfile
@@ -18,7 +19,11 @@ import cc.tomko.outify.services.OAuthService
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
+import kotlinx.coroutines.flow.distinctUntilChanged
+import kotlinx.coroutines.flow.flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -26,6 +31,7 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
@@ -37,8 +43,21 @@ class AccountsViewModel @Inject constructor(
     private val spircController: SpircController,
     private val settingsRepository: SettingsRepository,
     private val serverManager: AuthCallbackServerManager,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
     private val json = Json { ignoreUnknownKeys = true }
+
+    /**
+     * Seconds until Spotify accepts Web API calls again, 0 when it is not rate limiting us.
+     * Ticks once per second while someone is collecting it.
+     */
+    val rateLimitRemainingSeconds: StateFlow<Int> = flow {
+        while (true) {
+            emit(rateLimitGate.remainingSeconds())
+            delay(1_000L)
+        }
+    }.distinctUntilChanged()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
 
     private val _isPlaybackLoggedIn = MutableStateFlow(false)
     private val _isAccountLoggedIn = MutableStateFlow(false)
@@ -148,10 +167,17 @@ class AccountsViewModel @Inject constructor(
     }
 
     fun fetchProfile() {
+        if (rateLimitGate.isLimited()) return
         viewModelScope.launch {
             try {
-                val profile = spClient.getCurrentUserProfile()
+                // Blocking JNI call: keep it off the main thread.
+                val profile = withContext(Dispatchers.IO) { spClient.getCurrentUserProfile() }
                 if (profile == null) {
+                    return@launch
+                }
+                // A 429 comes back as an error payload; NativeErrorHandler arms the gate and the
+                // account stays "logged in" because the OAuth token is still valid.
+                if (NativeErrorHandler.handleErrorJson(profile, "current user profile") != null) {
                     return@launch
                 }
                 val jsonObject = json.decodeFromString<CurrentUserProfile>(profile)

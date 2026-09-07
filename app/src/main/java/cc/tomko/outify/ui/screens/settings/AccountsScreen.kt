@@ -73,6 +73,8 @@ fun AccountsScreen(
     val isPremium by viewModel.isPremium.collectAsStateWithLifecycle()
     val username by viewModel.username.collectAsStateWithLifecycle()
     val userImageUrl by viewModel.userImageUrl.collectAsStateWithLifecycle()
+    val rateLimitSeconds by viewModel.rateLimitRemainingSeconds.collectAsStateWithLifecycle()
+    val isRateLimited = rateLimitSeconds > 0
 
     Scaffold(
         topBar = {
@@ -227,6 +229,13 @@ fun AccountsScreen(
                                 }
                             }
 
+                            if (isRateLimited) {
+                                RateLimitNotice(
+                                    seconds = rateLimitSeconds,
+                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp),
+                                )
+                            }
+
                             OutlinedButton(
                                 onClick = { viewModel.logout() },
                                 modifier = Modifier
@@ -259,8 +268,13 @@ fun AccountsScreen(
                                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                             )
 
+                            if (isRateLimited) {
+                                RateLimitNotice(seconds = rateLimitSeconds)
+                            }
+
                             Button(
                                 onClick = { viewModel.startAuth(context) },
+                                enabled = !isRateLimited,
                                 modifier = Modifier.fillMaxWidth(),
                             ) {
                                 Icon(
@@ -401,6 +415,30 @@ private fun FeatureAvailability(text: String, available: Boolean, modifier: Modi
             style = MaterialTheme.typography.bodyMedium,
             color = if (available) MaterialTheme.colorScheme.onSurface else MaterialTheme.colorScheme.onSurfaceVariant,
             modifier = Modifier.weight(1f)
+        )
+    }
+}
+
+/**
+ * Inline warning shown while Spotify answers 429. [seconds] counts down from the ViewModel.
+ */
+@Composable
+private fun RateLimitNotice(seconds: Int, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier.fillMaxWidth(),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        Icon(
+            Icons.Default.Warning,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.error,
+            modifier = Modifier.size(16.dp)
+        )
+        Text(
+            text = stringResource(R.string.settings_accounts_rate_limited, seconds),
+            style = MaterialTheme.typography.bodySmall,
+            color = MaterialTheme.colorScheme.error,
         )
     }
 }

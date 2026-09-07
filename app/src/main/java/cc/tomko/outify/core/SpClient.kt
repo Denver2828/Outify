@@ -23,6 +23,16 @@ class SpClient @Inject constructor() {
         @StringDef(TRACKS, ALBUMS, EPISODES, SHOWS)
         @Retention(AnnotationRetention.SOURCE)
         annotation class SavedItemType
+
+        /**
+         * [getRateLimitUntilMs] tolerant to an older native library that lacks the symbol.
+         * JNI methods carry no instance state, so a throwaway instance is fine here.
+         */
+        fun rateLimitUntilMsOrZero(): Long = try {
+            SpClient().getRateLimitUntilMs()
+        } catch (_: UnsatisfiedLinkError) {
+            0L
+        }
     }
 
     /**
@@ -181,6 +191,13 @@ class SpClient @Inject constructor() {
      * Deletes the credentials file for Spotify Client
      */
     external fun logout(): Boolean
+
+    /**
+     * Wall-clock timestamp (ms) until which the Spotify Web API answered 429, 0 when no
+     * rate limit is pending. One atomic load on the native side, safe to call anywhere.
+     */
+    external fun getRateLimitUntilMs(): Long
+
 
     fun checkAndHandleError(result: String, context: String = ""): String {
         if (result.startsWith("{")) {

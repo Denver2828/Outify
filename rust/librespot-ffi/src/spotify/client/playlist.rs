@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{check_response_json, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn add_to_playlist(
@@ -38,13 +38,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "add_to_playlist failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("add_to_playlist", res).await?;
 
         Ok(res.status())
     }
@@ -75,13 +69,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "delete_from_playlist failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("delete_from_playlist", res).await?;
 
         Ok(res.status())
     }
@@ -165,13 +153,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "modify_playlist failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("modify_playlist", res).await?;
 
         Ok(res.status())
     }

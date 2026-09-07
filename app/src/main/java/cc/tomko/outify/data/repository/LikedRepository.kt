@@ -2,6 +2,7 @@ package cc.tomko.outify.data.repository
 
 import android.util.Log
 import androidx.room.withTransaction
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.data.dao.AlbumDao
 import cc.tomko.outify.data.dao.LikedDao
@@ -39,8 +40,34 @@ class LikedRepository @Inject constructor(
     private val showMetadataHelper: ShowMetadataHelper,
     private val metadata: Metadata,
     private val spClient: SpClient,
-) {
+    private val rateLimitGate: RateLimitGate,
+) : LikedSyncRunner {
     private val scope = CoroutineScope(Dispatchers.IO)
+
+    /**
+     * One full sync, tracks first (with progress) then episodes and shows, all sequential so
+     * we never fan out three request bursts at once. Only the track result is reported; the
+     * other two log their own failures. Callers go through [LikedSyncCoordinator].
+     */
+    override suspend fun run(force: Boolean, onProgress: (Int, Int) -> Unit): Boolean {
+        val tracks = syncLikedTracks(forceSync = force, onProgress = onProgress)
+        if (rateLimitGate.isLimited()) {
+            Log.w(TAG, "skipping episode/show sync: rate limited")
+            return tracks
+        }
+        runCatching { syncLikedEpisodes(forceSync = force) }
+            .onFailure { Log.w(TAG, "syncLikedEpisodes failed", it) }
+        if (rateLimitGate.isLimited()) return tracks
+        runCatching { syncLikedShows(forceSync = force) }
+            .onFailure { Log.w(TAG, "syncLikedShows failed", it) }
+        return tracks
+    }
+
+    private fun limitedLog(what: String): Boolean {
+        if (!rateLimitGate.isLimited()) return false
+        Log.w(TAG, "$what skipped: Spotify rate limited for ${rateLimitGate.remainingSeconds()}s")
+        return true
+    }
 
     companion object {
         private const val TAG = "LikedRepository"
@@ -58,12 +85,16 @@ class LikedRepository @Inject constructor(
         val maxRetries = 3
         val initialBackoffMs = 500L
 
+        if (limitedLog("syncLikedTracks")) return@withContext false
+
         try {
             try {
                 if (!syncLikedUris() && !forceSync) return@withContext false
             } catch (t: Throwable) {
                 Log.w(TAG, "syncLikedUris failed (continuing): ${t.message}", t)
             }
+            // A 429 during the URI fetch must not turn into a metadata burst.
+            if (limitedLog("syncLikedTracks")) return@withContext false
 
             yield()
             var offset = 0
@@ -93,22 +124,42 @@ class LikedRepository @Inject constructor(
                         succeeded = true
                     } catch (e: Exception) {
                         attempt++
-                        val isTransient = true
-                        if (attempt >= maxRetries || !isTransient) {
-                            Log.e(
-                                TAG,
-                                "Failed fetching metadata for liked tracks (offset=$offset).",
-                                e
-                            )
-                            return@withContext false
-                        } else {
-                            Log.w(
-                                TAG,
-                                "Transient failure fetching metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
-                                e
-                            )
-                            delay(backoff)
-                            backoff = min(backoff * 2, 10_000L)
+                        when (SyncErrorClassifier.classify(e, rateLimitGate.isLimited())) {
+                            SyncFailure.RATE_LIMITED -> {
+                                // 429: retrying only digs the hole deeper. Stop the whole sync.
+                                if (!rateLimitGate.isLimited()) rateLimitGate.noteRateLimited(null)
+                                Log.w(
+                                    TAG,
+                                    "Rate limited fetching metadata for liked tracks (offset=$offset); aborting sync.",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.FATAL -> {
+                                Log.e(
+                                    TAG,
+                                    "Failed fetching metadata for liked tracks (offset=$offset).",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.TRANSIENT -> {
+                                if (attempt >= maxRetries) {
+                                    Log.e(
+                                        TAG,
+                                        "Failed fetching metadata for liked tracks (offset=$offset) after $attempt attempts.",
+                                        e
+                                    )
+                                    return@withContext false
+                                }
+                                Log.w(
+                                    TAG,
+                                    "Transient failure fetching metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
+                                    e
+                                )
+                                delay(backoff)
+                                backoff = min(backoff * 2, 10_000L)
+                            }
                         }
                     }
                 }
@@ -266,12 +317,16 @@ class LikedRepository @Inject constructor(
         val maxRetries = 3
         val initialBackoffMs = 500L
 
+        if (limitedLog("syncLikedEpisodes")) return@withContext false
+
         try {
             try {
                 if (!syncLikedEpisodeUris() && !forceSync) return@withContext false
             } catch (t: Throwable) {
                 Log.w(TAG, "syncLikedEpisodeUris failed (continuing): ${t.message}", t)
             }
+            // A 429 during the URI fetch must not turn into a metadata burst.
+            if (limitedLog("syncLikedEpisodes")) return@withContext false
 
             yield()
             var offset = 0
@@ -299,21 +354,42 @@ class LikedRepository @Inject constructor(
                         succeeded = true
                     } catch (e: Exception) {
                         attempt++
-                        if (attempt >= maxRetries) {
-                            Log.e(
-                                TAG,
-                                "Failed fetching metadata for liked episodes (offset=$offset).",
-                                e
-                            )
-                            return@withContext false
-                        } else {
-                            Log.w(
-                                TAG,
-                                "Transient failure fetching episode metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
-                                e
-                            )
-                            delay(backoff)
-                            backoff = min(backoff * 2, 10_000L)
+                        when (SyncErrorClassifier.classify(e, rateLimitGate.isLimited())) {
+                            SyncFailure.RATE_LIMITED -> {
+                                // 429: retrying only digs the hole deeper. Stop the whole sync.
+                                if (!rateLimitGate.isLimited()) rateLimitGate.noteRateLimited(null)
+                                Log.w(
+                                    TAG,
+                                    "Rate limited fetching metadata for liked episodes (offset=$offset); aborting sync.",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.FATAL -> {
+                                Log.e(
+                                    TAG,
+                                    "Failed fetching metadata for liked episodes (offset=$offset).",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.TRANSIENT -> {
+                                if (attempt >= maxRetries) {
+                                    Log.e(
+                                        TAG,
+                                        "Failed fetching metadata for liked episodes (offset=$offset) after $attempt attempts.",
+                                        e
+                                    )
+                                    return@withContext false
+                                }
+                                Log.w(
+                                    TAG,
+                                    "Transient failure fetching episode metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
+                                    e
+                                )
+                                delay(backoff)
+                                backoff = min(backoff * 2, 10_000L)
+                            }
                         }
                     }
                 }
@@ -419,12 +495,16 @@ class LikedRepository @Inject constructor(
         val maxRetries = 3
         val initialBackoffMs = 500L
 
+        if (limitedLog("syncLikedShows")) return@withContext false
+
         try {
             try {
                 if (!syncLikedShowUris() && !forceSync) return@withContext false
             } catch (t: Throwable) {
                 Log.w(TAG, "syncLikedShowUris failed (continuing): ${t.message}", t)
             }
+            // A 429 during the URI fetch must not turn into a metadata burst.
+            if (limitedLog("syncLikedShows")) return@withContext false
 
             yield()
             var offset = 0
@@ -452,21 +532,42 @@ class LikedRepository @Inject constructor(
                         succeeded = true
                     } catch (e: Exception) {
                         attempt++
-                        if (attempt >= maxRetries) {
-                            Log.e(
-                                TAG,
-                                "Failed fetching metadata for liked shows (offset=$offset).",
-                                e
-                            )
-                            return@withContext false
-                        } else {
-                            Log.w(
-                                TAG,
-                                "Transient failure fetching show metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
-                                e
-                            )
-                            delay(backoff)
-                            backoff = min(backoff * 2, 10_000L)
+                        when (SyncErrorClassifier.classify(e, rateLimitGate.isLimited())) {
+                            SyncFailure.RATE_LIMITED -> {
+                                // 429: retrying only digs the hole deeper. Stop the whole sync.
+                                if (!rateLimitGate.isLimited()) rateLimitGate.noteRateLimited(null)
+                                Log.w(
+                                    TAG,
+                                    "Rate limited fetching metadata for liked shows (offset=$offset); aborting sync.",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.FATAL -> {
+                                Log.e(
+                                    TAG,
+                                    "Failed fetching metadata for liked shows (offset=$offset).",
+                                    e
+                                )
+                                return@withContext false
+                            }
+                            SyncFailure.TRANSIENT -> {
+                                if (attempt >= maxRetries) {
+                                    Log.e(
+                                        TAG,
+                                        "Failed fetching metadata for liked shows (offset=$offset) after $attempt attempts.",
+                                        e
+                                    )
+                                    return@withContext false
+                                }
+                                Log.w(
+                                    TAG,
+                                    "Transient failure fetching show metadata (offset=$offset), retrying in $backoff ms (attempt=$attempt).",
+                                    e
+                                )
+                                delay(backoff)
+                                backoff = min(backoff * 2, 10_000L)
+                            }
                         }
                     }
                 }

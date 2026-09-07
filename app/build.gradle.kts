@@ -26,7 +26,7 @@ ksp {
 
 val majorVersion = 1
 val minorVersion = 7
-val patchVersion = 1
+val patchVersion = 2
 
 extensions.configure<ApplicationExtension>("android") {
     compileSdk = 37
@@ -108,6 +108,11 @@ extensions.configure<ApplicationExtension>("android") {
             include("arm64-v8a", "armeabi-v7a")
             isUniversalApk = true
         }
+    }
+
+    testOptions {
+        // Pure-JVM unit tests touch android.util.Log through the classes under test.
+        unitTests.isReturnDefaultValues = true
     }
 
     compileOptions {

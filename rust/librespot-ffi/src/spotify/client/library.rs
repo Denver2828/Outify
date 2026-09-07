@@ -9,7 +9,7 @@ use crate::{
     types::responses::library::{EpisodeUri, SavedItemsResponse, Uri},
 };
 
-use super::{REQUEST_TIMEOUT, SPOTIFY_API_URL, SpotifyClient};
+use super::{REQUEST_TIMEOUT, SPOTIFY_API_URL, SpotifyClient, ensure_success};
 
 impl SpotifyClient {
     pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
@@ -29,13 +29,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "save_items failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("save_items", res).await?;
 
         Ok(res.status())
     }
@@ -57,13 +51,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "delete_items failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("delete_items", res).await?;
 
         Ok(res.status())
     }
@@ -83,6 +71,8 @@ impl SpotifyClient {
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
             .send()
+            .await?;
+        let res = ensure_success("get_saved", res)
             .await?
             .json::<SavedItemsResponse<Uri>>()
             .await;
@@ -110,6 +100,8 @@ impl SpotifyClient {
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
             .send()
+            .await?;
+        let res = ensure_success("get_saved_episode_items", res)
             .await?
             .json::<SavedItemsResponse<EpisodeUri>>()
             .await;
@@ -159,6 +151,11 @@ impl SpotifyClient {
             .await?;
 
         let status = resp.status();
+        if status == StatusCode::TOO_MANY_REQUESTS {
+            // Route through the shared helper so the rate-limit window gets armed.
+            ensure_success("get_episode_details", resp).await?;
+            unreachable!("ensure_success returns Err for 429");
+        }
         if !status.is_success() {
             let body = resp.text().await.unwrap_or_default();
             error!("get_episode_details status {status}: {body}");

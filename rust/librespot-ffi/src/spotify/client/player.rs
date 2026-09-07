@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{check_response_json, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn get_devices(&self) -> Result<DevicesResponse, SpotifyApiError> {
@@ -67,13 +67,7 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        if !res.status().is_success() {
-            let status = res.status().as_str().to_string();
-            let body = res.text().await.unwrap_or_default();
-            return Err(SpotifyApiError::Generic(format!(
-                "transfer_playback failed with status {status}: {body}"
-            )));
-        }
+        let res = ensure_success("transfer_playback", res).await?;
 
         Ok(res.status())
     }
