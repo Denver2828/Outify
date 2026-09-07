@@ -102,14 +102,9 @@ fun SharedTransitionScope.HomeScreen(
         modifier = modifier,
     ) { innerPaddings ->
         val state = uiState
-        if (state is HomeUiState.Error) {
-            ErrorScreen(
-                message = state.kind?.let { loadFailureMessage(it, rateLimitSeconds, state.message) }
-                    ?: state.message,
-                onRetry = { viewModel.retry() },
-                modifier = Modifier.padding(top = innerPaddings.calculateTopPadding()),
-            )
-        } else {
+        // The error state is rendered below the header on purpose: the header carries the
+        // settings and account entries, and a full-screen error must never hide them.
+        run {
             PullToRefreshBox(
                 isRefreshing = isRefreshing,
                 onRefresh = { viewModel.refresh() },
@@ -248,7 +243,16 @@ fun SharedTransitionScope.HomeScreen(
                         }
 
                         is HomeUiState.Error -> {
-                            // handled above
+                            item {
+                                ErrorScreen(
+                                    message = state.kind?.let {
+                                        loadFailureMessage(it, rateLimitSeconds, state.message)
+                                    } ?: state.message,
+                                    onRetry = { viewModel.retry() },
+                                    // A lazy item cannot fill an unbounded height; take most of the viewport.
+                                    modifier = Modifier.fillParentMaxHeight(0.7f),
+                                )
+                            }
                         }
                     }
                 }
