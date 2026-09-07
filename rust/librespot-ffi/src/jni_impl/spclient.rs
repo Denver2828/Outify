@@ -1220,9 +1220,9 @@ fn classify_spclient_error(err: &crate::spotify::error::SpotifyApiError) -> &'st
         || msg.contains("unauthorized")
     {
         "authentication_error"
-    } else if msg.contains("rate") {
-        "rate_limit"
     } else {
+        // A 429 always arrives as `SpotifyApiError::RateLimited` (handled above); matching
+        // the substring "rate" here turned "bitrate"/"generate" errors into fake rate limits.
         "unknown"
     }
 }
