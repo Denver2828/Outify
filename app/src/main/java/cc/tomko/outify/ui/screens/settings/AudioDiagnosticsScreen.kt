@@ -105,6 +105,19 @@ fun AudioDiagnosticsScreen(
                 )
             }
 
+            val probeResult by viewModel.lastProbeResult.collectAsState()
+            FilledTonalButton(onClick = viewModel::probeWebApi) {
+                Text(stringResource(R.string.settings_audio_diagnostics_probe_web_api))
+            }
+            probeResult?.let {
+                Text(
+                    text = it,
+                    style = MaterialTheme.typography.bodySmall,
+                    fontFamily = FontFamily.Monospace,
+                    modifier = Modifier.padding(vertical = 4.dp),
+                )
+            }
+
             Row(
                 modifier = Modifier.fillMaxWidth(),
                 horizontalArrangement = Arrangement.spacedBy(8.dp),

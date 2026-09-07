@@ -24,6 +24,7 @@
     <string name="settings_audio_diagnostics_intro">Play a song, wait a few seconds, then tap Share to send the log. The two test tones bypass Spotify entirely: they tell whether this device lets the app\'s audio out at all.</string>
     <string name="settings_audio_diagnostics_tone_track">Tone (AudioTrack)</string>
     <string name="settings_audio_diagnostics_tone_system">Tone (system)</string>
+    <string name="settings_audio_diagnostics_probe_web_api">Probe Web API</string>
     <string name="settings_audio_diagnostics_share">Share log</string>
     <string name="settings_audio_diagnostics_share_subject">Spoty: audio diagnostics</string>
     <string name="settings_audio_diagnostics_copy">Copy</string>

@@ -26,6 +26,7 @@
     <string name="settings_audio_diagnostics_intro">Dale play a una canción, esperá unos segundos y después tocá Compartir para enviar el registro. Los dos tonos de prueba suenan sin pasar por Spotify: sirven para saber si este dispositivo deja salir el audio de la app.</string>
     <string name="settings_audio_diagnostics_tone_track">Tono (AudioTrack)</string>
     <string name="settings_audio_diagnostics_tone_system">Tono (sistema)</string>
+    <string name="settings_audio_diagnostics_probe_web_api">Probar Web API</string>
     <string name="settings_audio_diagnostics_share">Compartir registro</string>
     <string name="settings_audio_diagnostics_share_subject">Spoty: diagnóstico de audio</string>
     <string name="settings_audio_diagnostics_copy">Copiar</string>

@@ -5,6 +5,8 @@ import android.content.Intent
 import androidx.core.content.FileProvider
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RateLimitGate
+import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.diagnostics.AudioTestTones
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -26,6 +28,8 @@ import javax.inject.Inject
 class AudioDiagnosticsViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     @ApplicationContext private val context: Context,
+    private val spClient: SpClient,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
     private val _report = MutableStateFlow("")
     val report: StateFlow<String> = _report.asStateFlow()
@@ -59,6 +63,52 @@ class AudioDiagnosticsViewModel @Inject constructor(
     fun playSystemTone() {
         viewModelScope.launch(Dispatchers.IO) {
             _lastToneResult.value = AudioTestTones.playSystemTone()
+        }
+    }
+
+    private val _lastProbeResult = MutableStateFlow<String?>(null)
+    val lastProbeResult: StateFlow<String?> = _lastProbeResult.asStateFlow()
+
+    /**
+     * Calls a few Web API endpoints once each, on purpose ignoring the rate-limit gate, and
+     * records what Spotify answered. Tells a per-account/IP block (everything fails) apart
+     * from an endpoint-specific one (only some fail). Each line also lands in the report.
+     */
+    fun probeWebApi() {
+        viewModelScope.launch(Dispatchers.IO) {
+            _lastProbeResult.value = "probing…"
+            val lines = listOf(
+                "/me" to { spClient.getCurrentUserProfile() },
+                "/me/top/artists" to { spClient.getUserTop("artists") },
+                "/me/top/tracks" to { spClient.getUserTop("tracks") },
+            ).map { (name, call) ->
+                val summary = summarizeProbe(runCatching { call() })
+                AudioDiagnostics.record("WebApiProbe", "$name -> $summary")
+                "$name -> $summary"
+            }
+            _lastProbeResult.value = lines.joinToString("\n")
+        }
+    }
+
+    private fun summarizeProbe(result: Result<String?>): String {
+        val raw = result.getOrElse { return "exception: ${it.message ?: it}" }
+            ?: return "null (no answer: no token or native failure)"
+        return try {
+            val obj = org.json.JSONObject(raw)
+            if (obj.has("error")) {
+                val err = obj.getJSONObject("error")
+                val type = err.optString("type", "unknown")
+                val retryAfter = if (err.has("retry_after_seconds")) err.getLong("retry_after_seconds") else null
+                if (type == "rate_limit" || type == "rate_limited") {
+                    rateLimitGate.noteRateLimited(retryAfter)
+                }
+                "error $type" + (retryAfter?.let { " retry_after=${it}s" } ?: "") +
+                    ": " + err.optString("message").take(120).replace('\n', ' ')
+            } else {
+                "ok (${raw.length} chars)"
+            }
+        } catch (e: Exception) {
+            "ok? non-JSON answer (${raw.length} chars)"
         }
     }
 
