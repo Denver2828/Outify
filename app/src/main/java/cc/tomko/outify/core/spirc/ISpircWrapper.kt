@@ -4,7 +4,12 @@ import cc.tomko.outify.core.model.OutifyUri
 
 interface ISpircWrapper {
     fun shutdown()
-    fun startRadio(track: OutifyUri, shuffle: Boolean = true): Boolean
+    /**
+     * Resolves the radio for [track] and loads it. Main-safe; suspends until the radio is
+     * resolved (bounded) and the load command was issued.
+     * @return `false` when Spotify has no radio for the track or the request failed.
+     */
+    suspend fun startRadio(track: OutifyUri, shuffle: Boolean = true): Boolean
     fun load(context: OutifyUri? = null, playingTrackUri: OutifyUri? = null): Boolean
     fun localLoad(uri: String): Boolean
     fun shuffle(enabled: Boolean): Boolean

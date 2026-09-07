@@ -351,10 +351,10 @@ class MainActivity : ComponentActivity() {
                                         addToQueue = { viewModel.addToQueue(it.toUriString()) },
                                         playNext = { viewModel.playNext(it.toUriString()) },
                                         startRadio = { viewModel.startRadio(it) },
-                                        openRadio = {
-                                            val uri =
-                                                viewModel.getRadioUri(it) ?: return@GlobalPopupHost
-                                            backStack.add(Route.PlaylistScreen(uri))
+                                        openRadio = { track ->
+                                            viewModel.resolveRadioUri(track) { uri ->
+                                                if (uri != null) backStack.add(Route.PlaylistScreen(uri))
+                                            }
                                         },
                                         addToPlaylist = { viewModel.addToPlaylist(it) },
                                         toggleLike = { viewModel.favorite(it.toUriString()) },

@@ -5,12 +5,12 @@ import android.content.Intent
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
-import cc.tomko.outify.core.RadioResult
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.DevicesResponse
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.repository.PlayerRepository
 import cc.tomko.outify.data.repository.SavedQueueRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
@@ -36,6 +36,7 @@ class SpircWrapper @Inject constructor(
     private val spClient: SpClient,
     private val settingsRepository: SettingsRepository,
     private val savedQueueRepository: SavedQueueRepository,
+    private val playerRepository: PlayerRepository,
     private val json: Json,
 ) : ISpircWrapper {
     val scope = CoroutineScope(
@@ -76,15 +77,10 @@ class SpircWrapper @Inject constructor(
         Spirc.shutdown()
     }
 
-    override fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {
-        val jsonResult = spClient.getRadioForTrack(trackUri.toUriString()) ?: return false
-        val result: RadioResult = json.decodeFromString(jsonResult)
-
-        if (result.total == 0 || result.mediaItems.isEmpty()) {
-            return false
-        }
-
-        val playlistUri = result.mediaItems.first().uri
+    override suspend fun startRadio(trackUri: OutifyUri, shuffle: Boolean): Boolean {
+        // Network resolution happens off the main thread inside the repository.
+        val playlistUri = playerRepository.getRadioPlaylistUri(trackUri.toUriString())
+            ?: return false
         val uri = OutifyUri.fromUriString(playlistUri)
 
         if (shuffle) {

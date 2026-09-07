@@ -130,6 +130,7 @@
     <string name="ui_notif_added_to_queue">Agregado a la cola</string>
     <string name="ui_notif_inserted_to_queue">Insertado en la cola</string>
     <string name="ui_notif_radio_started">Radio iniciada</string>
+    <string name="ui_notif_radio_failed">No se pudo iniciar la radio</string>
     <string name="ui_notif_favorite_failed">No se pudo actualizar Me gusta</string>
 
     <!-- Home top items range -->

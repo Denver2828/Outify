@@ -3,7 +3,6 @@ package cc.tomko.outify.ui.viewmodel.detail
 import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
@@ -36,7 +35,6 @@ class TrackDetailViewModel @Inject constructor(
     private val metadata: Metadata,
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
-    private val spClient: SpClient,
     private val lyricsRepository: LyricsRepository,
     private val likedRepository: LikedRepository,
     private val likedDao: LikedDao,
@@ -128,31 +126,8 @@ class TrackDetailViewModel @Inject constructor(
 
     fun toggleLike(trackUri: String) {
         viewModelScope.launch {
-            val trackId = trackUri.substringAfterLast(":")
-            val wasLiked = likedRepository.isLiked(trackId)
-
-            if (wasLiked) {
-                likedRepository.removeLiked(trackId)
-            } else {
-                likedRepository.addLiked(trackId)
-            }
-
-            // Blocking JNI network call: keep it off the main thread.
-            val success = withContext(Dispatchers.IO) {
-                if (wasLiked) {
-                    spClient.deleteItems(arrayOf(trackUri))
-                } else {
-                    spClient.saveItems(arrayOf(trackUri))
-                }
-            }
-
-            if (!success) {
-                if (wasLiked) {
-                    likedRepository.addLiked(trackId)
-                } else {
-                    likedRepository.removeLiked(trackId)
-                }
-            }
+            // Shared optimistic toggle: main-safe, rolled back if Spotify rejects it.
+            likedRepository.toggleTrackLiked(trackUri.substringAfterLast(":"))
         }
     }
 

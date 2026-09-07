@@ -18,12 +18,16 @@ import cc.tomko.outify.data.metadata.EpisodeMetadataHelper
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.ShowMetadataHelper
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
+import cc.tomko.outify.core.model.OutifyUri
+import java.util.concurrent.ConcurrentHashMap
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.stateIn
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 import kotlinx.coroutines.yield
 import javax.inject.Inject
@@ -235,27 +239,80 @@ class LikedRepository @Inject constructor(
     suspend fun isLiked(trackId: String): Boolean = likedDao.containsTrack(trackId)
 
     /**
-     * Flips the liked state of a track: optimistic local update first, then the
-     * remote call, rolled back when Spotify rejects it.
-     * @return the liked state after the call
+     * One lock per liked item so two quick taps on the same control run one after the other
+     * (the second one sees the first one's outcome) instead of racing on the same row.
      */
-    suspend fun toggleTrackLiked(trackId: String): Boolean = withContext(Dispatchers.IO) {
-        val wasLiked = isLiked(trackId)
+    private val toggleLocks = ConcurrentHashMap<String, Mutex>()
 
-        if (wasLiked) removeLiked(trackId) else addLiked(trackId)
+    private fun toggleLock(key: String): Mutex = toggleLocks.getOrPut(key) { Mutex() }
 
-        val uri = "spotify:track:$trackId"
-        val success = if (wasLiked) {
-            spClient.deleteItems(arrayOf(uri))
-        } else {
-            spClient.saveItems(arrayOf(uri))
+    /**
+     * Flips the liked state of a track: optimistic local update first, then the
+     * remote call, rolled back when Spotify rejects it. Main-safe: the blocking JNI call
+     * runs on [Dispatchers.IO]. Cancelling the caller does not cancel the native request;
+     * the local state is still reconciled when it returns.
+     *
+     * @param onLocalStateChanged invoked after every local write (the optimistic flip and,
+     * if needed, the rollback) for callers that do not observe the database.
+     * @return the resulting state and whether Spotify accepted the change
+     */
+    suspend fun toggleTrackLiked(
+        trackId: String,
+        onLocalStateChanged: suspend () -> Unit = {},
+    ): LikeToggleResult = withContext(Dispatchers.IO) {
+        toggleLock("track:$trackId").withLock {
+            val uri = "spotify:track:$trackId"
+            optimisticLikeToggle(
+                isLiked = { isLiked(trackId) },
+                add = { addLiked(trackId) },
+                remove = { removeLiked(trackId) },
+                remote = { wasLiked ->
+                    if (wasLiked) spClient.deleteItems(arrayOf(uri)) else spClient.saveItems(arrayOf(uri))
+                },
+                onLocalStateChanged = onLocalStateChanged,
+            )
         }
+    }
 
-        if (!success) {
-            if (wasLiked) addLiked(trackId) else removeLiked(trackId)
-            return@withContext wasLiked
+    /**
+     * Episode counterpart of [toggleTrackLiked]. Episodes live in their own table and are
+     * saved through the same Spotify endpoint with an `spotify:episode:` uri.
+     */
+    suspend fun toggleEpisodeLiked(
+        episodeId: String,
+        onLocalStateChanged: suspend () -> Unit = {},
+    ): LikeToggleResult = withContext(Dispatchers.IO) {
+        toggleLock("episode:$episodeId").withLock {
+            val uri = "spotify:episode:$episodeId"
+            optimisticLikeToggle(
+                isLiked = { isLikedEpisode(episodeId) },
+                add = { addLikedEpisode(episodeId) },
+                remove = { removeLikedEpisode(episodeId) },
+                remote = { wasLiked ->
+                    if (wasLiked) spClient.deleteItems(arrayOf(uri)) else spClient.saveItems(arrayOf(uri))
+                },
+                onLocalStateChanged = onLocalStateChanged,
+            )
         }
-        !wasLiked
+    }
+
+    /**
+     * Routes a raw `spotify:track:` / `spotify:episode:` uri to the matching toggle.
+     * @return the toggle outcome, or `null` when the uri is neither.
+     */
+    suspend fun toggleLikedByUri(
+        rawUri: String,
+        onLocalStateChanged: suspend () -> Unit = {},
+    ): LikeToggleResult? {
+        val uri = OutifyUri.fromUriString(rawUri)
+        return when {
+            uri.isTrack -> toggleTrackLiked(uri.id, onLocalStateChanged)
+            uri.isEpisode -> toggleEpisodeLiked(uri.id, onLocalStateChanged)
+            else -> {
+                Log.w(TAG, "toggleLikedByUri: unsupported uri $rawUri")
+                null
+            }
+        }
     }
 
     /**

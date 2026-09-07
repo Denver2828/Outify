@@ -7,7 +7,6 @@ import androidx.compose.material3.Icon
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.EpisodeDetails
-import cc.tomko.outify.core.RadioResult
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.OutifyUri
@@ -17,6 +16,7 @@ import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.data.repository.LikedRepository
+import cc.tomko.outify.data.repository.PlayerRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.data.setting.EpisodeSwipeActionHandler
 import cc.tomko.outify.data.setting.GestureSetting
@@ -39,8 +39,6 @@ import android.content.Context
 import androidx.compose.ui.res.stringResource
 import cc.tomko.outify.R
 import dagger.hilt.android.qualifiers.ApplicationContext
-import kotlinx.coroutines.withContext
-import kotlinx.coroutines.Dispatchers
 
 @HiltViewModel
 class MainViewModel @Inject constructor(
@@ -50,6 +48,7 @@ class MainViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val spClient: SpClient,
     private val likedRepository: LikedRepository,
+    private val playerRepository: PlayerRepository,
     private val json: Json,
 ) : ViewModel() {
     val swipeSettings: Flow<List<GestureSetting>> =
@@ -125,25 +124,45 @@ class MainViewModel @Inject constructor(
         )
     }
 
+    /**
+     * Resolves and starts the radio for [track]. The network round trip happens off the
+     * main thread; the "radio started" notice is only shown once the radio actually loaded.
+     */
     fun startRadio(track: Track) {
-        spirc.startRadio(track.toSpotifyUri(), false)
-        playbackStateHolder.setAudio(track.toPlayableAudio())
-        InAppNotificationController.show(
-            context.getString(R.string.ui_notif_radio_started),
-            { Icon(Icons.Default.Radio, contentDescription = stringResource(R.string.ui_notif_radio_started)) },
-            1000L
-        )
+        viewModelScope.launch {
+            val started = spirc.startRadio(track.toSpotifyUri(), false)
+            if (!started) {
+                InAppNotificationController.show(
+                    context.getString(R.string.ui_notif_radio_failed),
+                    durationMillis = 2000L
+                )
+                return@launch
+            }
+            playbackStateHolder.setAudio(track.toPlayableAudio())
+            InAppNotificationController.show(
+                context.getString(R.string.ui_notif_radio_started),
+                { Icon(Icons.Default.Radio, contentDescription = stringResource(R.string.ui_notif_radio_started)) },
+                1000L
+            )
+        }
     }
 
-    fun getRadioUri(track: Track): String? {
-        val jsonResult = spClient.getRadioForTrack(track.uri) ?: return null
-        val result: RadioResult = json.decodeFromString(jsonResult)
-
-        if (result.total == 0 || result.mediaItems.isEmpty()) {
-            return null
+    /**
+     * Resolves the radio playlist uri for [track] off the main thread and hands it to
+     * [onResolved] on the main thread. A `null` means Spotify has no radio for it or the
+     * request failed; the user is told in that case.
+     */
+    fun resolveRadioUri(track: Track, onResolved: (String?) -> Unit) {
+        viewModelScope.launch {
+            val uri = playerRepository.getRadioPlaylistUri(track.uri)
+            if (uri == null) {
+                InAppNotificationController.show(
+                    context.getString(R.string.ui_notif_radio_failed),
+                    durationMillis = 2000L
+                )
+            }
+            onResolved(uri)
         }
-
-        return result.mediaItems.first().uri
     }
 
     fun addToPlaylist(track: Track) {
@@ -154,39 +173,14 @@ class MainViewModel @Inject constructor(
         GlobalPopupController.show(PopupSpec.AddToPlaylist(tracks))
     }
 
+    /**
+     * Flips the liked state of a track or episode through the shared repository toggle,
+     * so this control converges on the same state as every other like button.
+     */
     fun favorite(rawUri: String) {
         viewModelScope.launch {
-            val uri = OutifyUri.fromUriString(rawUri)
-            val id = uri.id
-            val isTrack = uri.isTrack
-
-            val wasLiked = if (isTrack) {
-                likedRepository.isLiked(id)
-            } else {
-                likedRepository.isLikedEpisode(id)
-            }
-
-            if (wasLiked) {
-                if (isTrack) likedRepository.removeLikedEpisode(id) else likedRepository.removeLikedEpisode(id)
-            } else {
-                if (isTrack) likedRepository.addLiked(id) else likedRepository.addLikedEpisode(id)
-            }
-
-            // Blocking JNI network call: keep it off the main thread.
-            val success = withContext(Dispatchers.IO) {
-                if (wasLiked) {
-                    spClient.deleteItems(arrayOf(rawUri))
-                } else {
-                    spClient.saveItems(arrayOf(rawUri))
-                }
-            }
-
-            if(!success) {
-                if (wasLiked) {
-                    if (isTrack) likedRepository.addLiked(id) else likedRepository.addLikedEpisode(id)
-                } else {
-                    if (isTrack) likedRepository.removeLiked(id) else likedRepository.removeLikedEpisode(id)
-                }
+            val result = likedRepository.toggleLikedByUri(rawUri) ?: return@launch
+            if (!result.succeeded) {
                 InAppNotificationController.show(
                     context.getString(R.string.ui_notif_favorite_failed),
                     durationMillis = 2000L

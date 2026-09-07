@@ -45,8 +45,11 @@ import cc.tomko.outify.utils.CoilBitmapLoader
 import com.google.common.util.concurrent.MoreExecutors
 import dagger.hilt.android.AndroidEntryPoint
 import jakarta.inject.Inject
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.async
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -213,55 +216,52 @@ class PlaybackService : MediaLibraryService(),
         )
     }
 
-    private fun toggleLike() {
-        val item = player.currentMediaItem ?: return
+    /**
+     * Like/unlike from the notification, Android Auto or any other controller.
+     *
+     * Runs the shared optimistic toggle on [offloadScope] so a slow network never holds the
+     * session callback or the main thread. The notification is refreshed after every local
+     * write, so the button flips immediately and flips back if Spotify rejects the change.
+     * The returned deferred completes only once the remote call has been confirmed; the
+     * work itself is not cancelled if the caller stops waiting (the native request cannot
+     * be cancelled), so the local state is always reconciled.
+     *
+     * @return whether Spotify accepted the change, or `null` when there is nothing to like.
+     */
+    private fun toggleLike(): Deferred<Boolean?> {
+        val item = player.currentMediaItem
+        val audio = playbackStateHolder.state.value.currentAudio
+        if (item == null || audio == null) return CompletableDeferred(null)
         val id = item.mediaId
-        val audio = playbackStateHolder.state.value.currentAudio ?: return
         Log.i(TAG, "Toggling like for $id")
 
-        scope.launch {
-            val isTrack = audio.isTrack()
-            val uri = if (isTrack) "spotify:track:$id" else "spotify:episode:$id"
-
-            val wasLiked = if (isTrack) {
-                likedRepository.isLiked(id)
-            } else {
-                likedRepository.isLikedEpisode(id)
+        val uri = if (audio.isTrack()) "spotify:track:$id" else "spotify:episode:$id"
+        return offloadScope.async {
+            val result = likedRepository.toggleLikedByUri(uri) { updateNotification() }
+            if (result == null) {
+                Log.w(TAG, "toggleLike: unsupported uri $uri")
+                return@async null
             }
-
-            if (isTrack) {
-                if (wasLiked) likedRepository.removeLiked(id) else likedRepository.addLiked(id)
-            } else {
-                if (wasLiked) likedRepository.removeLikedEpisode(id) else likedRepository.addLikedEpisode(id)
-            }
-            updateNotification()
-
-            val success = try {
-                if (wasLiked) spClient.deleteItems(arrayOf(uri)) else spClient.saveItems(arrayOf(uri))
-            } catch (e: Exception) {
-                Log.w(TAG, "spClient failed to ${if (wasLiked) "delete" else "save"} $uri", e)
-                false
-            }
-
-            if (!success) {
-                Log.w(TAG, "Rolling back like state for $uri")
-                if (isTrack) {
-                    if (wasLiked) likedRepository.addLiked(id) else likedRepository.removeLiked(id)
-                } else {
-                    if (wasLiked) likedRepository.addLikedEpisode(id) else likedRepository.removeLikedEpisode(id)
-                }
-                updateNotification()
-            }
+            if (!result.succeeded) Log.w(TAG, "Spotify rejected the like change for $uri; rolled back")
+            result.succeeded
         }
     }
 
-    private fun toggleStartRadio() {
-        val item = player.currentMediaItem ?: return
+    /**
+     * Starts the radio for the current item. The radio resolution is a network round trip
+     * that runs off the main thread inside [SpircWrapper.startRadio].
+     *
+     * @return whether a radio was found and loaded, or `null` when nothing is playing.
+     */
+    private fun toggleStartRadio(): Deferred<Boolean?> {
+        val item = player.currentMediaItem ?: return CompletableDeferred(null)
         val id = item.mediaId
         Log.i(TAG, "Starting radio for $id")
 
-        scope.launch {
-            spirc.startRadio(SpotifyUri.Track(id), false)
+        return offloadScope.async {
+            val started = spirc.startRadio(SpotifyUri.Track(id), false)
+            if (!started) Log.w(TAG, "No radio available for $id")
+            started
         }
     }
 

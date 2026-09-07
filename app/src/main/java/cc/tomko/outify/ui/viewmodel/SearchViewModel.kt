@@ -390,7 +390,9 @@ class SearchViewModel @Inject constructor(
 
     fun saveItem(uri: String) {
         viewModelScope.launch {
-            if (!spClient.saveItems(arrayOf(uri))) {
+            // Blocking JNI network call: keep it off the main thread.
+            val saved = withContext(Dispatchers.IO) { spClient.saveItems(arrayOf(uri)) }
+            if (!saved) {
                 Log.w("SearchViewModel", "saveItem failed")
             }
         }

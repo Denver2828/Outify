@@ -130,6 +130,7 @@
     <string name="ui_notif_added_to_queue">Added to queue</string>
     <string name="ui_notif_inserted_to_queue">Inserted to queue</string>
     <string name="ui_notif_radio_started">Radio started</string>
+    <string name="ui_notif_radio_failed">Could not start the radio</string>
     <string name="ui_notif_favorite_failed">Failed to update favorite</string>
 
     <!-- Home top items range -->

@@ -37,7 +37,9 @@ import com.google.common.util.concurrent.ListenableFuture
 import dagger.hilt.android.qualifiers.ApplicationContext
 import jakarta.inject.Inject
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.async
@@ -48,6 +50,7 @@ import kotlinx.coroutines.supervisorScope
 import kotlinx.coroutines.sync.Semaphore
 import kotlinx.coroutines.sync.withPermit
 import kotlinx.coroutines.withContext
+import kotlinx.coroutines.withTimeoutOrNull
 import kotlinx.serialization.Serializable
 import kotlinx.serialization.json.Json
 import java.util.Collections
@@ -107,6 +110,9 @@ class MediaLibrarySessionCallback @Inject constructor(
         private const val FETCH_CONCURRENCY = 6
         private const val CONTEXT_CACHE_SIZE = 512
 
+        /** Upper bound for reporting a like/radio command result back to a controller. */
+        private const val CUSTOM_COMMAND_TIMEOUT_MS = 10_000L
+
         // Last-resort fallbacks when a native payload cannot be decoded as a model.
         private val TRACK_URI_REGEX = Regex("""spotify:track:[a-zA-Z0-9]+""")
         private val ARTIST_URI_REGEX = Regex("""spotify:artist:[a-zA-Z0-9]+""")
@@ -115,8 +121,14 @@ class MediaLibrarySessionCallback @Inject constructor(
     private val scope = CoroutineScope(Dispatchers.Main + SupervisorJob())
 
     lateinit var service: PlaybackService
-    var toggleLike: () -> Unit = {}
-    var toggleStartRadio: () -> Unit = {}
+
+    /**
+     * Like and radio are network operations: the service hands back a deferred that
+     * completes with the real outcome (`null` = nothing to act on), so [onCustomCommand]
+     * can report success only once the operation is confirmed.
+     */
+    var toggleLike: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
+    var toggleStartRadio: () -> Deferred<Boolean?> = { CompletableDeferred(null) }
     var toggleRepeatMode: () -> Unit = {}
 
     /** Results of the most recent [onSearch], served back by [onGetSearchResult]. */
@@ -169,13 +181,33 @@ class MediaLibrarySessionCallback @Inject constructor(
         customCommand: SessionCommand,
         args: Bundle
     ): ListenableFuture<SessionResult> {
-        when (customCommand.customAction) {
-            MediaSessionConstants.ACTION_TOGGLE_LIKE -> toggleLike()
-            MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> toggleStartRadio()
-            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> toggleRepeatMode()
+        return when (customCommand.customAction) {
+            MediaSessionConstants.ACTION_TOGGLE_LIKE -> confirmedResult(toggleLike())
+            MediaSessionConstants.ACTION_TOGGLE_START_RADIO -> confirmedResult(toggleStartRadio())
+            MediaSessionConstants.ACTION_TOGGLE_REPEAT_MODE -> {
+                toggleRepeatMode()
+                Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
+            }
+            else -> Futures.immediateFuture(SessionResult(SessionResult.RESULT_ERROR_NOT_SUPPORTED))
         }
-        return Futures.immediateFuture(SessionResult(SessionResult.RESULT_SUCCESS))
     }
+
+    /**
+     * Maps a network-backed command outcome to a [SessionResult] without holding the
+     * session callback: the future completes when the operation is confirmed, or with an
+     * error after [CUSTOM_COMMAND_TIMEOUT_MS]. A timeout does not cancel the operation
+     * (the native request is not cancellable); it keeps running and reconciles state.
+     */
+    private fun confirmedResult(outcome: Deferred<Boolean?>): ListenableFuture<SessionResult> =
+        scope.future {
+            val code = when (withTimeoutOrNull(CUSTOM_COMMAND_TIMEOUT_MS) { outcome.await() }) {
+                true -> SessionResult.RESULT_SUCCESS
+                false -> SessionResult.RESULT_ERROR_UNKNOWN
+                null -> if (outcome.isCompleted) SessionResult.RESULT_INFO_SKIPPED
+                else SessionResult.RESULT_ERROR_UNKNOWN // still pending after the timeout
+            }
+            SessionResult(code)
+        }
 
     // region Playback requests
 
