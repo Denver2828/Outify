@@ -3,6 +3,13 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.5 -->
+    <string name="changelog_1_7_5_date">September 8, 2026</string>
+    <string name="changelog_1_7_5_title">Controls no longer vanish without lyrics</string>
+    <string-array name="changelog_1_7_5_bullets">
+        <item>On the lyrics screen, when a song had no synced lyrics the previous, play/pause and next buttons disappeared along with the progress bar. The controls now show whenever the displayed track is the one playing, with or without lyrics.</item>
+    </string-array>
+
     <!-- 1.7.4 -->
     <string name="changelog_1_7_4_date">September 8, 2026</string>
     <string name="changelog_1_7_4_title">Fewer requests to Spotify after a rate limit</string>

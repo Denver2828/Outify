@@ -291,6 +291,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Lección.** Respetar la ventana no alcanza si algún camino la re-arma en cada arranque: hay que auditar quién llama, cuántas veces y desde qué ciclo de vida. Un ViewModel apilado no es visible en pantalla pero sigue pidiendo; y un reintento encima de otro reintento no es resiliencia, es carga duplicada.
 
+### 2026-09-08 — 1.7.5: los controles no desaparecen cuando falta la letra
+
+**Causa.** En la hoja de letra vertical (`LyricsBottomSheet`), la barra de transporte (anterior, reproducir/pausar, siguiente y la barra de progreso) se mostraba solo si `hasSyncedContent && isCurrentTrack`. Cuando la canción no tenía letra sincronizada (o no tenía letra), `hasSyncedContent` era falso y desaparecían todos los controles, aun con el tema sonando. La condición mezclaba dos cosas distintas: si hay letra con tiempos y si el tema mostrado es el que suena. La pantalla horizontal no tenía el problema porque mostraba los controles siempre.
+
+**Decisión.** Se separó el concepto: los controles se muestran cuando el tema mostrado es el que suena (`isCurrentTrack`), tenga letra o no; el resaltado de líneas y el salto al tocar una línea siguen dependiendo de que haya tiempos (`canSeekLines = hasSyncedContent && isCurrentTrack`). El resto del comportamiento queda igual: un tema que no es el actual no muestra controles de transporte, como antes.
+
+**Qué se descartó.** Corregir la pantalla horizontal (ya estaba bien) y tocar el string de "no hay letra" (era correcto; el grep lo mostraba raro por los saltos de línea).
+
+**Lección.** Una sola bandera que gobierna dos comportamientos distintos termina ocultando uno cuando falla el otro. Si un control depende de "el tema suena" y otro de "hay letra con tiempos", son dos condiciones, no una.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

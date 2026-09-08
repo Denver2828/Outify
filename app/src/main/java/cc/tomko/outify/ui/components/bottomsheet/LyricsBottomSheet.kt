@@ -102,14 +102,18 @@ fun LyricsBottomSheet(
     val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
 
-    val showPlaybackControls = hasSyncedContent && isCurrentTrack
+    // Transport controls follow the playing track, not whether it has lyrics. Gating them
+    // on hasSyncedContent hid play/pause/skip whenever a song had no (synced) lyrics.
+    val showPlaybackControls = isCurrentTrack
+    // Line highlighting and tap-to-seek still require timestamps on the current track.
+    val canSeekLines = hasSyncedContent && isCurrentTrack
 
     val backgroundColor = MaterialTheme.colorScheme.background
     val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
     val activeLineColor = MaterialTheme.colorScheme.primary
     val inactiveTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
-    val isSynced = isSyncedMode && showPlaybackControls
+    val isSynced = isSyncedMode && canSeekLines
 
     fun formatTime(ms: Long): String {
         val s = (ms / 1000).coerceAtLeast(0L)
@@ -245,7 +249,7 @@ fun LyricsBottomSheet(
                     isSynced = isSynced,
                     activeLineColor = activeLineColor,
                     inactiveTextColor = inactiveTextColor,
-                    onLineClick = if (showPlaybackControls) onSeekToTimestamp else { _ -> },
+                    onLineClick = if (canSeekLines) onSeekToTimestamp else { _ -> },
                     modifier = Modifier
                         .weight(1f)
                         .fillMaxWidth()

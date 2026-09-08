@@ -3,6 +3,14 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.5 -->
+    <string name="changelog_1_7_5_version" translatable="false">1.7.5</string>
+    <string name="changelog_1_7_5_date">8 de septiembre de 2026</string>
+    <string name="changelog_1_7_5_title">Los controles no desaparecen sin letra</string>
+    <string-array name="changelog_1_7_5_bullets">
+        <item>En la pantalla de letra, cuando una canción no tenía letra sincronizada desaparecían los botones de anterior, reproducir/pausar y siguiente junto con la barra de progreso. Ahora los controles aparecen siempre que suena el tema mostrado, tenga letra o no.</item>
+    </string-array>
+
     <!-- 1.7.4 -->
     <string name="changelog_1_7_4_version" translatable="false">1.7.4</string>
     <string name="changelog_1_7_4_date">8 de septiembre de 2026</string>
