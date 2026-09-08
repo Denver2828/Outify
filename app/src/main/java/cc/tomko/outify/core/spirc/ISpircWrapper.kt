@@ -24,7 +24,6 @@ interface ISpircWrapper {
     fun transfer(): Boolean
     fun smartTransfer(): Boolean
     fun setVolume(volume: Int): Boolean
-    suspend fun hasActiveDevice(): Boolean
     suspend fun seekTo(positionMs: Long): Boolean
     fun playerPlay(): Boolean
     fun playerPause(): Boolean

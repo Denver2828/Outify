@@ -155,6 +155,9 @@ class SearchViewModel @Inject constructor(
         }
 
         viewModelScope.launch {
+            // Items already resolved by this ViewModel are reused; only new uris hit the
+            // metadata helpers (network for artists, albums and shows). Keyed by uri.
+            val resolved = mutableMapOf<String, SearchUiModel>()
             settingsRepository.searchHistory.collect { items ->
                 if (items.isEmpty()) {
                     _historyResults.value = emptyList()
@@ -162,6 +165,7 @@ class SearchViewModel @Inject constructor(
                 }
                 val results = withContext(Dispatchers.IO) {
                     items.mapNotNull { item ->
+                        resolved[item.uri]?.let { return@mapNotNull it }
                         try {
                             when (item.type) {
                                 SearchResultType.TRACK -> {
@@ -195,7 +199,7 @@ class SearchViewModel @Inject constructor(
                                     val episode = metadata.getEpisodeMetadata(item.uri)
                                     episode?.let { SearchUiModel.EpisodeItem(item.uri, it) }
                                 }
-                            }
+                            }?.also { resolved[item.uri] = it }
                         } catch (e: Exception) {
                             Log.w(
                                 "SearchViewModel",

@@ -27,6 +27,7 @@ import kotlinx.coroutines.flow.flowOn
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.supervisorScope
 import kotlinx.serialization.json.Json
+import java.util.concurrent.ConcurrentHashMap
 import javax.inject.Inject
 import javax.inject.Named
 import javax.inject.Singleton
@@ -42,6 +43,12 @@ class AlbumMetadataHelper @Inject constructor(
     private val json: Json,
     @Named("metadataConcurrency") private val concurrency: Int,
 ) {
+
+    /**
+     * Albums whose cached track list was checked against the remote (or freshly fetched) in
+     * this process. Later hits return the Room data directly instead of re-fetching to verify.
+     */
+    private val verifiedAlbums: MutableSet<String> = ConcurrentHashMap.newKeySet()
 
     fun observeAlbums(uris: List<String>): Flow<List<Album>> {
         if (uris.isEmpty()) return flowOf(emptyList())
@@ -66,9 +73,10 @@ class AlbumMetadataHelper @Inject constructor(
      *
      * If album missing in DB -> fetch remote, persist, return fetched.
      * If album exists but album_tracks missing -> fetch remote, persist cross-refs, return fetched.
-     * If album + album_tracks exist -> fetch remote, compare track lists:
+     * If album + album_tracks exist -> fetch remote once per process, compare track lists:
      *      - if different -> persist remote and return it
      *      - if identical  -> return cached immediately
+     *      - already verified in this process -> return cached without any fetch
      */
     suspend fun getAlbumMetadata(uri: String): Album? {
         if (uri.isBlank()) return null
@@ -88,6 +96,7 @@ class AlbumMetadataHelper @Inject constructor(
 
             if (fetched.isNotEmpty()) {
                 persistAlbumMetadata(fetched)
+                verifiedAlbums += uri
                 return fetched.first()
             }
 
@@ -106,12 +115,17 @@ class AlbumMetadataHelper @Inject constructor(
 
             if (fetched.isNotEmpty()) {
                 persistAlbumMetadata(fetched)
+                verifiedAlbums += uri
                 return fetched.first()
             }
 
             // fallback: cached album without tracks
             val cachedDomain = albumWithArtists.toDomain()
             return cachedDomain.copy(tracks = emptyList())
+        }
+
+        if (uri in verifiedAlbums) {
+            return albumWithArtists.toDomain().copy(tracks = cachedTrackUris)
         }
 
         // Fetch remote album and compare track lists.
@@ -129,6 +143,7 @@ class AlbumMetadataHelper @Inject constructor(
         }
 
         val remoteAlbum = remoteAlbums.first()
+        verifiedAlbums += uri
 
         val remoteTrackUris = remoteAlbum.tracks
 
@@ -202,10 +217,9 @@ class AlbumMetadataHelper @Inject constructor(
             val deferred = chunk.map { uri ->
                 async {
                     try {
-                        // Retry on rate limit
-                        val raw = nativeMetadata.retryOnRateLimit {
-                            nativeMetadata.fetchMetadata(uri)
-                        }
+                        // No Kotlin retry on 429: the native client already retries with the
+                        // real Retry-After and refuses to send while the window is open.
+                        val raw = nativeMetadata.fetchMetadata(uri)
 
                         // Decode into Album
                         json.decodeFromString<Album>(raw.toString())

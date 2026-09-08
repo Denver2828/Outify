@@ -62,6 +62,7 @@ import androidx.compose.ui.unit.Density
 import androidx.compose.ui.unit.dp
 import androidx.core.view.WindowCompat
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import androidx.navigation3.runtime.NavBackStack
 import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
@@ -453,7 +454,7 @@ class MainActivity : ComponentActivity() {
                                                     FloatingOutifyBottomNav(
                                                         items = allRoutes,
                                                         selectedId = selectedId,
-                                                        onItemSelected = { item -> if (backStack.last() != item.route) backStack.add(item.route) },
+                                                        onItemSelected = { item -> backStack.selectTab(item.route) },
                                                         showSelectedLabel = interfaceSettings.navbarShowLabel,
                                                         modifier = Modifier.align(Alignment.BottomCenter)
                                                     )
@@ -461,7 +462,7 @@ class MainActivity : ComponentActivity() {
                                                     OutifyBottomNav(
                                                         items = allRoutes,
                                                         selectedId = selectedId,
-                                                        onItemSelected = { item -> if (backStack.last() != item.route) backStack.add(item.route) },
+                                                        onItemSelected = { item -> backStack.selectTab(item.route) },
                                                         modifier = Modifier.align(Alignment.BottomCenter)
                                                     )
                                                 }
@@ -555,7 +556,7 @@ class MainActivity : ComponentActivity() {
                                                 FloatingOutifyBottomNav(
                                                     items = allRoutes,
                                                     selectedId = selectedId,
-                                                    onItemSelected = { item -> if (backStack.last() != item.route) backStack.add(item.route) },
+                                                    onItemSelected = { item -> backStack.selectTab(item.route) },
                                                     showSelectedLabel = interfaceSettings.navbarShowLabel,
                                                 )
                                             }
@@ -576,7 +577,7 @@ class MainActivity : ComponentActivity() {
                                                 OutifyBottomNav(
                                                     items = allRoutes,
                                                     selectedId = selectedId,
-                                                    onItemSelected = { item -> if (backStack.last() != item.route) backStack.add(item.route) }
+                                                    onItemSelected = { item -> backStack.selectTab(item.route) }
                                                 )
                                             }
                                         }
@@ -664,5 +665,21 @@ class MainActivity : ComponentActivity() {
         }
 
         return null
+    }
+}
+
+/**
+ * Bottom-navigation selection. When [route] is already in the stack everything above it is
+ * popped, so the tab comes back with its existing screen and ViewModel; a new tab is pushed.
+ * Pushing a fresh copy per tap created one ViewModel (and its collectors) per tap.
+ */
+private fun NavBackStack<NavKey>.selectTab(route: NavKey) {
+    val index = indexOf(route)
+    if (index < 0) {
+        add(route)
+        return
+    }
+    while (lastIndex > index) {
+        removeAt(lastIndex)
     }
 }

@@ -5,6 +5,7 @@ import android.util.Log
 import androidx.compose.runtime.mutableStateOf
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.EpisodeDetails
 import cc.tomko.outify.core.spirc.SpircWrapper
@@ -80,13 +81,11 @@ class LibraryViewModel @Inject constructor(
     private val spirc: SpircWrapper,
     private val playbackStateHolder: PlaybackStateHolder,
     private val likedRepository: LikedRepository,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
 
-    init {
-        viewModelScope.launch {
-            metadata.syncLikedPlaylists()
-        }
-    }
+    // The rootlist is fetched once, by loadPlaylistUris (the screen calls it on entry and it is
+    // idempotent per ViewModel); that fetch also refreshes the liked-playlists table.
 
     private val _headerArtwork = mutableStateOf<String?>(null)
     val headerArtwork = _headerArtwork
@@ -240,7 +239,8 @@ class LibraryViewModel @Inject constructor(
             }
 
             runCatching {
-                metadata.getPlaylistUris()
+                // One rootlist call serves both the screen and the liked-playlists table.
+                withContext(Dispatchers.IO) { metadata.syncLikedPlaylists() }
             }.onSuccess { uris ->
                 playlistUris.value = uris
                 settingsRepository.saveCachedUris(uris)
@@ -256,6 +256,7 @@ class LibraryViewModel @Inject constructor(
 
     fun loadAlbumUris(force: Boolean = false) {
         if (!force && albumsLoaded) return
+        if (skipWhileRateLimited("saved albums")) return
         viewModelScope.launch {
             _isLoadingAlbums.value = true
 
@@ -275,6 +276,7 @@ class LibraryViewModel @Inject constructor(
 
     fun loadShowUris(force: Boolean = false) {
         if (!force && showsLoaded) return
+        if (skipWhileRateLimited("saved shows")) return
         viewModelScope.launch {
             _isLoadingShows.value = true
 
@@ -294,6 +296,7 @@ class LibraryViewModel @Inject constructor(
 
     fun loadEpisodeUris(force: Boolean = false) {
         if (!force && episodesLoaded) return
+        if (skipWhileRateLimited("saved episodes")) return
         viewModelScope.launch {
             _isLoadingEpisodes.value = true
 
@@ -312,6 +315,17 @@ class LibraryViewModel @Inject constructor(
 
             _isLoadingEpisodes.value = false
         }
+    }
+
+    /**
+     * True (and logged) while the Spotify rate-limit window is open: the saved-items calls
+     * stay quiet and keep whatever is on screen; the loaded flag is left untouched so the
+     * next tab selection retries once the window closes.
+     */
+    private fun skipWhileRateLimited(what: String): Boolean {
+        if (!rateLimitGate.isLimited()) return false
+        Log.i("LibraryViewModel", "$what skipped: rate limited for ${rateLimitGate.remainingSeconds()} s")
+        return true
     }
 
     val currentAudio: StateFlow<PlayableAudio?> = playbackStateHolder.state

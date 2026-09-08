@@ -18,6 +18,7 @@ import androidx.media3.session.SessionResult
 import cc.tomko.outify.ALBUM_COVER_URL
 import cc.tomko.outify.MediaSessionConstants
 import cc.tomko.outify.R
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.CoverSize
@@ -81,6 +82,7 @@ class MediaLibrarySessionCallback @Inject constructor(
     private val metadata: Metadata,
     private val searchRepository: SearchRepository,
     private val json: Json,
+    private val rateLimitGate: RateLimitGate,
 ) : MediaLibraryService.MediaLibrarySession.Callback {
 
     companion object {
@@ -311,6 +313,7 @@ class MediaLibrarySessionCallback @Inject constructor(
 
     /** Voice search ("play X"): play the best match directly. */
     private suspend fun playFromSearch(query: String) {
+        if (skipWhileRateLimited("Voice search")) return
         val results = try {
             searchRepository.search(query)
         } catch (e: CancellationException) {
@@ -541,6 +544,7 @@ class MediaLibrarySessionCallback @Inject constructor(
     }
 
     private suspend fun getTopArtists(): List<MediaItem> {
+        if (skipWhileRateLimited("Top artists")) return emptyList()
         val raw = spClient.getUserTop("artists") ?: return emptyList()
         if (NativeErrorHandler.handleErrorJson(raw, "android auto top artists") != null) return emptyList()
 
@@ -663,6 +667,7 @@ class MediaLibrarySessionCallback @Inject constructor(
 
     /** Playable tracks first, then artists and playlists as browsable folders. */
     private suspend fun searchLibrary(query: String): List<MediaItem> = supervisorScope {
+        if (skipWhileRateLimited("Search")) return@supervisorScope emptyList()
         val results = searchRepository.search(query)
 
         val trackUris = results.filter { it.type == SearchResultType.TRACK }.map { it.uri }.take(MAX_SEARCH_TRACKS)
@@ -695,6 +700,13 @@ class MediaLibrarySessionCallback @Inject constructor(
     // endregion
 
     // region Helpers
+
+    /** True (and logged) while the Spotify rate-limit window is open; the caller answers empty. */
+    private fun skipWhileRateLimited(what: String): Boolean {
+        if (!rateLimitGate.isLimited()) return false
+        Log.i(TAG, "$what skipped: rate limited for ${rateLimitGate.remainingSeconds()} s")
+        return true
+    }
 
     /** Runs [block] for every uri with bounded concurrency; failures are logged and skipped. */
     private suspend fun <T : Any> fetchConcurrently(

@@ -113,6 +113,9 @@ class HomeViewModel @Inject constructor(
 
     private var loadJob: Job? = null
 
+    /** Set once the profile was saved by this instance; see [loadUserProfile]. */
+    private var profileLoaded = false
+
     private val _selectedDuration = MutableStateFlow(TopItemsDuration.SHORT_TERM)
     val selectedDuration: StateFlow<TopItemsDuration> = _selectedDuration.asStateFlow()
 
@@ -140,7 +143,7 @@ class HomeViewModel @Inject constructor(
 
                     is AuthStateEvent.AccountLoggedOut -> {
                         _uiState.value = HomeUiState.NotAuthenticated
-                        loadUserProfile()
+                        loadUserProfile(force = true)
                     }
 
                     is AuthStateEvent.PlaybackLoggedIn -> {
@@ -220,7 +223,7 @@ class HomeViewModel @Inject constructor(
                 val isAuthenticated = withContext(Dispatchers.IO) { spClient.isOAuthAuthenticated() }
                 if (!isAuthenticated) {
                     _uiState.value = HomeUiState.NotAuthenticated
-                    loadUserProfile()
+                    loadUserProfile(force)
                     return@launch
                 }
 
@@ -251,13 +254,13 @@ class HomeViewModel @Inject constructor(
                     forced = force,
                 )
                 if (decision == TopsDecision.SERVE_CACHE) {
-                    loadUserProfile()
+                    loadUserProfile(force)
                     return@launch
                 }
 
                 if (rateLimitGate.isLimited()) {
                     fail(RefreshFailure.RATE_LIMITED, "rate limited")
-                    loadUserProfile()
+                    loadUserProfile(force)
                     return@launch
                 }
 
@@ -275,28 +278,28 @@ class HomeViewModel @Inject constructor(
                         // The native call failed without a payload (network, session); the
                         // OAuth check above already passed, so this is not "not logged in".
                         fail(RefreshFailure.OTHER, "top artists unavailable")
-                        loadUserProfile()
+                        loadUserProfile(force)
                         return@launch
                     }
                     val topArtistsError =
                         NativeErrorHandler.handleErrorJson(topArtistsJson, "top artists")
                     if (topArtistsError != null) {
                         handleTopItemsError(topArtistsError, ::fail)
-                        loadUserProfile()
+                        loadUserProfile(force)
                         return@launch
                     }
 
                     val topTracksJson = withContext(Dispatchers.IO) { spClient.getUserTop("tracks", durationValue) }
                     if (topTracksJson == null) {
                         fail(RefreshFailure.OTHER, "top tracks unavailable")
-                        loadUserProfile()
+                        loadUserProfile(force)
                         return@launch
                     }
                     val topTracksError =
                         NativeErrorHandler.handleErrorJson(topTracksJson, "top tracks")
                     if (topTracksError != null) {
                         handleTopItemsError(topTracksError, ::fail)
-                        loadUserProfile()
+                        loadUserProfile(force)
                         return@launch
                     }
 
@@ -307,7 +310,7 @@ class HomeViewModel @Inject constructor(
                         _selectedDuration.value = fallbackDuration
                         _uiState.value = HomeUiState.Success(topArtists, topTracks)
                         updateTopCache(fallbackDuration, topArtists, topTracks)
-                        loadUserProfile()
+                        loadUserProfile(force)
                         return@launch
                     }
                 }
@@ -315,7 +318,7 @@ class HomeViewModel @Inject constructor(
                 if (!hasContent) {
                     _uiState.value = HomeUiState.EmptyResult
                 }
-                loadUserProfile()
+                loadUserProfile(force)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
@@ -359,7 +362,13 @@ class HomeViewModel @Inject constructor(
         settingsRepository.saveCachedTops(json.encodeToString(updated), duration.value)
     }
 
-    private fun loadUserProfile() {
+    /**
+     * Runs once per ViewModel instance: every [loadData] path ends here, including the
+     * cache-only one, so without the flag each launch cost one profile call. [force] is the
+     * pull-to-refresh / retry path and a logout, which must pick up the new state.
+     */
+    private fun loadUserProfile(force: Boolean = false) {
+        if (profileLoaded && !force) return
         viewModelScope.launch {
             try {
                 val userId = withContext(Dispatchers.IO) { spClient.username() } ?: return@launch
@@ -379,6 +388,7 @@ class HomeViewModel @Inject constructor(
                 }
 
                 settingsRepository.saveUserProfile(userId, profileName, profileImageUrl)
+                profileLoaded = true
             } catch (e: Exception) {
                 // Ignore errors
             }

@@ -1,11 +1,9 @@
 package cc.tomko.outify.data.metadata
 
 import android.util.Log
-import kotlinx.coroutines.delay
 import org.json.JSONObject
 import javax.inject.Inject
 import javax.inject.Singleton
-import kotlin.random.Random
 
 data class NativeResult(
     val metadata: JSONObject? = null,
@@ -66,29 +64,6 @@ class NativeMetadata @Inject constructor() {
             metadata = null,
             error = cc.tomko.outify.data.metadata.NativeError.Unknown("Invalid response: $result")
         )
-    }
-
-    suspend fun <T> retryOnRateLimit(
-        maxAttempts: Int = 5,
-        baseDelayMs: Long = 1000L,
-        block: suspend () -> T
-    ): T {
-        var attempt = 0
-        while (true) {
-            try {
-                return block()
-            } catch (e: RateLimitException) {
-                attempt++
-                if (attempt >= maxAttempts) throw e
-
-                val backoffMs =
-                    e.retryAfterSeconds?.times(1000L) ?: (baseDelayMs * (1L shl (attempt - 1)))
-                val jitter = Random.nextLong(0, (backoffMs / 3).coerceAtLeast(1L))
-                val delayMs = backoffMs + jitter
-
-                delay(delayMs)
-            }
-        }
     }
 
     external fun getNativeMetadata(uri: String): String

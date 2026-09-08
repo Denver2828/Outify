@@ -3,10 +3,12 @@ package cc.tomko.outify.ui.viewmodel.bottomsheet
 import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.Device
 import cc.tomko.outify.core.model.DevicesResponse
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -22,6 +24,7 @@ class PlaybackDevicesViewModel @Inject constructor(
     private val spClient: SpClient,
     private val spircWrapper: SpircWrapper,
     private val json: Json,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
     private val _devices = MutableStateFlow<List<Device>>(emptyList())
     val devices: StateFlow<List<Device>> = _devices
@@ -53,7 +56,12 @@ class PlaybackDevicesViewModel @Inject constructor(
     }
 
     suspend fun loadDevices() = withContext(Dispatchers.IO) {
+        if (rateLimitGate.isLimited()) {
+            Log.i("PlaybackDevicesViewModel", "loadDevices: skipped, rate limited for ${rateLimitGate.remainingSeconds()} s")
+            return@withContext
+        }
         val raw = spClient.getDevices() ?: return@withContext
+        if (NativeErrorHandler.handleErrorJson(raw, "loadDevices") != null) return@withContext
         try {
             val parsed = json.decodeFromString<DevicesResponse>(raw)
             _devices.value = parsed.devices

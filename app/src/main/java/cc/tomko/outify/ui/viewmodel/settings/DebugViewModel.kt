@@ -5,6 +5,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.R
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CurrentUserProfile
@@ -36,6 +37,7 @@ class DebugViewModel @Inject constructor(
     val playbackStateHolder: PlaybackStateHolder,
     val settingsRepository: SettingsRepository,
     val exceptionCollector: ExceptionCollector,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
     //region Accounts
     private val _isPlaybackLoggedIn = MutableStateFlow(false)
@@ -109,6 +111,7 @@ class DebugViewModel @Inject constructor(
 
 
     private fun fetchProfile() {
+        if (rateLimitGate.isLimited()) return
         viewModelScope.launch {
             try {
                 // Blocking JNI call: keep it off the main thread.

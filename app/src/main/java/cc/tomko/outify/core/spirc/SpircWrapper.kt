@@ -6,11 +6,13 @@ import android.util.Log
 import androidx.annotation.OptIn
 import androidx.core.content.ContextCompat
 import androidx.media3.common.util.UnstableApi
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.model.DevicesResponse
 import cc.tomko.outify.core.model.OutifyUri
 import cc.tomko.outify.core.spirc.ISpircWrapper
 import cc.tomko.outify.core.spirc.Spirc
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.PlayerRepository
 import cc.tomko.outify.data.repository.SavedQueueRepository
 import cc.tomko.outify.data.repository.SettingsRepository
@@ -20,9 +22,7 @@ import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import javax.inject.Singleton
@@ -39,7 +39,12 @@ class SpircWrapper @Inject constructor(
     private val savedQueueRepository: SavedQueueRepository,
     private val playerRepository: PlayerRepository,
     private val json: Json,
+    private val rateLimitGate: RateLimitGate,
 ) : ISpircWrapper {
+    private companion object {
+        const val TAG = "SpircWrapper"
+    }
+
     val scope = CoroutineScope(
         Dispatchers.Main.immediate + SupervisorJob()
     )
@@ -245,8 +250,28 @@ class SpircWrapper @Inject constructor(
      * Transfers current Spirc session only if no other session is streaming.
      */
     override fun smartTransfer(): Boolean {
-        val json = spClient.getDevices() ?: return false
-        val devices = Json.decodeFromString<DevicesResponse>(json)
+        if (rateLimitGate.isLimited()) {
+            Log.w(TAG, "smartTransfer: skipped, Spotify rate limited for ${rateLimitGate.remainingSeconds()} s")
+            return false
+        }
+
+        // Any failure here (no answer, error payload, bad shape) means "do not transfer":
+        // this runs on every Spirc init and must never throw inside the wrapper scope.
+        val devices = try {
+            val json = spClient.getDevices()
+            if (json == null) {
+                Log.w(TAG, "smartTransfer: no device list, not transferring")
+                return false
+            }
+            if (NativeErrorHandler.handleErrorJson(json, "smartTransfer devices") != null) {
+                Log.w(TAG, "smartTransfer: device list failed, not transferring")
+                return false
+            }
+            Json.decodeFromString<DevicesResponse>(json)
+        } catch (e: Exception) {
+            Log.w(TAG, "smartTransfer: device list unavailable, not transferring", e)
+            return false
+        }
 
         for (device in devices.devices) {
             if (device.isActive) return false
@@ -260,25 +285,6 @@ class SpircWrapper @Inject constructor(
      */
     override fun setVolume(volume: Int): Boolean {
         return Spirc.setVolume(volume)
-    }
-
-    /**
-     * Checks if any other device is actively playing.
-     * Retries up to 3 times since SpClient may not be ready immediately at startup.
-     */
-    override suspend fun hasActiveDevice(): Boolean = withContext(Dispatchers.IO) {
-        repeat(3) {
-            try {
-                val json = spClient.getDevices()
-                if (json != null) {
-                    val devices = Json.decodeFromString<DevicesResponse>(json)
-                    return@withContext devices.devices.any { it.isActive }
-                }
-            } catch (_: Exception) {
-            }
-            delay(500)
-        }
-        false
     }
 
     /**

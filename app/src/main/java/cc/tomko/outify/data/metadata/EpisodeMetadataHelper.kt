@@ -143,9 +143,9 @@ class EpisodeMetadataHelper @Inject constructor(
             val deferred = chunk.map { uri ->
                 async {
                     try {
-                        val raw = nativeMetadata.retryOnRateLimit {
-                            nativeMetadata.fetchMetadata(uri)
-                        }
+                        // No Kotlin retry on 429: the native client already retries with the
+                        // real Retry-After and refuses to send while the window is open.
+                        val raw = nativeMetadata.fetchMetadata(uri)
                         json.decodeFromString<Episode>(raw.toString())
                     } catch (e: RateLimitException) {
                         Log.w("Metadata", "fetchEpisodes: rate-limited for $uri, giving up", e)

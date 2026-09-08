@@ -78,9 +78,11 @@ class AudioDiagnosticsViewModel @Inject constructor(
         viewModelScope.launch(Dispatchers.IO) {
             _lastProbeResult.value = "probing…"
             val lines = listOf(
-                "/me" to { spClient.getCurrentUserProfile() },
-                "/me/top/artists" to { spClient.getUserTop("artists", "medium_term") },
-                "/me/top/tracks" to { spClient.getUserTop("tracks", "medium_term") },
+                // The probe natives bypass the native rate-limit window; the regular helpers
+                // would answer "request skipped" without reaching Spotify.
+                "/me" to { spClient.probeCurrentUserProfile() },
+                "/me/top/artists" to { spClient.probeUserTop("artists", "medium_term") },
+                "/me/top/tracks" to { spClient.probeUserTop("tracks", "medium_term") },
             ).map { (name, call) ->
                 val summary = summarizeProbe(runCatching { call() })
                 AudioDiagnostics.record("WebApiProbe", "$name -> $summary")

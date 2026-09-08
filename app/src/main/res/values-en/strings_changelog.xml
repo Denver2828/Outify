@@ -3,6 +3,19 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.4 -->
+    <string name="changelog_1_7_4_date">September 8, 2026</string>
+    <string name="changelog_1_7_4_title">Fewer requests to Spotify after a rate limit</string>
+    <string-array name="changelog_1_7_4_bullets">
+        <item>While Spotify keeps a rate limit in place (HTTP 429), the native API client sends nothing and answers at once with how long is left. Only the diagnostics probe in Settings still reaches Spotify, to tell a real block from a window that already expired.</item>
+        <item>The access token is cached in memory and refreshed one refresh at a time, 60 seconds before it expires. A failed refresh is not repeated for two minutes.</item>
+        <item>Bottom-navigation tabs return to their existing screen instead of stacking a new copy on every tap. Each copy repeated the requests of that screen; they now run once.</item>
+        <item>Search history is no longer resolved against the network every time any setting changes: only new entries are looked up.</item>
+        <item>Podcast episode details, saved albums, shows and episodes, the device list and Android Auto browsing honour the rate-limit window and do not insist while it lasts.</item>
+        <item>Metadata lookups no longer retry a 429 on their own on top of the native retry, which already waits for the time Spotify indicates.</item>
+        <item>A second Spotify Connect initialisation no longer starts while another one is in flight.</item>
+    </string-array>
+
     <!-- 1.7.3 -->
     <string name="changelog_1_7_3_date">September 6, 2026</string>
     <string name="changelog_1_7_3_title">Code audit fixes</string>

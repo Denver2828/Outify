@@ -161,9 +161,9 @@ class TrackMetadataHelper @Inject constructor(
             chunk.map { uri ->
                 async {
                     try {
-                        val raw = nativeMetadata.retryOnRateLimit {
-                            nativeMetadata.fetchMetadata(uri)
-                        }
+                        // No Kotlin retry on 429: the native client already retries with the
+                        // real Retry-After and refuses to send while the window is open.
+                        val raw = nativeMetadata.fetchMetadata(uri)
                         uri to json.decodeFromString<Track>(raw.toString())
                     } catch (e: RateLimitException) {
                         Log.w("Metadata", "Rate limited: $uri", e)

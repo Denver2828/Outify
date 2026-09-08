@@ -42,6 +42,15 @@ class SpClient @Inject constructor() {
     external fun username(): String?
 
     external fun getCurrentUserProfile(): String?
+
+    /**
+     * [getCurrentUserProfile] and [getUserTop] that ignore the native rate-limit window. Every
+     * other Web API helper refuses to send while a 429 window is open; these exist only for the
+     * diagnostics probe, which must reach Spotify to tell an account block from a stale window.
+     */
+    external fun probeCurrentUserProfile(): String?
+    external fun probeUserTop(type: String?, timeRange: String): String?
+
     external fun search(
         query: String,
         type: String,

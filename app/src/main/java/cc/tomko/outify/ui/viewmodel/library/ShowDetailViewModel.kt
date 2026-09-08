@@ -2,10 +2,13 @@ package cc.tomko.outify.ui.viewmodel.library
 
 import androidx.lifecycle.SavedStateHandle
 import android.content.Context
+import android.util.Log
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.EpisodeDetails
+import cc.tomko.outify.core.RateLimitGate
 import cc.tomko.outify.core.SpClient
+import cc.tomko.outify.core.SpClientException
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.ConsumptionOrder
 import cc.tomko.outify.core.model.Episode
@@ -15,6 +18,8 @@ import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.data.dao.EpisodeDao
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.metadata.NativeError
+import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.show.ShowUiState
@@ -36,6 +41,7 @@ import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 
+private const val TAG = "ShowDetailViewModel"
 private const val SHOW_STATE_KEY = "show_state"
 private const val EPISODES_PAGE_SIZE = 20
 
@@ -51,6 +57,7 @@ class ShowDetailViewModel @Inject constructor(
     private val likedRepository: LikedRepository,
     private val episodeDao: EpisodeDao,
     private val savedStateHandle: SavedStateHandle,
+    private val rateLimitGate: RateLimitGate,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow(
@@ -259,13 +266,22 @@ class ShowDetailViewModel @Inject constructor(
         playbackStateHolder.setAudio(episode.toPlayableAudio())
     }
 
+    /**
+     * One Web API call per listed episode. Skipped entirely while the rate-limit window is
+     * open, and the loop stops at the first 429; whatever was resolved before it is kept.
+     */
     fun fetchEpisodeDetailsForShow() {
         val episodes = _uiState.value.episodes
         if (episodes.isEmpty()) return
+        if (rateLimitGate.isLimited()) {
+            Log.i(TAG, "fetchEpisodeDetailsForShow: skipped, rate limited for ${rateLimitGate.remainingSeconds()} s")
+            return
+        }
 
         viewModelScope.launch {
             val updated = withContext(Dispatchers.IO) {
-                episodes.map { episode ->
+                val result = episodes.toMutableList()
+                for ((index, episode) in episodes.withIndex()) {
                     try {
                         val raw = spClient.getEpisodeDetails(episode.id)
                         val checked = spClient.checkAndHandleError(raw, "getEpisodeDetails:${episode.id}")
@@ -275,18 +291,37 @@ class ShowDetailViewModel @Inject constructor(
                             fullyPlayed = details.fullyPlayed,
                             resumePositionMs = details.resumePositionMs,
                         )
-                        episode.copy(
+                        result[index] = episode.copy(
                             fullyPlayed = details.fullyPlayed,
                             resumePositionMs = details.resumePositionMs,
                         )
-                    } catch (_: Exception) {
-                        episode
+                    } catch (e: Exception) {
+                        if (isRateLimited(e)) {
+                            Log.w(TAG, "fetchEpisodeDetailsForShow: rate limited at ${episode.id}, stopping")
+                            break
+                        }
                     }
                 }
+                result
             }
             _uiState.update { it.copy(episodes = updated) }
             saveState(_uiState.value)
         }
+    }
+
+    /**
+     * A 429 arrives either as an error payload (already noted in the gate by
+     * [SpClient.checkAndHandleError]) or as a JNI exception carrying the native message, which
+     * is noted here so the rest of the app stays quiet for the same window.
+     */
+    private fun isRateLimited(e: Exception): Boolean {
+        if (e is SpClientException) return e.error is NativeError.RateLimited
+        val error = NativeError.fromMessage(e.message ?: return rateLimitGate.isLimited())
+        if (error is NativeError.RateLimited) {
+            NativeErrorHandler.handleError(error, "getEpisodeDetails")
+            return true
+        }
+        return rateLimitGate.isLimited()
     }
 
     fun playEpisode(episode: Episode) {
