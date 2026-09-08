@@ -78,6 +78,11 @@ pub async fn initialize_session() {
     let handle = rt.handle().clone();
     let session_config = SessionConfig {
         client_id: KEYMASTER_CLIENT_ID.to_owned(),
+        // librespot writes each download to a NamedTempFile in tmp_dir; its default is
+        // std::env::temp_dir() (/data/local/tmp on some OEMs), which an Android app cannot
+        // write, so playback failed with PermissionDenied on every track. The app cache dir
+        // is always writable.
+        tmp_dir: os_cache_dir.clone(),
         ..Default::default()
     };
     let session = Session::with_handle(session_config, Some(cache), handle);

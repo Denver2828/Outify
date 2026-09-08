@@ -3,6 +3,13 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.6 -->
+    <string name="changelog_1_7_6_date">September 8, 2026</string>
+    <string name="changelog_1_7_6_title">Playback on more devices</string>
+    <string-array name="changelog_1_7_6_bullets">
+        <item>On some devices (depending on the manufacturer) playback failed on every track: the engine tried to write its temporary file to a system folder it was not allowed to, and retried over and over. Temporary files now go to the app\'s own folder, which is always writable.</item>
+    </string-array>
+
     <!-- 1.7.5 -->
     <string name="changelog_1_7_5_date">September 8, 2026</string>
     <string name="changelog_1_7_5_title">Controls no longer vanish without lyrics</string>

@@ -301,6 +301,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Lección.** Una sola bandera que gobierna dos comportamientos distintos termina ocultando uno cuando falla el otro. Si un control depende de "el tema suena" y otro de "hay letra con tiempos", son dos condiciones, no una.
 
+### 2026-09-08 — 1.7.6: la reproducción fallaba en algunos equipos por la carpeta temporal
+
+**Causa.** En un equipo de prueba (Doro, Android 12) la reproducción fallaba en cada tema con `PermissionDenied` sobre `/data/local/tmp/.tmpXXXX`, reintentando una vez por segundo. librespot escribe cada descarga en un `NamedTempFile` dentro de `SessionConfig.tmp_dir`, y nuestro `SessionConfig` no lo fijaba, así que quedaba el valor por defecto: `std::env::temp_dir()`. En Android eso resuelve a `/data/local/tmp` en algunos fabricantes, una carpeta que una app normal no puede escribir. En el Galaxy S24 el sistema apuntaba esa variable a algo escribible y por eso no se notaba; el bug estaba en todos los equipos donde no era así.
+
+**Decisión.** Fijar `tmp_dir` a la carpeta de caché propia de la app (`getCacheDir`), que siempre es escribible, en lugar de depender de lo que devuelva `std::env::temp_dir()` según el fabricante.
+
+**Qué se descartó.** Pedir permisos de almacenamiento o usar almacenamiento externo: innecesario, el caché interno alcanza y no requiere permisos.
+
+**Lección.** Un valor por defecto que depende del entorno (`temp_dir()`) es una bomba de tiempo entre fabricantes: lo que anda en un equipo no prueba que ande en todos. Las rutas de escritura de una app Android tienen que ser explícitas y propias.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.
