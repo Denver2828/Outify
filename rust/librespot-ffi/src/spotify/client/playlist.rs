@@ -8,7 +8,7 @@ use crate::{
     },
 };
 
-use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn add_to_playlist(
@@ -16,6 +16,7 @@ impl SpotifyClient {
         playlist_id: String,
         uris: Vec<String>,
     ) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("add_to_playlist")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -48,6 +49,7 @@ impl SpotifyClient {
         playlist_id: String,
         uris: Vec<String>,
     ) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("delete_from_playlist")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -81,6 +83,7 @@ impl SpotifyClient {
         public: bool,
         collaborative: bool,
     ) -> Result<CreatePlaylistResponse, SpotifyApiError> {
+        check_rate_limit("create_playlist")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -132,6 +135,7 @@ impl SpotifyClient {
         public: bool,
         collaborative: bool,
     ) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("modify_playlist")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())

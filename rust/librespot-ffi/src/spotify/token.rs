@@ -24,12 +24,16 @@ impl WebApiToken {
         }
     }
 
+    /// Seconds before the real expiry at which the token is already treated as expired,
+    /// so a request never leaves with a token that dies in transit.
+    const EXPIRY_MARGIN_SECS: u64 = 60;
+
     pub fn is_expired(&self) -> bool {
         let now = SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)
             .expect("Time went backwards")
             .as_secs();
-        now >= self.expires_at
+        now + Self::EXPIRY_MARGIN_SECS >= self.expires_at
     }
 
     pub fn from(token: TokenResponse, old_refresh_token: Option<&str>) -> Self {

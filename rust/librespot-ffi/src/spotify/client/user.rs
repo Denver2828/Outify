@@ -10,7 +10,7 @@ use crate::{
     },
 };
 
-use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn search(
@@ -20,6 +20,7 @@ impl SpotifyClient {
         limit: Option<i32>,
         offset: Option<i32>,
     ) -> Result<Vec<String>, SpotifyApiError> {
+        check_rate_limit("search")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -56,6 +57,18 @@ impl SpotifyClient {
     }
 
     pub async fn get_current_user(&self) -> Result<CurrentUserResponse, SpotifyApiError> {
+        self.get_current_user_with(false).await
+    }
+
+    /// `bypass_rate_limit` is reserved for the diagnostics probe, which must reach Spotify
+    /// even while the shared rate-limit window is open.
+    pub async fn get_current_user_with(
+        &self,
+        bypass_rate_limit: bool,
+    ) -> Result<CurrentUserResponse, SpotifyApiError> {
+        if !bypass_rate_limit {
+            check_rate_limit("get_current_user")?;
+        }
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -83,6 +96,19 @@ impl SpotifyClient {
         request_type: Option<String>,
         time_range: String,
     ) -> Result<ArtistsOrTracksPage, SpotifyApiError> {
+        self.get_top_with(request_type, time_range, false).await
+    }
+
+    /// `bypass_rate_limit` is reserved for the diagnostics probe (see `get_current_user_with`).
+    pub async fn get_top_with(
+        &self,
+        request_type: Option<String>,
+        time_range: String,
+        bypass_rate_limit: bool,
+    ) -> Result<ArtistsOrTracksPage, SpotifyApiError> {
+        if !bypass_rate_limit {
+            check_rate_limit("get_top")?;
+        }
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())

@@ -3,13 +3,15 @@ use reqwest::Client;
 use std::{
     sync::{
         Arc, Mutex,
-        atomic::{AtomicI64, Ordering},
+        atomic::{AtomicI64, AtomicU64, Ordering},
     },
     time::{Duration, Instant, SystemTime, UNIX_EPOCH},
 };
 use tokio::sync::RwLock;
 
-use crate::spotify::{error::SpotifyApiError, token::WebApiToken};
+use crate::spotify::error::SpotifyApiError;
+
+use auth::TokenCache;
 
 mod auth;
 mod library;
@@ -63,6 +65,23 @@ pub fn rate_limit_until_ms() -> i64 {
     if until > now_ms() { until } else { 0 }
 }
 
+/// Gate every Web API helper runs before sending. While the shared 429 window is still
+/// open it fails with the same [`SpotifyApiError::RateLimited`] a real 429 produces
+/// (remaining whole seconds, at least 1) and no request goes out. The diagnostics probe
+/// is the only caller allowed to bypass it.
+pub(crate) fn check_rate_limit(method: &str) -> Result<(), SpotifyApiError> {
+    let remaining_ms = RATE_LIMIT_UNTIL_MS.load(Ordering::Acquire) - now_ms();
+    if remaining_ms <= 0 {
+        return Ok(());
+    }
+    let retry_after_secs = ((remaining_ms + 999) / 1000).max(1) as u64;
+    debug!("{method} skipped: rate limited for {retry_after_secs} s");
+    Err(SpotifyApiError::RateLimited {
+        retry_after_secs,
+        body: "request skipped, rate-limit window still open".to_string(),
+    })
+}
+
 /// Parses `Retry-After` as delay seconds; HTTP dates are not expected from Spotify.
 fn retry_after_secs(res: &reqwest::Response) -> u64 {
     res.headers()
@@ -112,7 +131,13 @@ pub struct SpotifyClient {
     pub(crate) client_id: Mutex<String>,
     pub(crate) client_secret: Mutex<String>,
     pub(crate) client: Client,
-    pub(crate) token: Arc<RwLock<Option<WebApiToken>>>,
+    /// In-memory Web API token plus the refresh negative cache. The async mutex is held
+    /// across the refresh POST so at most one refresh is in flight; account.json stays
+    /// the source of truth across processes and is read only when this copy is empty.
+    pub(crate) token: tokio::sync::Mutex<TokenCache>,
+    /// Bumped whenever the cached token must be dropped from a synchronous path
+    /// (credential switch, logout); the async paths compare it before trusting the cache.
+    pub(crate) token_generation: AtomicU64,
     pub(crate) oauth_state: Arc<RwLock<Option<OAuthState>>>,
 }
 
@@ -125,7 +150,8 @@ impl SpotifyClient {
                 .pool_idle_timeout(Duration::from_secs(90))
                 .build()
                 .expect("failed to build client"),
-            token: Arc::new(RwLock::new(None)),
+            token: tokio::sync::Mutex::new(TokenCache::default()),
+            token_generation: AtomicU64::new(0),
             oauth_state: Arc::new(RwLock::new(None)),
         }
     }
@@ -133,6 +159,14 @@ impl SpotifyClient {
     pub fn update_credentials(&self, client_id: String, client_secret: String) {
         *self.client_id.lock().unwrap() = client_id;
         *self.client_secret.lock().unwrap() = client_secret;
+        // A refresh that failed with the old client id must be retried with the new one.
+        self.invalidate_token_cache();
+    }
+
+    /// Drops the in-memory token and the refresh negative cache on the next async access.
+    /// Safe from synchronous JNI paths: no lock is taken here.
+    pub(crate) fn invalidate_token_cache(&self) {
+        self.token_generation.fetch_add(1, Ordering::AcqRel);
     }
 }
 

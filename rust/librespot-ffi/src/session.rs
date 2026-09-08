@@ -4,9 +4,12 @@ use std::{
     },
 };
 
-use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME};
+use crate::{CACHE_DIR, FILES_DIR, TOKIO_RUNTIME, spirc::SpircError};
 use jni::objects::GlobalRef;
-use librespot_core::{Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID};
+use librespot_core::{
+    Session, SessionConfig, cache::Cache, config::KEYMASTER_CLIENT_ID,
+    spclient::RequestStrategy,
+};
 use once_cell::sync::OnceCell;
 
 pub static SESSION: OnceCell<RwLock<Option<Session>>> = OnceCell::new();
@@ -18,10 +21,21 @@ static IS_AUTO_RESTARTING: AtomicBool = AtomicBool::new(false);
 static SESSION_GENERATION: AtomicU64 = AtomicU64::new(0);
 const MAX_RESTART_ATTEMPTS: u32 = 8;
 const MAX_RESTART_BACKOFF_SECS: u64 = 30;
+/// librespot retries every spclient request up to 10 times back to back, which turns one
+/// 429 into a burst of ten against the same account. Three keeps transient failures
+/// covered without multiplying a rate limit.
+const SPCLIENT_MAX_TRIES: usize = 3;
+/// Longest the restart loop waits for a Spirc init started elsewhere (e.g. by a load).
+const INIT_IN_FLIGHT_MAX_WAIT: std::time::Duration = std::time::Duration::from_secs(60);
 
 pub fn init_session_container() {
     SESSION.get_or_init(|| RwLock::new(None));
     SESSION_CALLBACK.get_or_init(|| RwLock::new(None));
+}
+
+/// Whether the shutdown listener is currently rebuilding the session and its Spirc.
+pub fn is_auto_restarting() -> bool {
+    IS_AUTO_RESTARTING.load(Ordering::Acquire)
 }
 
 // Initializes the session work further usage
@@ -67,6 +81,9 @@ pub async fn initialize_session() {
         ..Default::default()
     };
     let session = Session::with_handle(session_config, Some(cache), handle);
+    session
+        .spclient()
+        .set_strategy(RequestStrategy::TryTimes(SPCLIENT_MAX_TRIES));
 
     let generation = SESSION_GENERATION.fetch_add(1, Ordering::AcqRel) + 1;
 
@@ -153,9 +170,32 @@ fn start_shutdown_listener(session: Session, generation: u64) {
         loop {
             attempt += 1;
             initialize_session().await;
-            match crate::spirc::initialize_spirc(device_name.clone(), gapless, normalise, bitrate)
-                .await
+            let outcome = match crate::spirc::initialize_spirc(
+                device_name.clone(),
+                gapless,
+                normalise,
+                bitrate,
+            )
+            .await
             {
+                Ok(()) => Ok(()),
+                Err(SpircError::InitInFlight) => {
+                    // A load-triggered init got there first; it runs on the session created
+                    // above, so its outcome is ours. Shutting the session down now would
+                    // pull the rug from under it.
+                    debug!("spirc init already in flight during auto-restart, waiting for it");
+                    crate::spirc::wait_for_init_in_flight(INIT_IN_FLIGHT_MAX_WAIT).await;
+                    if crate::spirc::with_spirc(|_| ()).is_ok() {
+                        Ok(())
+                    } else {
+                        Err(SpircError::Other(
+                            "the spirc init already in flight did not produce a runtime".to_string(),
+                        ))
+                    }
+                }
+                Err(e) => Err(e),
+            };
+            match outcome {
                 Ok(()) => break,
                 Err(e) => {
                     error!("spirc init after reconnect failed (attempt {attempt}/{MAX_RESTART_ATTEMPTS}): {e}");

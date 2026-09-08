@@ -735,6 +735,16 @@ fn call_spirc_load(uri: String, options: LoadRequestOptions) -> jboolean {
         }
         Err(e) => match e {
             SpircError::NotInitialized | SpircError::NotCreated => {
+                // One login at a time: a restart in progress creates the Spirc itself, and
+                // an init already running will land shortly.
+                if crate::spirc::is_init_in_flight() {
+                    debug!("spirc init already in flight, not auto initializing on load");
+                    return 0;
+                }
+                if crate::session::is_auto_restarting() {
+                    debug!("session auto-restart in progress, not auto initializing on load");
+                    return 0;
+                }
                 debug!("auto initializing spirc on load failure");
                 let rt = match crate::TOKIO_RUNTIME.get() {
                     Some(rt) => rt,
@@ -744,8 +754,12 @@ fn call_spirc_load(uri: String, options: LoadRequestOptions) -> jboolean {
                     }
                 };
                 rt.spawn(async move {
-                    if let Err(e) = crate::spirc::auto_initialize_spirc().await {
-                        error!("auto_initialize_spirc failed: {e}");
+                    match crate::spirc::auto_initialize_spirc().await {
+                        Ok(()) => {}
+                        Err(SpircError::InitInFlight) => {
+                            debug!("auto_initialize_spirc skipped: init already in flight");
+                        }
+                        Err(e) => error!("auto_initialize_spirc failed: {e}"),
                     }
                 });
                 0

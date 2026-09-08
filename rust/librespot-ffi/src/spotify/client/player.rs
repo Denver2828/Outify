@@ -8,10 +8,11 @@ use crate::{
     },
 };
 
-use super::{check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
+use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
     pub async fn get_devices(&self) -> Result<DevicesResponse, SpotifyApiError> {
+        check_rate_limit("get_devices")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())
@@ -49,6 +50,7 @@ impl SpotifyClient {
         &self,
         device_id: String,
     ) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("transfer_playback")?;
         let token = self.load_token().await?;
         let token = token.ok_or_else(|| {
             SpotifyApiError::Generic("No account token present!".to_string())

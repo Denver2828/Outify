@@ -35,6 +35,17 @@ pub extern "system" fn username(env: JNIEnv, _class: JClass) -> jstring {
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getCurrentUserProfile")]
 pub extern "system" fn get_current_user(env: JNIEnv, _class: JClass) -> jstring {
+    current_user_profile(env, false)
+}
+
+/// Diagnostics probe variant of `getCurrentUserProfile`: sends even while the shared
+/// rate-limit window is open. Only `AudioDiagnosticsViewModel.probeWebApi` may use it.
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_probeCurrentUserProfile")]
+pub extern "system" fn probe_current_user(env: JNIEnv, _class: JClass) -> jstring {
+    current_user_profile(env, true)
+}
+
+fn current_user_profile(env: JNIEnv, bypass_rate_limit: bool) -> jstring {
     let client = get_client();
 
     let rt = match crate::TOKIO_RUNTIME.get() {
@@ -45,7 +56,7 @@ pub extern "system" fn get_current_user(env: JNIEnv, _class: JClass) -> jstring 
         }
     };
 
-    let result = match rt.block_on(async { client.get_current_user().await }) {
+    let result = match rt.block_on(async { client.get_current_user_with(bypass_rate_limit).await }) {
         Ok(r) => match serde_json::to_string(&r) {
             Ok(j) => j,
             Err(e) => {
@@ -381,10 +392,31 @@ pub extern "system" fn get_episode_details(
 
 #[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_getUserTop")]
 pub extern "system" fn get_user_top(
-    mut env: JNIEnv,
+    env: JNIEnv,
     _class: JClass,
     r#type: JString,
     time_range: JString,
+) -> jstring {
+    user_top(env, r#type, time_range, false)
+}
+
+/// Diagnostics probe variant of `getUserTop`: sends even while the shared rate-limit
+/// window is open. Only `AudioDiagnosticsViewModel.probeWebApi` may use it.
+#[unsafe(export_name = "Java_cc_tomko_outify_core_SpClient_probeUserTop")]
+pub extern "system" fn probe_user_top(
+    env: JNIEnv,
+    _class: JClass,
+    r#type: JString,
+    time_range: JString,
+) -> jstring {
+    user_top(env, r#type, time_range, true)
+}
+
+fn user_top(
+    mut env: JNIEnv,
+    r#type: JString,
+    time_range: JString,
+    bypass_rate_limit: bool,
 ) -> jstring {
     let client = get_client();
 
@@ -420,7 +452,11 @@ pub extern "system" fn get_user_top(
         }
     };
 
-    let result = rt.block_on(async { client.get_top(request_type, time_range).await });
+    let result = rt.block_on(async {
+        client
+            .get_top_with(request_type, time_range, bypass_rate_limit)
+            .await
+    });
 
     match result {
         Ok(result) => match serde_json::to_string(&result) {

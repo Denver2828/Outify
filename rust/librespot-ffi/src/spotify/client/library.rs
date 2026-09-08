@@ -9,10 +9,11 @@ use crate::{
     types::responses::library::{EpisodeUri, SavedItemsResponse, Uri},
 };
 
-use super::{REQUEST_TIMEOUT, SPOTIFY_API_URL, SpotifyClient, ensure_success};
+use super::{REQUEST_TIMEOUT, SPOTIFY_API_URL, SpotifyClient, check_rate_limit, ensure_success};
 
 impl SpotifyClient {
     pub async fn save_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("save_items")?;
         let token = self.load_token().await?;
         let token = token
             .ok_or_else(|| SpotifyApiError::Generic("No account token present!".to_string()))?;
@@ -35,6 +36,7 @@ impl SpotifyClient {
     }
 
     pub async fn delete_items(&self, uris: Vec<String>) -> Result<StatusCode, SpotifyApiError> {
+        check_rate_limit("delete_items")?;
         let token = self.load_token().await?;
         let token = token
             .ok_or_else(|| SpotifyApiError::Generic("No account token present!".to_string()))?;
@@ -61,6 +63,7 @@ impl SpotifyClient {
         &self,
         item: SavedItemType,
     ) -> Result<SavedItemsResponse<Uri>, SpotifyApiError> {
+        check_rate_limit("get_saved")?;
         let token = self.load_token().await?;
         let token = token
             .ok_or_else(|| SpotifyApiError::Generic("No account token present!".to_string()))?;
@@ -90,6 +93,7 @@ impl SpotifyClient {
     pub async fn get_saved_episode_items(
         &self,
     ) -> Result<SavedItemsResponse<EpisodeUri>, SpotifyApiError> {
+        check_rate_limit("get_saved_episode_items")?;
         let token = self.load_token().await?;
         let token = token
             .ok_or_else(|| SpotifyApiError::Generic("No account token present!".to_string()))?;
@@ -121,6 +125,7 @@ impl SpotifyClient {
         &self,
         episode_id: &str,
     ) -> Result<EpisodeDetails, SpotifyApiError> {
+        check_rate_limit("get_episode_details")?;
         let token = self.load_token().await?;
         let token = token
             .ok_or_else(|| SpotifyApiError::Generic("No account token present!".to_string()))?;

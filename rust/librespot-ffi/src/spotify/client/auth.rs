@@ -2,6 +2,7 @@ use std::{
     collections::HashMap,
     fs::OpenOptions,
     os::unix::fs::OpenOptionsExt,
+    sync::atomic::Ordering,
     time::{Duration, Instant},
 };
 
@@ -17,6 +18,38 @@ use super::{
     check_response_json, OAuthState, SpotifyClient, SPOTIFY_OAUTH_CALLBACK_URI,
     SPOTIFY_OAUTH_SCOPES,
 };
+
+/// How long a non-network refresh failure (HTTP 400/401: invalid_client, invalid_grant)
+/// is answered from memory before the token endpoint is asked again.
+const REFRESH_FAILURE_TTL: Duration = Duration::from_secs(120);
+
+/// In-memory copy of the Web API token, guarded by [`SpotifyClient::token`].
+#[derive(Default)]
+pub(crate) struct TokenCache {
+    token: Option<WebApiToken>,
+    /// Message of the last non-network refresh failure and when it stops being replayed.
+    refresh_failure: Option<(Instant, String)>,
+    /// [`SpotifyClient::token_generation`] value this cache was filled under.
+    generation: u64,
+}
+
+impl TokenCache {
+    /// Drops everything when a synchronous path (credential switch, logout) bumped the
+    /// generation since this cache was filled.
+    fn sync_generation(&mut self, current: u64) {
+        if self.generation != current {
+            self.token = None;
+            self.refresh_failure = None;
+            self.generation = current;
+        }
+    }
+
+    fn replace(&mut self, token: WebApiToken, generation: u64) {
+        self.token = Some(token);
+        self.refresh_failure = None;
+        self.generation = generation;
+    }
+}
 
 impl SpotifyClient {
     pub async fn get_oauth_url(&self) -> String {
@@ -89,8 +122,7 @@ impl SpotifyClient {
             token_response.scopes.join(" "),
         );
 
-        let mut token_guard = self.token.write().await;
-        *token_guard = Some(new_token.clone());
+        self.store_token(new_token.clone()).await;
 
         drop(oauth_state_guard);
         let mut oauth_state_guard = self.oauth_state.write().await;
@@ -125,15 +157,20 @@ impl SpotifyClient {
             token.scopes.join(" "),
         );
 
-        let mut token_guard = self.token.write().await;
-        *token_guard = Some(new_token.clone());
-        drop(token_guard);
+        self.store_token(new_token.clone()).await;
 
         let mut oauth_state_guard = self.oauth_state.write().await;
         *oauth_state_guard = None;
         drop(oauth_state_guard);
 
         self.save_token(&new_token).await
+    }
+
+    /// Makes `token` the in-memory token and clears the refresh negative cache.
+    async fn store_token(&self, token: WebApiToken) {
+        let generation = self.token_generation.load(Ordering::Acquire);
+        let mut cache = self.token.lock().await;
+        cache.replace(token, generation);
     }
 
     pub async fn save_token(&self, token: &WebApiToken) -> Result<(), SpotifyApiError> {
@@ -166,6 +203,9 @@ impl SpotifyClient {
             .clone();
 
         path.push("account.json");
+
+        // Drop the memory copy even when the file was already gone.
+        self.invalidate_token_cache();
 
         match std::fs::remove_file(path) {
             Ok(_) => Ok(()),
@@ -210,21 +250,70 @@ impl SpotifyClient {
         }
     }
 
+    /// Returns a usable token: the in-memory copy, account.json when memory is empty, or a
+    /// fresh one when the stored token is (about to be) expired. Concurrent callers queue
+    /// on the cache mutex, so an expired token is refreshed once and the rest reuse it.
     pub async fn load_token(&self) -> Result<Option<WebApiToken>, SpotifyApiError> {
-        let token = match self.read_stored_token()? {
+        let mut cache = self.token.lock().await;
+        let token = match self.cached_or_stored_token(&mut cache)? {
             Some(t) => t,
             None => return Ok(None),
         };
 
         if token.is_expired() {
-            let refreshed = self.refresh_token(&token).await?;
+            let refreshed = self.refresh_locked(&mut cache, &token).await?;
             return Ok(Some(refreshed));
         }
 
         Ok(Some(token))
     }
 
+    /// Refreshes `token` unless another caller already replaced it while this one was
+    /// waiting for the lock (a 401 retry after a concurrent refresh must not POST again).
     pub(crate) async fn refresh_token(&self, token: &WebApiToken) -> Result<WebApiToken, SpotifyApiError> {
+        let mut cache = self.token.lock().await;
+        if let Some(current) = self.cached_or_stored_token(&mut cache)? {
+            if current.access_token != token.access_token && !current.is_expired() {
+                debug!("refresh_token: reusing the token refreshed by another caller");
+                return Ok(current);
+            }
+        }
+        self.refresh_locked(&mut cache, token).await
+    }
+
+    /// The in-memory token, filled from account.json when empty. Caller holds the lock.
+    fn cached_or_stored_token(
+        &self,
+        cache: &mut TokenCache,
+    ) -> Result<Option<WebApiToken>, SpotifyApiError> {
+        cache.sync_generation(self.token_generation.load(Ordering::Acquire));
+        if cache.token.is_none() {
+            cache.token = self.read_stored_token()?;
+        }
+        Ok(cache.token.clone())
+    }
+
+    /// POSTs the refresh with the cache lock held. A non-network failure (HTTP 400/401)
+    /// is remembered for [`REFRESH_FAILURE_TTL`] and replayed without a request; a 429 is
+    /// recorded into the shared rate-limit window by `ensure_success`; network errors are
+    /// neither cached nor recorded.
+    async fn refresh_locked(
+        &self,
+        cache: &mut TokenCache,
+        token: &WebApiToken,
+    ) -> Result<WebApiToken, SpotifyApiError> {
+        if let Some((until, message)) = &cache.refresh_failure {
+            let now = Instant::now();
+            if *until > now {
+                debug!(
+                    "refresh_token skipped: last failure replayed for another {} s",
+                    (*until - now).as_secs()
+                );
+                return Err(SpotifyApiError::Generic(message.clone()));
+            }
+            cache.refresh_failure = None;
+        }
+
         let mut form = HashMap::new();
         form.insert("grant_type", "refresh_token");
         form.insert("refresh_token", &token.refresh_token);
@@ -238,9 +327,20 @@ impl SpotifyClient {
             .send()
             .await?;
 
-        let response = check_response_json::<TokenResponse>("refresh_token", response).await?;
+        let response = match check_response_json::<TokenResponse>("refresh_token", response).await
+        {
+            Ok(r) => r,
+            Err(e @ SpotifyApiError::Generic(_)) | Err(e @ SpotifyApiError::Http(..)) => {
+                let message = e.to_string();
+                warn!("refresh_token failed, not retrying for {} s: {message}", REFRESH_FAILURE_TTL.as_secs());
+                cache.refresh_failure = Some((Instant::now() + REFRESH_FAILURE_TTL, message));
+                return Err(e);
+            }
+            Err(e) => return Err(e),
+        };
 
         let new_token = WebApiToken::from(response, Some(&token.refresh_token));
+        cache.replace(new_token.clone(), self.token_generation.load(Ordering::Acquire));
         self.save_token(&new_token).await?;
         Ok(new_token)
     }

@@ -36,6 +36,10 @@ pub enum SpircError {
     #[error("Spirc not created")]
     NotCreated,
 
+    /// Another `initialize_spirc` is still running; this call did nothing.
+    #[error("Spirc initialization already in flight")]
+    InitInFlight,
+
     #[error("Librespot error: {0}")]
     Librespot(#[from] librespot_core::Error),
 
@@ -44,6 +48,9 @@ pub enum SpircError {
 }
 
 static SPIRC_RUNTIME: OnceCell<RwLock<Option<SpircRuntime>>> = OnceCell::new();
+/// Set while an `initialize_spirc` is running. Every Spirc init is a Connect login, so
+/// N loads racing a restart must not become N concurrent logins.
+static SPIRC_INIT_IN_FLIGHT: AtomicBool = AtomicBool::new(false);
 static CURRENT_TRACK: OnceCell<Mutex<Option<String>>> = OnceCell::new();
 pub static BITRATE: OnceCell<Mutex<Bitrate>> = OnceCell::new();
 pub static DEVICE_NAME: OnceCell<Mutex<String>> = OnceCell::new();
@@ -198,7 +205,12 @@ impl SpircRuntime {
     /// librespot ignores `Load` while the device is not the active Connect device (seen after
     /// a cluster update reported the previous device as gone). `Activate` is idempotent (a
     /// warning when already active) and is queued ahead of the load on the same channel.
+    /// Skipped while the session events say this device is already active: an `Activate`
+    /// there is a no-op for librespot but still a round of Connect state traffic.
     fn ensure_active(&self) {
+        if IS_DEVICE_ACTIVE.load(std::sync::atomic::Ordering::Relaxed) {
+            return;
+        }
         if let Err(e) = self.spirc.activate() {
             warn!("activate before load failed: {e}");
         }
@@ -569,12 +581,52 @@ pub async fn auto_initialize_spirc() -> Result<(), SpircError> {
     initialize_spirc(device_name, gapless, normalisation, bitrate).await
 }
 
+/// Whether an `initialize_spirc` is currently running.
+pub fn is_init_in_flight() -> bool {
+    SPIRC_INIT_IN_FLIGHT.load(std::sync::atomic::Ordering::Acquire)
+}
+
+/// Waits until the in-flight `initialize_spirc` (if any) has finished, bounded by `max_wait`.
+pub async fn wait_for_init_in_flight(max_wait: std::time::Duration) {
+    let deadline = tokio::time::Instant::now() + max_wait;
+    while is_init_in_flight() {
+        if tokio::time::Instant::now() >= deadline {
+            warn!("spirc init still in flight after {} s", max_wait.as_secs());
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+    }
+}
+
+/// Clears `SPIRC_INIT_IN_FLIGHT` on every exit path of `initialize_spirc`.
+struct InitInFlightGuard;
+
+impl Drop for InitInFlightGuard {
+    fn drop(&mut self) {
+        SPIRC_INIT_IN_FLIGHT.store(false, std::sync::atomic::Ordering::Release);
+    }
+}
+
 pub async fn initialize_spirc(
     device_name: String,
     gapless: bool,
     normalisation: bool,
     bitrate: Bitrate,
 ) -> Result<(), SpircError> {
+    if SPIRC_INIT_IN_FLIGHT
+        .compare_exchange(
+            false,
+            true,
+            std::sync::atomic::Ordering::AcqRel,
+            std::sync::atomic::Ordering::Acquire,
+        )
+        .is_err()
+    {
+        debug!("spirc init already in flight, skipping");
+        return Err(SpircError::InitInFlight);
+    }
+    let _in_flight = InitInFlightGuard;
+
     debug!("initializing spirc runtime");
 
     // A fresh Spirc starts inactive until librespot reports SessionConnected.
@@ -582,11 +634,12 @@ pub async fn initialize_spirc(
 
     let lock = SPIRC_RUNTIME.get_or_init(|| RwLock::new(None));
 
-    {
-        let read_guard = lock.read().unwrap();
-        if read_guard.is_some() {
-            warn!("spirc already initialized");
-        }
+    // Replacing a live runtime without stopping it leaked its SpircTask: a second Connect
+    // device with the same name kept talking to Spotify behind the new one.
+    let previous = lock.write().unwrap().take();
+    if let Some(previous) = previous {
+        warn!("spirc already initialized, shutting the previous runtime down first");
+        previous.shutdown();
     }
 
     let session = with_session(|s| s.clone()).map_err(|e| {

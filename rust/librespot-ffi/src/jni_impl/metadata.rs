@@ -92,38 +92,64 @@ pub extern "system" fn get_native_metadata(
             }
         }
         Err(e) => {
-            // Inspect error kind for rate-limit
-            match e.kind {
-                librespot_core::error::ErrorKind::ResourceExhausted => {
-                    let err = serde_json::json!({
-                        "error": {
-                            "type": "rate_limit",
-                            "retry_after_seconds": null,
-                            "message": format!("Rate limited: {}", e)
-                        }
-                    });
-                    let err_str = err.to_string();
-                    match env.new_string(&err_str) {
-                        Ok(s) => s.into_raw(),
-                        Err(_) => std::ptr::null_mut(),
+            let err = match classify_rate_limit(&e) {
+                Some(retry_after_seconds) => serde_json::json!({
+                    "error": {
+                        "type": "rate_limit",
+                        "retry_after_seconds": retry_after_seconds,
+                        "message": format!("Rate limited: {}", e)
                     }
-                }
-                _ => {
-                    let err = serde_json::json!({
-                        "error": {
-                            "type": "unknown",
-                            "message": format!("{}", e)
-                        }
-                    });
-                    let err_str = err.to_string();
-                    match env.new_string(&err_str) {
-                        Ok(s) => s.into_raw(),
-                        Err(_) => std::ptr::null_mut(),
+                }),
+                None => serde_json::json!({
+                    "error": {
+                        "type": "unknown",
+                        "message": format!("{}", e)
                     }
-                }
+                }),
+            };
+            let err_str = err.to_string();
+            match env.new_string(&err_str) {
+                Ok(s) => s.into_raw(),
+                Err(_) => std::ptr::null_mut(),
             }
         }
     }
+}
+
+/// Seconds to wait when Spotify answered a 429 without a usable Retry-After: librespot
+/// drops the header value once it exceeds its own 10 s in-process wait, so the caller
+/// only sees the status code.
+const DEFAULT_RETRY_AFTER_SECS: u64 = 30;
+
+/// Returns the seconds to hold off when `e` is a rate limit, `None` otherwise.
+///
+/// librespot reports two rate limits, both as `ResourceExhausted`:
+/// - its local governor (`http_client.rs`): "rate limited for at least another N seconds",
+///   whose N is parsed here;
+/// - a real spclient 429 with Retry-After > 10 s: `HttpClientError::StatusCode(429)`,
+///   rendered as "Response status code: 429 ...", with the header value already lost.
+/// A 429 wrapped under any other kind is still treated as a rate limit.
+fn classify_rate_limit(e: &librespot_core::error::Error) -> Option<u64> {
+    let message = e.to_string();
+    let is_429 = message.contains("429");
+    if e.kind != librespot_core::error::ErrorKind::ResourceExhausted && !is_429 {
+        return None;
+    }
+    if let Some(secs) = parse_governor_wait_secs(&message) {
+        return Some(secs.max(1));
+    }
+    Some(DEFAULT_RETRY_AFTER_SECS)
+}
+
+/// Parses N out of librespot's "rate limited for at least another N seconds".
+fn parse_governor_wait_secs(message: &str) -> Option<u64> {
+    const PREFIX: &str = "rate limited for at least another ";
+    let start = message.find(PREFIX)? + PREFIX.len();
+    let digits: String = message[start..]
+        .chars()
+        .take_while(|c| c.is_ascii_digit())
+        .collect();
+    digits.parse().ok()
 }
 
 // Retrieves the album metadata as JSON
