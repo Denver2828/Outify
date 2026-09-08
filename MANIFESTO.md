@@ -311,6 +311,16 @@ También se declara explícitamente `allowAudioPlaybackCapture`, por las cajas q
 
 **Lección.** Un valor por defecto que depende del entorno (`temp_dir()`) es una bomba de tiempo entre fabricantes: lo que anda en un equipo no prueba que ande en todos. Las rutas de escritura de una app Android tienen que ser explícitas y propias.
 
+### 2026-09-08 — 1.7.7: controles de tipografía propios para la letra
+
+**Causa.** El tamaño de fuente general de la app (Apariencia) no afectaba la letra: la letra tiene su propio ajuste de tamaño, que estaba escondido en Ajustes de reproducción. El usuario agrandó la fuente desde Apariencia esperando que la letra creciera y no cambiaba nada, porque el control que la gobierna vivía en otra pantalla.
+
+**Decisión.** Mover el tamaño de la letra a Apariencia, junto al tamaño general y bajo un grupo propio, y sumar dos controles nuevos que aplican solo a la pantalla de letra (nunca a toda la app): negrita y selector de tipografía con familias del sistema (Sans/Serif/Monoespaciada). Los tres ajustes van a DataStore y se reflejan en vivo en la hoja de letra y en la pantalla horizontal; una única línea de vista previa refleja tamaño, negrita y tipografía juntos.
+
+**Qué se descartó.** Aplicar la negrita y la tipografía a toda la app (es un cambio de theming global y riesgoso, ajeno al pedido), y empaquetar fuentes propias como Atkinson Hyperlegible (suma assets y peso; queda como posible mejora futura si se pide una tipografía específica). Las familias genéricas de Compose están siempre presentes y no agregan riesgo.
+
+**Lección.** Un ajuste que el usuario espera global no puede vivir escondido en otra pantalla: si el usuario agranda la fuente desde Apariencia, la letra tiene que estar donde la busca. Y las familias genéricas de Compose dan variedad legible sin sumar assets ni riesgo de theming.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

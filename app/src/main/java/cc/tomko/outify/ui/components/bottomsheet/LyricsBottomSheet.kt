@@ -57,6 +57,7 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.TransformOrigin
 import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.Dp
@@ -66,6 +67,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.ui.components.WavyMusicSlider
+import cc.tomko.outify.ui.components.player.LyricsFontFamily
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
 /**
@@ -91,6 +93,8 @@ fun LyricsBottomSheet(
     val positionMs by viewModel.positionMs.collectAsState()
     val effectivePositionMs by viewModel.effectivePositionMs.collectAsState()
     val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
+    val lyricsFontBold by viewModel.lyricsFontBold.collectAsState()
+    val lyricsFontFamily by viewModel.lyricsFontFamily.collectAsState()
     val isCurrentTrack by viewModel.isCurrentTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
     val durationMs by viewModel.durationMs.collectAsState()
@@ -246,6 +250,8 @@ fun LyricsBottomSheet(
                     // Offset-adjusted so lines can light up ahead of the vocals
                     currentPositionMs = effectivePositionMs,
                     fontScale = lyricsFontScale,
+                    fontFamily = LyricsFontFamily.fromId(lyricsFontFamily).fontFamily,
+                    bold = lyricsFontBold,
                     isSynced = isSynced,
                     activeLineColor = activeLineColor,
                     inactiveTextColor = inactiveTextColor,
@@ -403,6 +409,8 @@ internal fun LyricsList(
     lyrics: List<LyricLine>,
     currentPositionMs: Long,
     fontScale: Float,
+    fontFamily: FontFamily,
+    bold: Boolean,
     isSynced: Boolean,
     activeLineColor: Color,
     inactiveTextColor: Color,
@@ -462,14 +470,23 @@ internal fun LyricsList(
                 label = "lineScale"
             )
 
-            val fontWeight by remember(isActive) {
-                mutableStateOf(if (isActive) FontWeight.Bold else FontWeight.Medium)
+            // The bold toggle forces Bold on every line; otherwise the active line stays Bold
+            // and inactive lines keep their lighter Medium weight.
+            val fontWeight by remember(isActive, bold) {
+                mutableStateOf(
+                    when {
+                        bold -> FontWeight.Bold
+                        isActive -> FontWeight.Bold
+                        else -> FontWeight.Medium
+                    }
+                )
             }
 
             Text(
                 text = line.text,
                 style = MaterialTheme.typography.headlineSmall.copy(
                     fontWeight = fontWeight,
+                    fontFamily = fontFamily,
                     // always measured at the largest size so auto-scroll centering stays correct
                     fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
                 ),

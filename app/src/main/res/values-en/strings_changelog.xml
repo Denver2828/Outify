@@ -3,6 +3,13 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.7 -->
+    <string name="changelog_1_7_7_date">September 8, 2026</string>
+    <string name="changelog_1_7_7_title">Its own typeface controls for lyrics</string>
+    <string-array name="changelog_1_7_7_bullets">
+        <item>The lyrics screen now has its own text controls in Appearance: an independent size, bold, and a choice of typeface (Sans, Serif, Monospace), separate from the general app font size. Lyrics can now be made larger and more legible, for example while driving.</item>
+    </string-array>
+
     <!-- 1.7.6 -->
     <string name="changelog_1_7_6_date">September 8, 2026</string>
     <string name="changelog_1_7_6_title">Playback on more devices</string>

@@ -208,6 +208,12 @@
     <string name="settings_lyrics_lead_time_value" translatable="false">%1$d ms</string>
     <string name="settings_lyrics_text_size_title">Tamaño del texto de las letras</string>
     <string name="settings_lyrics_preview">Las letras se van a ver así</string>
+    <string name="settings_lyrics_appearance_section">Letra de las canciones</string>
+    <string name="settings_lyrics_bold_title">Negrita</string>
+    <string name="settings_lyrics_typeface_title">Tipografía</string>
+    <string name="settings_lyrics_typeface_sans">Sans</string>
+    <string name="settings_lyrics_typeface_serif">Serif</string>
+    <string name="settings_lyrics_typeface_mono">Monoespaciada</string>
     <string name="settings_spotify_connection_section">Conexión con Spotify</string>
     <string name="settings_connect_name_title">Nombre en Spotify Connect</string>
     <string name="settings_auto_transfer_title">Transferencia automática</string>

@@ -15,7 +15,6 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.VolumeDown
 import androidx.compose.material.icons.filled.CloudDownload
-import androidx.compose.material.icons.filled.FormatSize
 import androidx.compose.material.icons.filled.Healing
 import androidx.compose.material.icons.filled.HighQuality
 import androidx.compose.material.icons.filled.Lyrics
@@ -46,14 +45,12 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
 import cc.tomko.outify.R
 import cc.tomko.outify.data.repository.DEFAULT_LYRICS_OFFSET_MS
 import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.playback.model.Bitrate
 import cc.tomko.outify.playback.model.labelRes
 import cc.tomko.outify.ui.components.DropdownOption
-import cc.tomko.outify.ui.components.bottomsheet.LYRIC_LINE_BASE_FONT_SIZE_SP
 import cc.tomko.outify.ui.components.DropdownPreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
@@ -66,10 +63,6 @@ import kotlin.math.roundToInt
 private const val LYRICS_OFFSET_MIN_MS = -3000f
 private const val LYRICS_OFFSET_MAX_MS = 3000f
 private const val LYRICS_OFFSET_STEP_MS = 100
-
-private const val LYRICS_FONT_SCALE_MIN = 0.7f
-private const val LYRICS_FONT_SCALE_MAX = 1.6f
-private const val LYRICS_FONT_SCALE_STEP = 0.1f
 
 /**
  * Number of intermediate stops for a [Slider] that must land exactly on every `step` multiple
@@ -94,7 +87,6 @@ fun PlaybackSettingScreen(
     val romanizeLyrics by viewModel.romanizeLyrics.collectAsState(initial = false)
     val lyricsOffsetEnabled by viewModel.lyricsOffsetEnabled.collectAsState(initial = false)
     val lyricsOffsetMs by viewModel.lyricsOffsetMs.collectAsState(initial = DEFAULT_LYRICS_OFFSET_MS)
-    val lyricsFontScale by viewModel.lyricsFontScale.collectAsState(initial = 1.0f)
     val lyricsSynced by viewModel.lyricsSynced.collectAsState(initial = true)
     val lyricsFallbackEnabled by viewModel.lyricsFallbackEnabled.collectAsState(initial = true)
     val savedClientId by viewModel.clientId.collectAsState(initial = null)
@@ -323,45 +315,6 @@ fun PlaybackSettingScreen(
                                 onClick = { },
                             )
                         }
-
-                        var fontScale by remember(lyricsFontScale) {
-                            mutableFloatStateOf(lyricsFontScale)
-                        }
-
-                        PreferenceEntry(
-                            title = { Text(stringResource(R.string.settings_lyrics_text_size_title)) },
-                            description = stringResource(R.string.settings_percent_format, (fontScale * 100).roundToInt()),
-                            icon = { Icon(Icons.Default.FormatSize, contentDescription = null) },
-                            content = {
-                                Slider(
-                                    value = fontScale,
-                                    onValueChange = { fontScale = it },
-                                    onValueChangeFinished = {
-                                        // Snap to one decimal so stored values match the slider stops
-                                        val snapped = (fontScale * 10).roundToInt() / 10f
-                                        viewModel.setLyricsFontScale(snapped)
-                                    },
-                                    valueRange = LYRICS_FONT_SCALE_MIN..LYRICS_FONT_SCALE_MAX,
-                                    steps = sliderSteps(
-                                        LYRICS_FONT_SCALE_MIN,
-                                        LYRICS_FONT_SCALE_MAX,
-                                        LYRICS_FONT_SCALE_STEP
-                                    ),
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                                )
-
-                                Text(
-                                    text = stringResource(R.string.settings_lyrics_preview),
-                                    style = MaterialTheme.typography.headlineSmall.copy(
-                                        fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
-                                    ),
-                                    color = MaterialTheme.colorScheme.primary,
-                                    maxLines = 1,
-                                    modifier = Modifier.padding(horizontal = 16.dp, vertical = 4.dp)
-                                )
-                            },
-                            onClick = { },
-                        )
                     }
                 }
             }

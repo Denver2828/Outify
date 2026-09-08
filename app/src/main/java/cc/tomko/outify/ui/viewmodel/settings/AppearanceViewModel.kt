@@ -19,6 +19,15 @@ class AppearanceViewModel @Inject constructor(
     val settings: Flow<InterfaceSettings> =
         settingsRepository.interfaceSettings
 
+    val lyricsFontScale: Flow<Float> =
+        settingsRepository.lyricsFontScale
+
+    val lyricsFontBold: Flow<Boolean> =
+        settingsRepository.lyricsFontBold
+
+    val lyricsFontFamily: Flow<String> =
+        settingsRepository.lyricsFontFamily
+
     fun setMonochromeImages(enabled: Boolean) {
         viewModelScope.launch {
             settingsRepository.setMonochromeImages(enabled)
@@ -106,6 +115,24 @@ class AppearanceViewModel @Inject constructor(
     fun setFontScale(scale: Float) {
         viewModelScope.launch {
             settingsRepository.setFontScale(scale)
+        }
+    }
+
+    fun setLyricsFontScale(scale: Float) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsFontScale(scale)
+        }
+    }
+
+    fun setLyricsFontBold(enabled: Boolean) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsFontBold(enabled)
+        }
+    }
+
+    fun setLyricsFontFamily(id: String) {
+        viewModelScope.launch {
+            settingsRepository.setLyricsFontFamily(id)
         }
     }
 

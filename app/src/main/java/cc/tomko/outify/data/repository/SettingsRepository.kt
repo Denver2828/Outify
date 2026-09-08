@@ -88,6 +88,16 @@ class SettingsRepository @Inject constructor(
             val FONT_SCALE = floatPreferencesKey("lyrics_font_scale")
 
             /**
+             * When true, lyric lines are rendered bold on the lyrics screens.
+             */
+            val FONT_BOLD = booleanPreferencesKey("lyrics_font_bold")
+
+            /**
+             * Typeface id used for the lyrics screens (see [LyricsFontFamily]); "sans" by default.
+             */
+            val FONT_FAMILY = stringPreferencesKey("lyrics_font_family")
+
+            /**
              * When true, LRCLIB is queried whenever Spotify has no lyrics for a track.
              * Sends title, artist, album and duration to lrclib.net.
              */
@@ -344,6 +354,14 @@ class SettingsRepository @Inject constructor(
         it[Keys.Lyrics.FONT_SCALE] ?: 1.0f
     }
 
+    val lyricsFontBold: Flow<Boolean> = dataStore.data.map {
+        it[Keys.Lyrics.FONT_BOLD] ?: false
+    }
+
+    val lyricsFontFamily: Flow<String> = dataStore.data.map {
+        it[Keys.Lyrics.FONT_FAMILY] ?: "sans"
+    }
+
     val lyricsSynced: Flow<Boolean> = dataStore.data.map {
         it[Keys.Lyrics.SYNCED] ?: true
     }
@@ -496,6 +514,14 @@ class SettingsRepository @Inject constructor(
 
     suspend fun setLyricsFontScale(scale: Float) {
         dataStore.edit { it[Keys.Lyrics.FONT_SCALE] = scale }
+    }
+
+    suspend fun setLyricsFontBold(enabled: Boolean) {
+        dataStore.edit { it[Keys.Lyrics.FONT_BOLD] = enabled }
+    }
+
+    suspend fun setLyricsFontFamily(id: String) {
+        dataStore.edit { it[Keys.Lyrics.FONT_FAMILY] = id }
     }
 
     suspend fun setLyricsSynced(value: Boolean) {

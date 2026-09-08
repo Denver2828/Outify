@@ -41,6 +41,7 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.ui.components.bottomsheet.LyricsList
 import cc.tomko.outify.ui.components.bottomsheet.LyricsSourceBadge
+import cc.tomko.outify.ui.components.player.LyricsFontFamily
 import cc.tomko.outify.ui.components.bottomsheet.LyricsStatusMessage
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
@@ -62,6 +63,8 @@ fun LandscapeLyricsScreen(
     val lyrics by viewModel.lyrics.collectAsState()
     val effectivePositionMs by viewModel.effectivePositionMs.collectAsState()
     val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
+    val lyricsFontBold by viewModel.lyricsFontBold.collectAsState()
+    val lyricsFontFamily by viewModel.lyricsFontFamily.collectAsState()
     val lyricsSynced by viewModel.lyricsSynced.collectAsState()
     val isCurrentTrack by viewModel.isCurrentTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
@@ -171,6 +174,8 @@ fun LandscapeLyricsScreen(
                     // Offset-adjusted so lines can light up ahead of the vocals
                     currentPositionMs = effectivePositionMs,
                     fontScale = lyricsFontScale,
+                    fontFamily = LyricsFontFamily.fromId(lyricsFontFamily).fontFamily,
+                    bold = lyricsFontBold,
                     isSynced = isSynced,
                     activeLineColor = activeLineColor,
                     inactiveTextColor = inactiveTextColor,

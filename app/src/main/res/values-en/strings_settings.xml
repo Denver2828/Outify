@@ -199,6 +199,12 @@
     <string name="settings_lyrics_lead_time_title">Lead time</string>
     <string name="settings_lyrics_text_size_title">Lyrics text size</string>
     <string name="settings_lyrics_preview">Lyrics will look like this</string>
+    <string name="settings_lyrics_appearance_section">Song lyrics</string>
+    <string name="settings_lyrics_bold_title">Bold</string>
+    <string name="settings_lyrics_typeface_title">Typeface</string>
+    <string name="settings_lyrics_typeface_sans">Sans</string>
+    <string name="settings_lyrics_typeface_serif">Serif</string>
+    <string name="settings_lyrics_typeface_mono">Monospace</string>
     <string name="settings_spotify_connection_section">Spotify connection</string>
     <string name="settings_connect_name_title">Spotify Connect name</string>
     <string name="settings_auto_transfer_title">Auto transfer</string>

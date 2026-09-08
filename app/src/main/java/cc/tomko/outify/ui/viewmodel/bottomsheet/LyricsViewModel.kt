@@ -119,6 +119,18 @@ class LyricsViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), 1.0f)
 
     /**
+     * When true, lyric lines on the lyrics screens are rendered bold.
+     */
+    val lyricsFontBold: StateFlow<Boolean> = settingsRepository.lyricsFontBold
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    /**
+     * Stored typeface id for the lyrics screens (see LyricsFontFamily); "sans" by default.
+     */
+    val lyricsFontFamily: StateFlow<String> = settingsRepository.lyricsFontFamily
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), "sans")
+
+    /**
      * When false the lyric text is shown static, without following the playback position.
      */
     val lyricsSynced: StateFlow<Boolean> = settingsRepository.lyricsSynced
