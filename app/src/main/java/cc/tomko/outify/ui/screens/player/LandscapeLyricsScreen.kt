@@ -37,8 +37,10 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
+import cc.tomko.outify.MyIcons
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.bottomsheet.LyricsList
 import cc.tomko.outify.ui.components.bottomsheet.LyricsSourceBadge
 import cc.tomko.outify.ui.components.player.LyricsFontFamily
@@ -75,6 +77,7 @@ fun LandscapeLyricsScreen(
     val isLoadingLyrics by viewModel.isLoading.collectAsState()
     val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
+    val isShuffling by viewModel.isShuffling.collectAsState()
 
     val isSynced = lyricsSynced && hasSyncedContent && isCurrentTrack
 
@@ -98,7 +101,7 @@ fun LandscapeLyricsScreen(
                 onClick = onBrowse,
                 modifier = Modifier
                     .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                    .size(40.dp)
+                    .size(48.dp)
             ) {
                 Icon(
                     imageVector = Icons.AutoMirrored.Filled.ArrowBack,
@@ -131,7 +134,7 @@ fun LandscapeLyricsScreen(
                     onClick = { viewModel.toggleLiked() },
                     modifier = Modifier
                         .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .size(40.dp)
+                        .size(48.dp)
                 ) {
                     Icon(
                         imageVector = Icons.Default.Favorite,
@@ -144,6 +147,8 @@ fun LandscapeLyricsScreen(
                     )
                 }
             }
+
+            SpotyBrand()
         }
 
         Box(
@@ -188,50 +193,76 @@ fun LandscapeLyricsScreen(
             }
         }
 
-        Row(
+        // Car-sized transport: large targets, shuffle pinned to the left edge, playback centered.
+        Box(
             modifier = Modifier
                 .fillMaxWidth()
                 .navigationBarsPadding()
-                .padding(vertical = 8.dp),
-            horizontalArrangement = Arrangement.spacedBy(24.dp, Alignment.CenterHorizontally),
-            verticalAlignment = Alignment.CenterVertically
+                .padding(vertical = 8.dp)
         ) {
             IconButton(
-                onClick = { viewModel.skipPrevious() },
-                modifier = Modifier.size(48.dp)
+                onClick = { viewModel.toggleShuffle() },
+                modifier = Modifier
+                    .align(Alignment.CenterStart)
+                    .padding(start = 24.dp)
+                    .background(
+                        if (isShuffling) MaterialTheme.colorScheme.primaryContainer
+                        else MaterialTheme.colorScheme.surfaceVariant,
+                        CircleShape
+                    )
+                    .size(64.dp)
             ) {
                 Icon(
-                    imageVector = Icons.Default.SkipPrevious,
-                    contentDescription = stringResource(R.string.sheet_previous_cd),
-                    modifier = Modifier.size(32.dp)
+                    imageVector = MyIcons.Shuffle,
+                    contentDescription = stringResource(R.string.ui_player_shuffle_desc),
+                    modifier = Modifier.size(40.dp),
+                    tint = if (isShuffling) MaterialTheme.colorScheme.onPrimaryContainer
+                    else MaterialTheme.colorScheme.onSurfaceVariant
                 )
             }
 
-            FilledIconButton(
-                onClick = { viewModel.playPause() },
-                modifier = Modifier.size(60.dp),
-                colors = IconButtonDefaults.filledIconButtonColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+            Row(
+                modifier = Modifier.align(Alignment.Center),
+                horizontalArrangement = Arrangement.spacedBy(32.dp),
+                verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(
-                    imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                    contentDescription = if (isPlaying) stringResource(R.string.sheet_pause_cd)
-                    else stringResource(R.string.sheet_play_cd),
-                    modifier = Modifier.size(36.dp)
-                )
-            }
+                IconButton(
+                    onClick = { viewModel.skipPrevious() },
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipPrevious,
+                        contentDescription = stringResource(R.string.sheet_previous_cd),
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
 
-            IconButton(
-                onClick = { viewModel.skipNext() },
-                modifier = Modifier.size(48.dp)
-            ) {
-                Icon(
-                    imageVector = Icons.Default.SkipNext,
-                    contentDescription = stringResource(R.string.sheet_next_cd),
-                    modifier = Modifier.size(32.dp)
-                )
+                FilledIconButton(
+                    onClick = { viewModel.playPause() },
+                    modifier = Modifier.size(80.dp),
+                    colors = IconButtonDefaults.filledIconButtonColors(
+                        containerColor = MaterialTheme.colorScheme.primaryContainer,
+                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                ) {
+                    Icon(
+                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
+                        contentDescription = if (isPlaying) stringResource(R.string.sheet_pause_cd)
+                        else stringResource(R.string.sheet_play_cd),
+                        modifier = Modifier.size(52.dp)
+                    )
+                }
+
+                IconButton(
+                    onClick = { viewModel.skipNext() },
+                    modifier = Modifier.size(64.dp)
+                ) {
+                    Icon(
+                        imageVector = Icons.Default.SkipNext,
+                        contentDescription = stringResource(R.string.sheet_next_cd),
+                        modifier = Modifier.size(44.dp)
+                    )
+                }
             }
         }
     }

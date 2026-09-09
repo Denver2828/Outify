@@ -90,6 +90,7 @@ import cc.tomko.outify.core.model.toSpotifyUri
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.SkeletonTrackRow
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.navigation.Route.ArtistScreen
 import cc.tomko.outify.ui.components.navigation.Route.PlaylistScreen
@@ -198,6 +199,8 @@ fun SharedTransitionScope.SearchScreen(
                             style = MaterialTheme.typography.headlineLarge,
                             fontWeight = FontWeight.Bold,
                         )
+
+                        SpotyBrand()
                     }
                 }
 
@@ -262,6 +265,16 @@ fun SharedTransitionScope.SearchScreen(
                 }
 
                 item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 24.dp)
+                            .padding(top = 8.dp),
+                        horizontalArrangement = Arrangement.End
+                    ) {
+                        SpotyBrand()
+                    }
+
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()

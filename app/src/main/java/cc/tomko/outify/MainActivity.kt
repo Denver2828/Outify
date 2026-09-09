@@ -67,6 +67,7 @@ import androidx.navigation3.runtime.NavKey
 import androidx.navigation3.runtime.rememberNavBackStack
 import cc.tomko.outify.MainActivity.MainActivity.LocalSharedTransitionScope
 import cc.tomko.outify.core.AuthManager
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.core.EpisodeDetails
 import cc.tomko.outify.core.model.Episode
 import cc.tomko.outify.core.spirc.VolumeController
@@ -123,6 +124,9 @@ class MainActivity : ComponentActivity() {
     private val deepLinkFlow = MutableSharedFlow<Uri>(extraBufferCapacity = 1)
 
     override fun onKeyDown(keyCode: Int, event: KeyEvent?): Boolean {
+        if (keyCode in DIAGNOSED_KEY_CODES) {
+            AudioDiagnostics.record("MainActivity", "onKeyDown keyCode=$keyCode repeat=${event?.repeatCount}")
+        }
         return if (keyCode == KeyEvent.KEYCODE_VOLUME_UP || keyCode == KeyEvent.KEYCODE_VOLUME_DOWN) {
             val handled = super.onKeyDown(keyCode, event)
             volumeController.onAndroidVolumeChanged()
@@ -667,6 +671,19 @@ class MainActivity : ComponentActivity() {
         return null
     }
 }
+
+/** Hardware keys worth a line in the audio diagnostics report: volume and transport. */
+private val DIAGNOSED_KEY_CODES = setOf(
+    KeyEvent.KEYCODE_VOLUME_UP,
+    KeyEvent.KEYCODE_VOLUME_DOWN,
+    KeyEvent.KEYCODE_MEDIA_PLAY,
+    KeyEvent.KEYCODE_MEDIA_PAUSE,
+    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+    KeyEvent.KEYCODE_MEDIA_NEXT,
+    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+    KeyEvent.KEYCODE_MEDIA_STOP,
+    KeyEvent.KEYCODE_HEADSETHOOK,
+)
 
 /**
  * Bottom-navigation selection. When [route] is already in the stack everything above it is

@@ -67,6 +67,7 @@ import cc.tomko.outify.ui.components.ErrorScreen
 import cc.tomko.outify.ui.components.RefreshNotice
 import cc.tomko.outify.ui.components.loadFailureMessage
 import cc.tomko.outify.ui.components.SmartImage
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.navigation.Route
 import cc.tomko.outify.ui.components.rows.SwipeableTrackRowConfigured
 import cc.tomko.outify.ui.viewmodel.HomeUiState
@@ -347,6 +348,7 @@ private fun HeaderSection(
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
+            SpotyBrand(modifier = Modifier.padding(end = 4.dp))
             IconButton(onClick = onAccountClick) {
                 if (userAvatarUrl != null) {
                     SmartImage(

@@ -38,6 +38,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.setting.DisplayIcon
 import cc.tomko.outify.data.setting.GestureSetting
@@ -71,7 +72,8 @@ fun SharedTransitionScope.GestureSettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

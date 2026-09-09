@@ -3,6 +3,15 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.8 -->
+    <string name="changelog_1_7_8_date">September 8, 2026</string>
+    <string name="changelog_1_7_8_title">Spoty by Darius mark, car controls and steering wheel next button</string>
+    <string-array name="changelog_1_7_8_bullets">
+        <item>Every screen now shows the "Spoty by Darius" brand mark in the top-right corner: home, search, library, album, artist, playlist and podcast details, the expanded player, landscape lyrics, and every settings screen.</item>
+        <item>The fullscreen landscape lyrics layout, the one used in the car, now has larger playback buttons and a shuffle button at the left edge.</item>
+        <item>The "next" button on the steering wheel, Bluetooth headsets and Android Auto now changes the song. The audio diagnostics report records the media keys received, to investigate play/pause and volume.</item>
+    </string-array>
+
     <!-- 1.7.7 -->
     <string name="changelog_1_7_7_date">September 8, 2026</string>
     <string name="changelog_1_7_7_title">Its own typeface controls for lyrics</string>

@@ -33,6 +33,7 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 
 /**
  * One release note. Everything is a resource id so the screen is fully localized.
@@ -50,6 +51,12 @@ private data class ChangelogEntry(
  * Newest release first
  */
 private val changelogEntries = listOf(
+    ChangelogEntry(
+        version = R.string.changelog_1_7_8_version,
+        date = R.string.changelog_1_7_8_date,
+        title = R.string.changelog_1_7_8_title,
+        bullets = R.array.changelog_1_7_8_bullets,
+    ),
     ChangelogEntry(
         version = R.string.changelog_1_7_7_version,
         date = R.string.changelog_1_7_7_date,
@@ -187,7 +194,8 @@ fun ChangelogScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

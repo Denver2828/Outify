@@ -1,9 +1,12 @@
 package cc.tomko.outify.services
 
 import android.content.Context
+import android.content.Intent
 import android.os.Bundle
+import android.view.KeyEvent
 import android.util.Log
 import androidx.annotation.DrawableRes
+import androidx.core.content.IntentCompat
 import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
@@ -31,6 +34,7 @@ import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.repository.SearchRepository
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.ui.model.search.SearchResultType
 import com.google.common.collect.ImmutableList
 import com.google.common.util.concurrent.Futures
@@ -167,6 +171,22 @@ class MediaLibrarySessionCallback @Inject constructor(
                 .build(),
             connectionResult.availablePlayerCommands
         )
+    }
+
+    // Diagnostics only: the shareable audio report shows which hardware keys (steering wheel,
+    // Bluetooth, Android Auto) actually reach the session. Default handling is untouched.
+    override fun onMediaButtonEvent(
+        session: MediaSession,
+        controllerInfo: MediaSession.ControllerInfo,
+        intent: Intent
+    ): Boolean {
+        val event = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+        AudioDiagnostics.record(
+            "MediaSession",
+            "media button keyCode=${event?.keyCode} action=${event?.action} " +
+                "repeat=${event?.repeatCount} from=${controllerInfo.packageName}"
+        )
+        return super.onMediaButtonEvent(session, controllerInfo, intent)
     }
 
     override fun onPlaybackResumption(

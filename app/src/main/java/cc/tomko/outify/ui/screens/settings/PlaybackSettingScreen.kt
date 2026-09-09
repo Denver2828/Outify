@@ -46,6 +46,7 @@ import androidx.compose.ui.res.pluralStringResource
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.data.repository.DEFAULT_LYRICS_OFFSET_MS
 import cc.tomko.outify.data.repository.PlaybackSettings
 import cc.tomko.outify.playback.model.Bitrate
@@ -100,7 +101,8 @@ fun PlaybackSettingScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

@@ -99,6 +99,7 @@ import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.AutoScrollingTextOnDemand
 import cc.tomko.outify.ui.components.SmartImage
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.ToggleSegmentButton
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.core.model.LyricsSource
@@ -214,6 +215,14 @@ fun PlayerContent(
         )
     }
 
+    // Brand mark for the expanded player; fades out with the sheet like the metadata does.
+    val brandSection: @Composable () -> Unit = {
+        SpotyBrand(
+            contentColor = textColor,
+            modifier = Modifier.graphicsLayer { alpha = expansionFractionProvider() },
+        )
+    }
+
     BoxWithConstraints(modifier = modifier.fillMaxSize()) {
         val itemHeight = maxHeight
 
@@ -229,6 +238,7 @@ fun PlayerContent(
                     FullPlayerLandscapeContent(
                         paddingValues,
                         modifier = itemModifier,
+                        brandSection = brandSection,
                         albumCoverSection = albumCoverSection,
                         trackMetadataSection = trackMetadataSection,
                         playerProgressSection = playerProgressSection,
@@ -241,6 +251,7 @@ fun PlayerContent(
                     FullPlayerPortraitContent(
                         paddingValues,
                         modifier = itemModifier,
+                        brandSection = brandSection,
                         albumCoverSection = albumCoverSection,
                         trackMetadataSection = trackMetadataSection,
                         playerProgressSection = playerProgressSection,
@@ -900,6 +911,7 @@ private fun AudioMetadataSection(
 private fun FullPlayerLandscapeContent(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
+    brandSection: @Composable () -> Unit,
     albumCoverSection: @Composable (Modifier) -> Unit,
     trackMetadataSection: @Composable () -> Unit,
     playerProgressSection: @Composable () -> Unit,
@@ -913,50 +925,62 @@ private fun FullPlayerLandscapeContent(
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp
     ) {
-        Column(
-            modifier = modifier
-                .fillMaxSize()
-                .padding(paddingValues)
-                .padding(end = 16.dp),
-            horizontalAlignment = Alignment.CenterHorizontally,
-        ) {
+        Box(modifier = Modifier.fillMaxSize()) {
+            Column(
+                modifier = modifier
+                    .fillMaxSize()
+                    .padding(paddingValues)
+                    .padding(end = 16.dp),
+                horizontalAlignment = Alignment.CenterHorizontally,
+            ) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth(),
+                    contentAlignment = Alignment.Center
+                ) {
+                    albumCoverSection(
+                        Modifier
+                            .fillMaxWidth(0.55f)
+                            .padding(top = 16.dp)
+                    )
+                }
+    
+                Spacer(Modifier.weight(0.25f))
+    
+                Column(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                    verticalArrangement = Arrangement.spacedBy(4.dp)
+                ) {
+                    trackMetadataSection()
+                    playerProgressSection()
+                }
+    
+                Column(
+                    modifier = Modifier
+                        .fillMaxHeight(),
+                ) {
+                    playbackControlsSection(50.dp)
+    
+                    Spacer(Modifier.weight(0.25f))
+    
+                    controlsSection(50.dp)
+    
+                    if (!isEpisode) {
+                        moreActions()
+                    }
+                }
+            }
+
+            // Overlaid at the top-right of the inset area; the column layout is untouched.
             Box(
                 modifier = Modifier
-                    .fillMaxWidth(),
-                contentAlignment = Alignment.Center
+                    .align(Alignment.TopEnd)
+                    .padding(paddingValues)
+                    .padding(end = 24.dp, top = 8.dp)
             ) {
-                albumCoverSection(
-                    Modifier
-                        .fillMaxWidth(0.55f)
-                        .padding(top = 16.dp)
-                )
-            }
-
-            Spacer(Modifier.weight(0.25f))
-
-            Column(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(horizontal = 16.dp),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
-            ) {
-                trackMetadataSection()
-                playerProgressSection()
-            }
-
-            Column(
-                modifier = Modifier
-                    .fillMaxHeight(),
-            ) {
-                playbackControlsSection(50.dp)
-
-                Spacer(Modifier.weight(0.25f))
-
-                controlsSection(50.dp)
-
-                if (!isEpisode) {
-                    moreActions()
-                }
+                brandSection()
             }
         }
     }
@@ -966,6 +990,7 @@ private fun FullPlayerLandscapeContent(
 private fun FullPlayerPortraitContent(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
+    brandSection: @Composable () -> Unit,
     albumCoverSection: @Composable (Modifier) -> Unit,
     trackMetadataSection: @Composable () -> Unit,
     playerProgressSection: @Composable () -> Unit,
@@ -1029,6 +1054,15 @@ private fun FullPlayerPortraitContent(
             if (!isEpisode) {
                 moreActions()
             }
+        }
+
+        // Overlaid in the top inset zone so the cover layout is not shifted.
+        Box(
+            modifier = Modifier
+                .align(Alignment.TopEnd)
+                .padding(end = horizontalPadding, top = outerVerticalPadding * 0.5f)
+        ) {
+            brandSection()
         }
     }
 }

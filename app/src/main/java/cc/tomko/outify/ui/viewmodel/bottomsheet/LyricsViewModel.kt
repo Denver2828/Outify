@@ -12,6 +12,7 @@ import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
+import cc.tomko.outify.playback.PlaybackModeController
 import cc.tomko.outify.playback.PlaybackStateHolder
 import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
@@ -60,6 +61,7 @@ class LyricsViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val likedDao: LikedDao,
     private val likedRepository: LikedRepository,
+    private val modeController: PlaybackModeController,
 ) : ViewModel() {
 
     private val _lyricsState = MutableStateFlow<LyricsUiState>(LyricsUiState.Missing)
@@ -175,6 +177,10 @@ class LyricsViewModel @Inject constructor(
     val isPlaying: StateFlow<Boolean> = playbackStateHolder.state
         .map { it.isPlaying }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), false)
+
+    // Same persisted flag the player reads, so both screens agree on the shuffle state.
+    val isShuffling: StateFlow<Boolean> = settingsRepository.shuffleEnabled
+        .stateIn(viewModelScope, SharingStarted.Eagerly, false)
 
     val durationMs: StateFlow<Long> = playbackStateHolder.state
         .map { it.currentAudio?.duration ?: 0L }
@@ -307,6 +313,13 @@ class LyricsViewModel @Inject constructor(
     fun skipNext() {
         viewModelScope.launch {
             spirc.playerNext()
+        }
+    }
+
+    // Goes through the shared mode controller so the player, notification and this screen stay in sync.
+    fun toggleShuffle() {
+        viewModelScope.launch {
+            modeController.toggleShuffle()
         }
     }
 }

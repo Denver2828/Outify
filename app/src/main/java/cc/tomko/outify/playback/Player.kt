@@ -18,11 +18,13 @@ import cc.tomko.outify.R
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.Episode
+import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
+import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.playback.model.PlayState
 import cc.tomko.outify.playback.model.RepeatMode
 import cc.tomko.outify.services.PlaybackService
@@ -337,6 +339,12 @@ class Player @Inject constructor(
             .setMediaMetadata(mediaMetadata)
             .build()
 
+        // Media3's BasePlayer.seekToNext() (final) ignores the seek when hasNextMediaItem()
+        // is false, so a one-item timeline makes every hardware "next" (steering wheel,
+        // Bluetooth AVRCP, Android Auto) a silent no-op before handleSeek() is ever called.
+        // The real queue lives in librespot, so a second item is published only to make the
+        // next command reachable: the upcoming track when the local queue knows it, else a
+        // placeholder that librespot replaces as soon as the track change is reported.
         val playlist = listOf(
             MediaItemData.Builder(audio.id)
                 .setMediaItem(mediaItem)
@@ -344,7 +352,8 @@ class Player @Inject constructor(
                 .setDefaultPositionUs(0)
                 .setIsSeekable(true)
                 .setMediaMetadata(mediaItem.mediaMetadata)
-                .build()
+                .build(),
+            buildNextMediaItemData(ps, audio),
         )
 
         val playbackState = when {
@@ -369,10 +378,63 @@ class Player @Inject constructor(
             .build()
     }
 
+    /**
+     * The item after the current one. See the comment in [getState] for why it exists.
+     */
+    private fun buildNextMediaItemData(ps: PlaybackState, audio: PlayableAudio): MediaItemData {
+        val upcoming = ps.queue.getOrNull(ps.queueIndex + 1)
+            ?.takeIf { ps.queue.getOrNull(ps.queueIndex)?.id == audio.id }
+            // SimpleBasePlayer rejects duplicate uids, so a track queued twice in a row falls back to the placeholder.
+            ?.takeIf { it.id != audio.id }
+
+        if (upcoming != null) {
+            val upcomingSubtitle = upcoming.artists?.joinToString { it.name }
+                ?: upcoming.showName
+                ?: appContext.getString(R.string.sys_player_unknown_source)
+            val upcomingMetadata = MediaMetadata.Builder()
+                .setTitle(upcoming.name)
+                .setDisplayTitle(upcoming.name)
+                .setArtist(upcomingSubtitle)
+                .setMediaType(
+                    if (upcoming.isEpisode()) MediaMetadata.MEDIA_TYPE_PODCAST else MediaMetadata.MEDIA_TYPE_MUSIC
+                )
+                .build()
+            val upcomingItem = MediaItem.Builder()
+                .setMediaId(upcoming.id)
+                .setUri(upcoming.uri)
+                .setMediaMetadata(upcomingMetadata)
+                .build()
+            return MediaItemData.Builder(upcoming.id)
+                .setMediaItem(upcomingItem)
+                .setDurationUs(upcoming.duration * 1000L)
+                .setDefaultPositionUs(0)
+                .setIsSeekable(true)
+                .setMediaMetadata(upcomingMetadata)
+                .build()
+        }
+
+        val placeholderTitle = appContext.getString(R.string.sys_player_next_placeholder)
+        val placeholderMetadata = MediaMetadata.Builder()
+            .setTitle(placeholderTitle)
+            .setDisplayTitle(placeholderTitle)
+            .build()
+        val placeholderItem = MediaItem.Builder()
+            .setMediaId(NEXT_PLACEHOLDER_ID)
+            .setMediaMetadata(placeholderMetadata)
+            .build()
+        return MediaItemData.Builder(NEXT_PLACEHOLDER_ID)
+            .setMediaItem(placeholderItem)
+            .setDurationUs(C.TIME_UNSET)
+            .setIsSeekable(false)
+            .setMediaMetadata(placeholderMetadata)
+            .build()
+    }
+
     override fun handleSetPlayWhenReady(playWhenReady: Boolean): ListenableFuture<*> {
         val currentMedia3State = if (stateHolder.state.value.currentAudio == null) STATE_IDLE else STATE_READY
 
         val playerCommand = audioFocusManager.updateAudioFocus(playWhenReady, currentMedia3State)
+        AudioDiagnostics.record("Player", "handleSetPlayWhenReady playWhenReady=$playWhenReady focusCommand=$playerCommand")
 
         scope.launch(Dispatchers.IO) {
             when (playerCommand) {
@@ -394,8 +456,22 @@ class Player @Inject constructor(
         positionMs: Long,
         seekCommand: Int
     ): ListenableFuture<*> {
-//        spirc.seekTo(mediaItemIndex, positionMs)
+        AudioDiagnostics.record("Player", "handleSeek command=$seekCommand index=$mediaItemIndex positionMs=$positionMs")
         when (seekCommand) {
+            // Queue taps (Android Auto, notification): the timeline only has the current item
+            // and the one after it, so the index can only mean "forward" or "back".
+            COMMAND_SEEK_TO_MEDIA_ITEM -> {
+                // Read on the application thread; SimpleBasePlayer verifies the caller thread.
+                val currentIndex = currentMediaItemIndex
+                scope.launch(Dispatchers.IO) {
+                    when {
+                        mediaItemIndex > currentIndex -> spirc.playerNext()
+                        mediaItemIndex < currentIndex -> spirc.playerPrevious()
+                        positionMs != C.TIME_UNSET -> spirc.seekTo(positionMs)
+                    }
+                }
+            }
+
             COMMAND_SEEK_TO_PREVIOUS_MEDIA_ITEM -> scope.launch(Dispatchers.IO) { spirc.playerPrevious() }
             COMMAND_SEEK_TO_PREVIOUS -> scope.launch(Dispatchers.IO) { spirc.playerPrevious() }
 
@@ -503,5 +579,8 @@ class Player @Inject constructor(
     private companion object {
         /** Upper bound for a repeat/shuffle change before the controller is released. */
         const val MODE_COMMAND_TIMEOUT_MS = 5_000L
+
+        /** Media id of the synthetic "next" item published when the local queue has no upcoming track. */
+        const val NEXT_PLACEHOLDER_ID = "spoty:next"
     }
 }

@@ -49,6 +49,7 @@ import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.PreferenceHeader
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
@@ -84,7 +85,8 @@ fun AccountsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

@@ -5,6 +5,7 @@ import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.spring
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ColumnScope
@@ -100,13 +101,18 @@ fun CollapsingHeader(
                 )
             }
 
-            actionButtonContent?.let {
-                Box(
-                    modifier = Modifier
-                        .align(Alignment.TopEnd)
-                        .padding(end = 12.dp, top = 4.dp)
-                ) {
-                    it()
+            // Brand mark stays visible at every collapse fraction, left of the optional action.
+            Row(
+                modifier = Modifier.align(Alignment.TopEnd),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (actionButtonContent != null) {
+                    SpotyBrand(modifier = Modifier.padding(end = 8.dp))
+                    Box(modifier = Modifier.padding(end = 12.dp, top = 4.dp)) {
+                        actionButtonContent()
+                    }
+                } else {
+                    SpotyBrand(modifier = Modifier.padding(end = 16.dp, top = 12.dp))
                 }
             }
 

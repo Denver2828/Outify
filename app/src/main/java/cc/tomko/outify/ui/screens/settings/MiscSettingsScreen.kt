@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.data.repository.OutifyBackup
 import cc.tomko.outify.ui.components.PreferenceEntry
 import cc.tomko.outify.ui.components.PreferenceHeader
@@ -83,7 +84,8 @@ fun MiscSettingsScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

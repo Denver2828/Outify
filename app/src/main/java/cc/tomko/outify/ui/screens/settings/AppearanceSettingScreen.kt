@@ -50,6 +50,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.data.repository.DarkModeSetting
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.data.repository.LandscapeLayout
@@ -112,7 +113,8 @@ fun AppearanceSettingScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

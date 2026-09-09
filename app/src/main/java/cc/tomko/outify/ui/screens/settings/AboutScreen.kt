@@ -41,6 +41,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import cc.tomko.outify.BuildConfig
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 
 private const val DEVELOPER = "Darius"
 
@@ -58,7 +59,8 @@ fun AboutScreen(
                     IconButton(onClick = onNavigateBack) {
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.settings_back))
                     }
-                }
+                },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) }
             )
         },
         modifier = modifier

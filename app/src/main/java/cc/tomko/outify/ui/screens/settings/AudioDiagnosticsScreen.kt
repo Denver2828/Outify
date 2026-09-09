@@ -35,6 +35,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.R
+import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.viewmodel.settings.AudioDiagnosticsViewModel
 import kotlinx.coroutines.launch
 
@@ -66,6 +67,7 @@ fun AudioDiagnosticsScreen(
                         )
                     }
                 },
+                actions = { SpotyBrand(modifier = Modifier.padding(end = 16.dp)) },
             )
         },
         modifier = modifier,

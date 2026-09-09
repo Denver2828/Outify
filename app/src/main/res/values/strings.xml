@@ -1,5 +1,7 @@
 <resources>
     <string name="app_name" translatable="false">Spoty</string>
+    <string name="brand_name" translatable="false">Spoty</string>
+    <string name="brand_by_author" translatable="false">by Darius</string>
     <string name="title_activity_auth" translatable="false">AuthActivity</string>
     <string name="title_activity_main" translatable="false">Spoty</string>
     <string name="title_activity_callback" translatable="false">CallbackActivity</string>

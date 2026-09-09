@@ -5,6 +5,7 @@
     <string name="sys_audio_output_failed">Spoty no pudo abrir la salida de audio de este dispositivo: %1$s</string>
     <string name="sys_playback_error_toast">Error de reproducción: %1$s (%2$d): %3$s</string>
     <string name="sys_player_unknown_source">Fuente desconocida</string>
+    <string name="sys_player_next_placeholder">Siguiente</string>
 
     <!-- Media browser (Android Auto / media library) -->
     <string name="sys_media_recently_played">Reproducido recientemente</string>
