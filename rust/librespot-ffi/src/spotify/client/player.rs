@@ -8,6 +8,7 @@ use crate::{
     },
 };
 
+use super::GatedRequest;
 use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
@@ -25,7 +26,7 @@ impl SpotifyClient {
             .get(&url)
             .bearer_auth(&token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_devices", false)
             .await?;
 
         if res.status() == StatusCode::UNAUTHORIZED {
@@ -35,7 +36,7 @@ impl SpotifyClient {
                 .get(&url)
                 .bearer_auth(new_token.access_token)
                 .timeout(REQUEST_TIMEOUT)
-                .send()
+                .send_gated("get_devices", false)
                 .await?;
             let data = check_response_json::<DevicesResponse>("get_devices", res).await?;
             return Ok(data);
@@ -66,7 +67,7 @@ impl SpotifyClient {
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
             .json(&body)
-            .send()
+            .send_gated("transfer_playback", false)
             .await?;
 
         let res = ensure_success("transfer_playback", res).await?;

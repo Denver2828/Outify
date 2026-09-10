@@ -355,6 +355,16 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Ampliación de la misma versión: el informe en dos archivos y trazas de letras.** El informe de una sola pieza superaba lo que se puede pegar en un mensaje y la parte útil quedaba truncada. Ahora se comparte como dos archivos: `1-summary` (dispositivo, estado, eventos, cierres del proceso) y `2-logcat`. El resumen entra entero. Y como en la caja la letra decía "no encontrada" sin que se supiera si LRCLIB llegó a consultarse, `LyricsRepository` anota en los eventos qué respondió Spotify, si el respaldo estaba habilitado y qué respondió LRCLIB.
 
+### 2026-09-10 — 1.7.10: admisión nativa de solicitudes durante una pausa de Spotify
+
+**Decisión.** Todos los envíos del cliente Web API pasan por una admisión nativa compartida: consulta el plazo después de obtener el token y antes de cada envío, incluidos los reintentos por 401. Serializa hasta recibir los encabezados, registra el 429 una sola vez y libera el turno antes de leer el cuerpo. La renovación del token participa porque ya comparte ese plazo; una renovación en espera no vuelve a enviar durante la pausa. Las sondas manuales conservan la excepción de admisión pública, pero no omiten la serialización ni el registro del 429. Si necesitan renovar el token, esa renovación respeta la pausa.
+
+**Contexto.** El control anterior ocurría antes de esperar el token y no se repetía en algunos reintentos. Además, registraba el 429 después de consumir el cuerpo. Esas ventanas permitían nuevos envíos cuando ya se conocía una pausa. La prueba nativa usa el código de producción con respuestas HTTP locales controladas; el permiso Unix del archivo de sesión sigue siendo 0600 en Android, y se condiciona por plataforma para compilar las pruebas en Windows.
+
+**Alternativas y límites.** Se descartó agregar controles dispersos: no ordenan la admisión con la recepción de otro 429. La serialización puede aumentar la latencia hasta recibir encabezados; no retiene el turno durante la lectura del cuerpo ni la espera del token. Esto corrige la política local durante una pausa conocida, no garantiza la cuota global de Spotify. Persistencia entre procesos, reloj y política de sondas quedan fuera de esta corrección.
+
+**Protección ante esperas de red.** La renovación usa el mismo tiempo máximo de cinco segundos que los demás envíos. Así, un servidor que no devuelve encabezados no retiene indefinidamente la admisión compartida. Una prueba con conexión local abierta y encabezados retenidos verifica el vencimiento y la liberación del turno.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

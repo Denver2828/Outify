@@ -19,6 +19,9 @@ mod player;
 mod playlist;
 mod user;
 
+#[cfg(test)]
+mod admission_tests;
+
 pub use library::SavedItemType;
 
 const SPOTIFY_API_URL: &str = "https://api.spotify.com";
@@ -42,6 +45,35 @@ static SPOTIFY_CLIENT: OnceCell<SpotifyClient> = OnceCell::new();
 /// Wall-clock millisecond timestamp until which the Web API must not be called
 /// (0 when no 429 is pending). Kotlin reads it through `SpClient.getRateLimitUntilMs`.
 static RATE_LIMIT_UNTIL_MS: AtomicI64 = AtomicI64::new(0);
+static REQUEST_ADMISSION: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
+
+/// Serialize dispatch through headers, not bodies or token acquisition. Token refresh
+/// also uses this boundary: its 429 contributes to the same native deadline.
+pub(super) trait GatedRequest {
+    async fn send_gated(
+        self,
+        method: &str,
+        bypass: bool,
+    ) -> Result<reqwest::Response, SpotifyApiError>;
+}
+
+impl GatedRequest for reqwest::RequestBuilder {
+    async fn send_gated(
+        self,
+        method: &str,
+        bypass: bool,
+    ) -> Result<reqwest::Response, SpotifyApiError> {
+        let _admission = REQUEST_ADMISSION.lock().await;
+        if !bypass {
+            check_rate_limit(method)?;
+        }
+        let response = self.send().await?;
+        if response.status() == reqwest::StatusCode::TOO_MANY_REQUESTS {
+            note_rate_limited(retry_after_secs(&response));
+        }
+        Ok(response)
+    }
+}
 
 const DEFAULT_RETRY_AFTER_SECS: u64 = 30;
 
@@ -93,7 +125,7 @@ fn retry_after_secs(res: &reqwest::Response) -> u64 {
 }
 
 /// Turns a non-2xx response into the matching error. 429 becomes
-/// [`SpotifyApiError::RateLimited`] and arms the shared rate-limit window; every
+/// [`SpotifyApiError::RateLimited`]; `send_gated` already armed the window at headers. Every
 /// other status keeps the historical `{method} failed with status ...` message.
 pub(crate) async fn ensure_success(
     method: &str,
@@ -106,7 +138,6 @@ pub(crate) async fn ensure_success(
     if status == reqwest::StatusCode::TOO_MANY_REQUESTS {
         let retry_after = retry_after_secs(&res);
         let body = res.text().await.unwrap_or_default();
-        note_rate_limited(retry_after);
         error!("{method} rate limited (retry after {retry_after} s): {body}");
         return Err(SpotifyApiError::RateLimited {
             retry_after_secs: retry_after,

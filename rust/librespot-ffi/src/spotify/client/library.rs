@@ -9,6 +9,7 @@ use crate::{
     types::responses::library::{EpisodeUri, SavedItemsResponse, Uri},
 };
 
+use super::GatedRequest;
 use super::{REQUEST_TIMEOUT, SPOTIFY_API_URL, SpotifyClient, check_rate_limit, ensure_success};
 
 impl SpotifyClient {
@@ -27,7 +28,7 @@ impl SpotifyClient {
             .header(reqwest::header::CONTENT_LENGTH, "0")
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("save_items", false)
             .await?;
 
         let res = ensure_success("save_items", res).await?;
@@ -50,7 +51,7 @@ impl SpotifyClient {
             .header(reqwest::header::CONTENT_LENGTH, "0")
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("delete_items", false)
             .await?;
 
         let res = ensure_success("delete_items", res).await?;
@@ -73,7 +74,7 @@ impl SpotifyClient {
             .get(format!("{}/v1/me/{}", SPOTIFY_API_URL, item.as_str()))
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_saved", false)
             .await?;
         let res = ensure_success("get_saved", res)
             .await?
@@ -103,7 +104,7 @@ impl SpotifyClient {
             .get(format!("{}/v1/me/episodes", SPOTIFY_API_URL))
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_saved_episode_items", false)
             .await?;
         let res = ensure_success("get_saved_episode_items", res)
             .await?
@@ -152,7 +153,7 @@ impl SpotifyClient {
             .get(format!("{}/v1/episodes/{}", SPOTIFY_API_URL, episode_id))
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_episode_details", false)
             .await?;
 
         let status = resp.status();

@@ -1,10 +1,12 @@
 use std::{
     collections::HashMap,
     fs::OpenOptions,
-    os::unix::fs::OpenOptionsExt,
     sync::atomic::Ordering,
     time::{Duration, Instant},
 };
+
+#[cfg(unix)]
+use std::os::unix::fs::OpenOptionsExt;
 
 use librespot_oauth::{OAuthClientBuilder, OAuthToken};
 use oauth2::AuthorizationCode;
@@ -14,6 +16,7 @@ use crate::spotify::{
     token::{TokenResponse, WebApiToken},
 };
 
+use super::{GatedRequest, REQUEST_TIMEOUT};
 use super::{
     check_response_json, OAuthState, SpotifyClient, SPOTIFY_OAUTH_CALLBACK_URI,
     SPOTIFY_OAUTH_SCOPES,
@@ -181,12 +184,11 @@ impl SpotifyClient {
 
         path.push("account.json");
 
-        let mut file = OpenOptions::new()
-            .write(true)
-            .create(true)
-            .truncate(true)
-            .mode(0o600)
-            .open(&path)?;
+        let mut options = OpenOptions::new();
+        options.write(true).create(true).truncate(true);
+        #[cfg(unix)]
+        options.mode(0o600);
+        let mut file = options.open(&path)?;
 
         let json = serde_json::to_string(token).map_err(|e| {
             SpotifyApiError::Generic(format!("Failed to serialize WebApiToken: {e}"))
@@ -324,7 +326,8 @@ impl SpotifyClient {
             .client
             .post("https://accounts.spotify.com/api/token")
             .form(&form)
-            .send()
+            .timeout(REQUEST_TIMEOUT)
+            .send_gated("refresh_token", false)
             .await?;
 
         let response = match check_response_json::<TokenResponse>("refresh_token", response).await

@@ -8,6 +8,7 @@ use crate::{
     },
 };
 
+use super::GatedRequest;
 use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
@@ -36,7 +37,7 @@ impl SpotifyClient {
             .bearer_auth(token.access_token)
             .json(&body)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("add_to_playlist", false)
             .await?;
 
         let res = ensure_success("add_to_playlist", res).await?;
@@ -68,7 +69,7 @@ impl SpotifyClient {
             .bearer_auth(token.access_token)
             .json(&body)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("delete_from_playlist", false)
             .await?;
 
         let res = ensure_success("delete_from_playlist", res).await?;
@@ -104,7 +105,7 @@ impl SpotifyClient {
             .json(&body)
             .bearer_auth(&token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("create_playlist", false)
             .await?;
 
         if res.status() == StatusCode::UNAUTHORIZED {
@@ -115,7 +116,7 @@ impl SpotifyClient {
                 .json(&body)
                 .bearer_auth(new_token.access_token)
                 .timeout(REQUEST_TIMEOUT)
-                .send()
+                .send_gated("create_playlist", false)
                 .await?;
             let data =
                 check_response_json::<CreatePlaylistResponse>("create_playlist", res).await?;
@@ -154,7 +155,7 @@ impl SpotifyClient {
             .json(&body)
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("modify_playlist", false)
             .await?;
 
         let res = ensure_success("modify_playlist", res).await?;

@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.10 -->
+    <string name="changelog_1_7_10_date">September 10, 2026</string>
+    <string name="changelog_1_7_10_title">Respect Spotify cooldowns</string>
+    <string-array name="changelog_1_7_10_bullets">
+        <item>Normal Web API requests recheck the cooldown immediately before dispatch, including after waiting for a session or retrying an authentication error.</item>
+        <item>A rate-limit response starts the cooldown when its headers arrive, without waiting for its body. Session refresh also respects that pause. Manual diagnostic probes retain their exception.</item>
+    </string-array>
+
     <!-- 1.7.9 -->
     <string name="changelog_1_7_9_date">September 9, 2026</string>
     <string name="changelog_1_7_9_title">Hide songs and albums, a home button, and a bigger brand mark</string>

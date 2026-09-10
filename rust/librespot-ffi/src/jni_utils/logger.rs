@@ -1,13 +1,20 @@
-use jni::{JavaVM};
+use jni::JavaVM;
 use log::{Level, LevelFilter, Metadata, Record};
+#[cfg(target_os = "android")]
 use std::ffi::CString;
 
+#[cfg(target_os = "android")]
 const ANDROID_LOG_VERBOSE: i32 = 2;
+#[cfg(target_os = "android")]
 const ANDROID_LOG_DEBUG: i32 = 3;
+#[cfg(target_os = "android")]
 const ANDROID_LOG_INFO: i32 = 4;
+#[cfg(target_os = "android")]
 const ANDROID_LOG_WARN: i32 = 5;
+#[cfg(target_os = "android")]
 const ANDROID_LOG_ERROR: i32 = 6;
 
+#[cfg(target_os = "android")]
 unsafe extern "C" {
     fn __android_log_write(prio: i32, tag: *const i8, text: *const i8) -> i32;
 }
@@ -27,6 +34,7 @@ impl AndroidLogger {
     }
 }
 
+#[cfg(target_os = "android")]
 fn log_to_ndk(level: Level, tag: &str, msg: &str) {
     let tag = if tag.is_empty() { "rust" } else { tag };
     let tag_c = CString::new(tag).unwrap_or_else(|_| CString::new("rust").unwrap());
@@ -42,8 +50,20 @@ fn log_to_ndk(level: Level, tag: &str, msg: &str) {
     };
 
     unsafe {
-        let _ = __android_log_write(prio, tag_c.as_ptr() as *const i8, msg_c.as_ptr() as *const i8);
+        let _ = __android_log_write(
+            prio,
+            tag_c.as_ptr() as *const i8,
+            msg_c.as_ptr() as *const i8,
+        );
     }
+}
+
+/// Host tests use stderr without linking Android's platform logging library.
+#[cfg(not(target_os = "android"))]
+fn log_to_ndk(level: Level, tag: &str, msg: &str) {
+    use std::io::Write;
+    let tag = if tag.is_empty() { "rust" } else { tag };
+    let _ = writeln!(std::io::stderr(), "{level} {tag}: {msg}");
 }
 
 impl log::Log for AndroidLogger {

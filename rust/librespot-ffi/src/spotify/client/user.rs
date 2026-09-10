@@ -10,6 +10,7 @@ use crate::{
     },
 };
 
+use super::GatedRequest;
 use super::{check_rate_limit, check_response_json, ensure_success, SpotifyClient, REQUEST_TIMEOUT, SPOTIFY_API_URL};
 
 impl SpotifyClient {
@@ -42,7 +43,7 @@ impl SpotifyClient {
             .query(&params)
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("search", false)
             .await?;
 
         let res = ensure_success("search", res).await?;
@@ -79,7 +80,7 @@ impl SpotifyClient {
             .get(format!("{}/v1/me", SPOTIFY_API_URL))
             .bearer_auth(token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_current_user", bypass_rate_limit)
             .await?;
 
         let res = ensure_success("get_current_user", res).await?;
@@ -126,7 +127,7 @@ impl SpotifyClient {
             .get(&url)
             .bearer_auth(&token.access_token)
             .timeout(REQUEST_TIMEOUT)
-            .send()
+            .send_gated("get_top", bypass_rate_limit)
             .await?;
 
         if res.status() == StatusCode::UNAUTHORIZED {
@@ -136,7 +137,7 @@ impl SpotifyClient {
                 .get(&url)
                 .bearer_auth(new_token.access_token)
                 .timeout(REQUEST_TIMEOUT)
-                .send()
+                .send_gated("get_top", bypass_rate_limit)
                 .await?;
             let data = check_response_json::<ArtistsOrTracksPage>("get_top", res).await?;
             return Ok(data);
