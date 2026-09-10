@@ -105,6 +105,9 @@ import cc.tomko.outify.ui.components.user.UserChipAvatar
 import cc.tomko.outify.ui.viewmodel.SearchUiModel
 import cc.tomko.outify.ui.viewmodel.SearchViewModel
 import cc.tomko.outify.ui.viewmodel.search.SearchErrorKind
+import cc.tomko.outify.ui.viewmodel.search.SearchAuthState
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.compose.LifecycleEventEffect
 import cc.tomko.outify.ui.viewmodel.search.SearchUiState
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -122,7 +125,9 @@ fun SharedTransitionScope.SearchScreen(
     val searchState by viewModel.searchState.collectAsState()
     val rateLimitRemainingSeconds by viewModel.rateLimitRemainingSeconds.collectAsState()
     val isLoading by viewModel.isLoading.collectAsState()
-    val isLoggedIn by viewModel.isLoggedIn.collectAsState()
+    val accessState by viewModel.authState.collectAsState()
+    val authState = accessState.auth
+    LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { viewModel.refreshSearchAccess() }
     val searchHistory by viewModel.searchHistory.collectAsState()
     val historyResults by viewModel.historyResults.collectAsState()
     val spirc = viewModel.spirc
@@ -555,7 +560,16 @@ fun SharedTransitionScope.SearchScreen(
                     )
                 }
 
-                if (!isLoggedIn) {
+                if (authState == SearchAuthState.CHECKING || authState == SearchAuthState.ERROR) {
+                    item {
+                        val message = if (authState == SearchAuthState.CHECKING) {
+                            R.string.screen_search_auth_checking
+                        } else {
+                            R.string.screen_search_auth_check_failed
+                        }
+                        Text(stringResource(message))
+                    }
+                } else if (authState == SearchAuthState.DISCONNECTED) {
                     item {
                         Box(
                             modifier = Modifier.fillMaxSize(),
@@ -1210,6 +1224,12 @@ private fun searchErrorMessage(kind: SearchErrorKind, rateLimitRemainingSeconds:
         )
 
         SearchErrorKind.AUTH -> stringResource(R.string.screen_search_error_auth)
+        SearchErrorKind.MISSING_ACCOUNT -> stringResource(R.string.screen_search_login_required)
+        SearchErrorKind.REJECTED -> stringResource(R.string.screen_search_error_rejected)
+        SearchErrorKind.FORBIDDEN -> stringResource(R.string.screen_search_error_forbidden)
+        SearchErrorKind.BAD_REQUEST -> stringResource(R.string.screen_search_error_request)
+        SearchErrorKind.SERVER -> stringResource(R.string.screen_search_error_server)
+        SearchErrorKind.DECODING -> stringResource(R.string.screen_search_error_decoding)
         SearchErrorKind.OTHER -> stringResource(R.string.screen_search_error_generic)
     }
 

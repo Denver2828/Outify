@@ -16,8 +16,8 @@ import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.SearchRepository
 import cc.tomko.outify.data.repository.SettingsRepository
-import cc.tomko.outify.data.repository.SyncErrorClassifier
-import cc.tomko.outify.data.repository.SyncFailure
+import cc.tomko.outify.ui.viewmodel.search.SearchAccess
+import cc.tomko.outify.ui.viewmodel.search.SearchErrorClassifier
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.reccobeats.RecommendationConfig
 import cc.tomko.outify.reccobeats.Recommendations
@@ -32,6 +32,7 @@ import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.FlowPreview
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
@@ -39,7 +40,6 @@ import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
-import kotlinx.coroutines.flow.collectLatest
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
@@ -50,9 +50,6 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
-
-/** Substrings of a native error that mean the account token was rejected for good. */
-private val AUTH_REJECTION_HINTS = listOf("sign in again", "invalid_client", "invalid_grant")
 
 private val SEARCH_SECTIONS = listOf(
     SearchSection("track", R.string.search_section_tracks),
@@ -104,8 +101,16 @@ class SearchViewModel @Inject constructor(
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
 
-    private val _isLoggedIn = MutableStateFlow(false)
-    val isLoggedIn: StateFlow<Boolean> = _isLoggedIn
+    private val searchAccess = SearchAccess {
+        withContext(Dispatchers.IO) { spClient.isOAuthAuthenticated() }
+    }
+    val authState = searchAccess.state
+    private var authCheck: Job? = null
+
+    fun refreshSearchAccess() {
+        authCheck?.cancel()
+        authCheck = viewModelScope.launch { searchAccess.refresh() }
+    }
 
     private val _isRecommendationMode = MutableStateFlow(false)
     val isRecommendationMode: StateFlow<Boolean> = _isRecommendationMode
@@ -160,15 +165,8 @@ class SearchViewModel @Inject constructor(
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rateLimitGate.remainingSeconds())
 
     init {
-        _isLoggedIn.value = spClient.isOAuthAuthenticated()
-
         viewModelScope.launch {
-            searchRequests
-                .debounce(500)
-                .distinctUntilChanged()
-                // collectLatest cancels the previous search (and its section fetches, which are
-                // children of this block) as soon as a new request arrives.
-                .collectLatest { request -> orchestrator.search(request.query) }
+            searchAccess.collect(searchRequests.debounce(500).map { it.query }, orchestrator::search)
         }
 
         viewModelScope.launch {
@@ -294,17 +292,7 @@ class SearchViewModel @Inject constructor(
             "failed: ${error::class.simpleName}: ${error.message?.take(300)} " +
                 "(cause=${error.cause?.let { "${it::class.simpleName}: ${it.message?.take(200)}" }})"
         )
-        val message = error.message.orEmpty()
-        if (AUTH_REJECTION_HINTS.any { it in message }) {
-            // The native layer already dropped the stored token; the screen must say so.
-            _isLoggedIn.value = spClient.isOAuthAuthenticated()
-            return SearchErrorKind.AUTH
-        }
-        return when (SyncErrorClassifier.classify(error, rateLimitGate.isLimited())) {
-            SyncFailure.RATE_LIMITED -> SearchErrorKind.RATE_LIMITED
-            SyncFailure.TRANSIENT -> SearchErrorKind.NETWORK
-            SyncFailure.FATAL -> SearchErrorKind.OTHER
-        }
+        return SearchErrorClassifier.classify(error, rateLimitGate.isLimited())
     }
 
     /**

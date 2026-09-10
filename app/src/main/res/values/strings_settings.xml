@@ -64,7 +64,7 @@
     <string name="settings_accounts_connect">Conectar cuenta de Spotify</string>
     <string name="settings_accounts_connect_description">Iniciá sesión una sola vez con tu cuenta de Spotify. Sirve para reproducir música y para tu biblioteca.</string>
     <string name="settings_accounts_reconnect_description">Volvé a iniciar sesión para completar la conexión.</string>
-    <string name="settings_accounts_rate_limited">Spotify limitó los pedidos. Reintentá en %1$d s.</string>
+    <string name="settings_accounts_rate_limited">Las solicitudes están en pausa por el límite de Spotify. Esperá %1$d s. No hace falta volver a iniciar sesión por esta pausa.</string>
     <string name="settings_accounts_logout">Cerrar sesión</string>
     <string name="settings_accounts_profile_picture">Foto de perfil</string>
     <string name="settings_accounts_account_fallback">Cuenta</string>
@@ -166,7 +166,7 @@
     <string name="settings_sync_explanation">La sincronización trae tus canciones que te gustan desde Spotify y las guarda localmente. Usala si faltan canciones en tu biblioteca.</string>
     <string name="settings_sync_error_login_first">Primero iniciá sesión en tu cuenta de Spotify</string>
     <string name="settings_sync_error_failed">No se pudieron sincronizar las canciones que te gustan</string>
-    <string name="settings_sync_error_rate_limited">Spotify limitó los pedidos. Reintentá en %1$d s.</string>
+    <string name="settings_sync_error_rate_limited">Las solicitudes están en pausa por el límite de Spotify. Esperá %1$d s. No hace falta volver a iniciar sesión por esta pausa.</string>
     <string name="settings_backup_restore_header">Respaldo y restauración</string>
     <string name="settings_backup_app_settings_title">Ajustes de la app</string>
     <string name="settings_backup_description">Respaldá todas las preferencias, incluidos gestos, colas y ajustes de reproducción, en un archivo .%1$s.</string>

@@ -3,6 +3,15 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.12 -->
+    <string name="changelog_1_7_12_version" translatable="false">1.7.12</string>
+    <string name="changelog_1_7_12_date">10 de septiembre de 2026</string>
+    <string name="changelog_1_7_12_title">Estado de cuenta y errores de búsqueda claros</string>
+    <string-array name="changelog_1_7_12_bullets">
+        <item>Buscar vuelve a comprobar la cuenta guardada al regresar a la pantalla. No envía consultas mientras la comprueba o si no hay una cuenta conectada; conserva la consulta y respeta la pausa de Spotify.</item>
+        <item>Los errores distinguen autorización, permisos, solicitud, servidor, conexión y respuesta incompatible. Las pausas indican que no hace falta volver a iniciar sesión.</item>
+    </string-array>
+
     <!-- 1.7.11 -->
     <string name="changelog_1_7_11_version" translatable="false">1.7.11</string>
     <string name="changelog_1_7_11_date">10 de septiembre de 2026</string>

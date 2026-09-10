@@ -373,6 +373,14 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Límite.** La notificación no espera al disco: una terminación del proceso antes de completar el guardado puede perder la última extensión. No se garantiza atomicidad entre recibir un 429 y persistirlo. No cambia la política de sondas, cierre de sesión ni reloj.
 
+### 2026-09-10 — 1.7.12: búsqueda sincronizada con la cuenta guardada
+
+**Decisión.** Buscar comprueba la presencia local de la cuenta al entrar o reanudar la pantalla, fuera del hilo principal. Mientras la comprobación está pendiente o no hay cuenta, cancela la consulta activa y no inicia otra. Al completar una comprobación válida vuelve a evaluar la consulta conservada una vez, respetando la pausa compartida. No inicia sesión automáticamente ni depende del bus de eventos de autenticación.
+
+**Errores.** La interfaz distingue ausencia de cuenta, autorización 401, renovación rechazada, acceso 403, solicitud 400, servidor 5xx, conexión y decodificación. Utiliza mensajes fijos con una acción concreta, sin mostrar cuerpos de respuesta ni atribuir un 403 a una causa no demostrada. Inicio y Cuentas aclaran que una pausa no requiere volver a autenticarse.
+
+**Límites y pruebas.** Las pruebas ejecutan el coordinador de acceso y el orquestador reales con una comprobación de cuenta controlada; la conexión con el ciclo de vida Android se revisa estáticamente, sin prueba de dispositivo. No cambia el comportamiento nativo ante un 401 ni la política de renovación o duración de las pausas.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

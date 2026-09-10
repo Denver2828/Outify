@@ -60,14 +60,14 @@
     <string name="screen_search_clear_all">Clear all</string>
     <string name="screen_search_remove_from_history_cd">Remove from history</string>
     <string name="screen_search_logged_out_cd">Logged out</string>
-    <string name="screen_search_login_required">This feature is only available to logged in users</string>
+    <string name="screen_search_login_required">No account is connected for search. Open Accounts using the button below.</string>
     <string name="screen_search_select_filters_cd">Select filters</string>
     <string name="screen_search_nothing_found">Nothing found…</string>
     <string name="screen_search_type_and_filter">Type the query and select filters</string>
     <string name="screen_search_error_network">Search failed. Check your connection.</string>
-    <string name="screen_search_error_generic">Search failed. Try again.</string>
-    <string name="screen_search_error_auth">Spotify rejected the account session. Connect it again from Home.</string>
-    <string name="screen_search_error_rate_limited">Spotify is rate limiting requests. Try again in %1$d s.</string>
+    <string name="screen_search_error_generic">The search failure could not be identified. Share the Diagnostics report, including its summary, without restarting the app.</string>
+    <string name="screen_search_error_auth">Spotify did not accept search authorization (401). Retry; if it persists, reconnect the account from Home.</string>
+    <string name="screen_search_error_rate_limited">Search is paused because of the Spotify limit. Wait %1$d s. This pause does not sign you out.</string>
     <string name="screen_search_partial_error">Some results could not be loaded.</string>
     <string name="screen_search_placeholder">Search Spotify</string>
     <string name="screen_search_clear_query_cd">Clear query</string>
@@ -193,4 +193,11 @@
     <string name="screen_error_sync_failed">Sync failed</string>
     <string name="screen_error_album_not_found">Album not found</string>
     <string name="screen_error_album_for_track_not_found">Album for track not found</string>
+    <string name="screen_search_error_decoding">The Spotify response could not be interpreted. Share the Diagnostics report so compatibility can be checked.</string>
+    <string name="screen_search_error_forbidden">Spotify denied search access (403). Check application and account permissions; retrying does not change those permissions.</string>
+    <string name="screen_search_auth_checking">Checking the saved account…</string>
+    <string name="screen_search_error_rejected">Spotify rejected session renewal. Reconnect the account from Home.</string>
+    <string name="screen_search_error_request">Spotify rejected the search request (400). Try a simple query; if it persists, share the Diagnostics report.</string>
+    <string name="screen_search_error_server">Spotify returned a server error (5xx). Wait a moment and retry.</string>
+    <string name="screen_search_auth_check_failed">The saved account could not be checked. Reopen Search; if it persists, share the Diagnostics report.</string>
 </resources>

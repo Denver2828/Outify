@@ -60,14 +60,14 @@
     <string name="screen_search_clear_all">Borrar todo</string>
     <string name="screen_search_remove_from_history_cd">Quitar del historial</string>
     <string name="screen_search_logged_out_cd">Sesión cerrada</string>
-    <string name="screen_search_login_required">Esta función solo está disponible si iniciás sesión</string>
+    <string name="screen_search_login_required">No hay una cuenta conectada para buscar. Abrí Cuentas con el botón de abajo.</string>
     <string name="screen_search_select_filters_cd">Elegí filtros</string>
     <string name="screen_search_nothing_found">No encontramos nada…</string>
     <string name="screen_search_type_and_filter">Escribí algo y elegí filtros</string>
     <string name="screen_search_error_network">No pudimos buscar. Revisá tu conexión.</string>
-    <string name="screen_search_error_generic">La búsqueda falló. Probá de nuevo.</string>
-    <string name="screen_search_error_auth">Spotify rechazó la sesión de la cuenta. Volvé a conectarla desde Inicio.</string>
-    <string name="screen_search_error_rate_limited">Spotify limitó los pedidos. Reintentá en %1$d s.</string>
+    <string name="screen_search_error_generic">No pudimos identificar el error de búsqueda. Compartí el informe de Diagnóstico, incluido el resumen, sin reiniciar la app.</string>
+    <string name="screen_search_error_auth">Spotify no aceptó la autorización de búsqueda (401). Reintentá; si persiste, reconectá la cuenta desde Inicio.</string>
+    <string name="screen_search_error_rate_limited">La búsqueda está en pausa por el límite de Spotify. Esperá %1$d s. Esta pausa no cierra la sesión.</string>
     <string name="screen_search_partial_error">Algunos resultados no se pudieron cargar.</string>
     <string name="screen_search_placeholder">Buscar en Spotify</string>
     <string name="screen_search_clear_query_cd">Borrar búsqueda</string>
@@ -193,4 +193,11 @@
     <string name="screen_error_sync_failed">Falló la sincronización</string>
     <string name="screen_error_album_not_found">No se encontró el álbum</string>
     <string name="screen_error_album_for_track_not_found">No se encontró el álbum de la canción</string>
+    <string name="screen_search_error_decoding">La respuesta de Spotify no se pudo interpretar. Compartí el informe de Diagnóstico para revisar la compatibilidad.</string>
+    <string name="screen_search_error_forbidden">Spotify denegó el acceso a la búsqueda (403). Revisá los permisos de la aplicación y la cuenta; reintentar no cambia esos permisos.</string>
+    <string name="screen_search_auth_checking">Comprobando la cuenta guardada…</string>
+    <string name="screen_search_error_rejected">Spotify rechazó la renovación de la sesión. Volvé a conectar la cuenta desde Inicio.</string>
+    <string name="screen_search_error_request">Spotify rechazó la solicitud de búsqueda (400). Probá una consulta simple; si persiste, compartí el informe de Diagnóstico.</string>
+    <string name="screen_search_error_server">Spotify tuvo un error de servidor (5xx). Esperá un momento y reintentá.</string>
+    <string name="screen_search_auth_check_failed">No pudimos comprobar la cuenta guardada. Volvé a abrir Buscar; si persiste, compartí el informe de Diagnóstico.</string>
 </resources>

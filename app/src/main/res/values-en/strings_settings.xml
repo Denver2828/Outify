@@ -61,7 +61,7 @@
     <string name="settings_accounts_connect">Connect Spotify account</string>
     <string name="settings_accounts_connect_description">Sign in once with your Spotify account. It covers playback and your library.</string>
     <string name="settings_accounts_reconnect_description">Sign in again to complete the connection.</string>
-    <string name="settings_accounts_rate_limited">Spotify is rate limiting requests. Try again in %1$d s.</string>
+    <string name="settings_accounts_rate_limited">Requests are paused because of the Spotify limit. Wait %1$d s. This pause does not require signing in again.</string>
     <string name="settings_accounts_logout">Log out</string>
     <string name="settings_accounts_profile_picture">Profile picture</string>
     <string name="settings_accounts_account_fallback">Account</string>
@@ -160,7 +160,7 @@
     <string name="settings_sync_explanation">Sync fetches your liked tracks from Spotify and stores them locally. Use this if tracks are missing from your library.</string>
     <string name="settings_sync_error_login_first">Please log in to your Spotify account first</string>
     <string name="settings_sync_error_failed">Failed to sync liked tracks</string>
-    <string name="settings_sync_error_rate_limited">Spotify is rate limiting requests. Try again in %1$d s.</string>
+    <string name="settings_sync_error_rate_limited">Requests are paused because of the Spotify limit. Wait %1$d s. This pause does not require signing in again.</string>
     <string name="settings_backup_restore_header">Backup &amp; restore</string>
     <string name="settings_backup_app_settings_title">App settings</string>
     <string name="settings_backup_description">Backup all preferences including gestures, queues, and playback settings to a .%1$s file.</string>

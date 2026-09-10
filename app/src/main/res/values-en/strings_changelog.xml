@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.12 -->
+    <string name="changelog_1_7_12_date">September 10, 2026</string>
+    <string name="changelog_1_7_12_title">Clear search account state and errors</string>
+    <string-array name="changelog_1_7_12_bullets">
+        <item>Search rechecks the saved account when returning to the screen. It sends no queries while checking or without a connected account, retains the query, and respects Spotify cooldowns.</item>
+        <item>Errors distinguish authorization, permissions, request, server, connection, and incompatible responses. Cooldowns explain that signing in again is unnecessary.</item>
+    </string-array>
+
     <!-- 1.7.11 -->
     <string name="changelog_1_7_11_date">September 10, 2026</string>
     <string name="changelog_1_7_11_title">Restore Spotify cooldowns</string>
