@@ -395,6 +395,14 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Verificación.** Las pruebas Compose del componente usado por el panel comprueban tamaño, separación, estado y acciones con anchos vertical y horizontal. Su compilación no acredita ejecución visual en un dispositivo. No se modifica la autenticación ni el cliente nativo; esta preparación no genera un APK.
 
+### 2026-09-10 — 1.7.15: espacio útil en el reproductor horizontal dividido
+
+**Decisión.** El panel izquierdo conserva Inicio con un área de 48 dp, pero elimina la marca duplicada. La marca del panel derecho y el reproductor vertical no cambian. La portada queda limitada por el ancho, un cuarto de la altura y un máximo de 120 dp; Inicio ocupa la misma fila sin superponerse.
+
+**Distribución.** Se eliminan los dos separadores ponderados y la altura de pantalla completa del primer elemento horizontal. El contenido utiliza separaciones de 4 dp y margen vertical de 8 dp, conserva los espacios del sistema y sigue siendo desplazable. La tarjeta de letras comienza después del contenido real, no de una pantalla reservada.
+
+**Verificación.** Una prueba del componente real con secciones controladas comprueba Inicio, los espacios del sistema, la separación y la posición de la tarjeta siguiente. Se compila sin ejecutarla en un dispositivo; no se genera un APK.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

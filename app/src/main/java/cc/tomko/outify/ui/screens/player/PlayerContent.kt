@@ -102,6 +102,8 @@ import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.components.AutoScrollingTextOnDemand
 import cc.tomko.outify.ui.components.SmartImage
 import cc.tomko.outify.ui.components.SpotyBrand
+import cc.tomko.outify.ui.components.navigation.LocalGoHome
+import androidx.compose.material.icons.rounded.Home
 import cc.tomko.outify.ui.components.ToggleSegmentButton
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.core.model.LyricsSource
@@ -243,8 +245,8 @@ fun PlayerContent(
                 if (isLandscape) {
                     FullPlayerLandscapeContent(
                         paddingValues,
-                        modifier = itemModifier,
-                        brandSection = brandSection,
+                        modifier = Modifier.fillMaxWidth(),
+                        coverSize = minOf(maxWidth * 0.45f, maxHeight * 0.25f, 120.dp),
                         albumCoverSection = albumCoverSection,
                         trackMetadataSection = trackMetadataSection,
                         playerProgressSection = playerProgressSection,
@@ -270,7 +272,7 @@ fun PlayerContent(
             }
 
             // Lyrics card, revealed by scrolling the player down (Spotify-style).
-            // Only for tracks with loaded lyrics; the first item keeps its full height.
+            // Only for tracks with loaded lyrics; landscape follows the compact player immediately.
             val lyricsTrack = audio?.takeIf { it.isTrack() }?.sourceTrack
             if (lyricsTrack != null && lyrics.isNotEmpty()) {
                 item(key = "lyrics_card") {
@@ -926,10 +928,10 @@ private fun AudioMetadataSection(
 }
 
 @Composable
-private fun FullPlayerLandscapeContent(
+internal fun FullPlayerLandscapeContent(
     paddingValues: PaddingValues,
     modifier: Modifier = Modifier,
-    brandSection: @Composable () -> Unit,
+    coverSize: Dp,
     albumCoverSection: @Composable (Modifier) -> Unit,
     trackMetadataSection: @Composable () -> Unit,
     playerProgressSection: @Composable () -> Unit,
@@ -938,68 +940,45 @@ private fun FullPlayerLandscapeContent(
     moreActions: @Composable () -> Unit,
     isEpisode: Boolean,
 ) {
+    val goHome = LocalGoHome.current
     Surface(
-        modifier = modifier.fillMaxSize(),
+        modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surface,
         tonalElevation = 6.dp
     ) {
-        Box(modifier = Modifier.fillMaxSize()) {
-            Column(
-                modifier = modifier
-                    .fillMaxSize()
-                    .padding(paddingValues)
-                    .padding(end = 16.dp),
-                horizontalAlignment = Alignment.CenterHorizontally,
+        // Content height, not viewport height: the following lyrics card can start sooner.
+        Column(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(paddingValues)
+                .padding(horizontal = 16.dp, vertical = 8.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.Top,
             ) {
+                IconButton(
+                    onClick = { goHome?.invoke() },
+                    enabled = goHome != null,
+                    modifier = Modifier.size(48.dp),
+                ) {
+                    Icon(Icons.Rounded.Home, stringResource(R.string.go_home))
+                }
                 Box(
-                    modifier = Modifier
-                        .fillMaxWidth(),
-                    contentAlignment = Alignment.Center
+                    modifier = Modifier.weight(1f),
+                    contentAlignment = Alignment.Center,
                 ) {
-                    albumCoverSection(
-                        Modifier
-                            .fillMaxWidth(0.55f)
-                            .padding(top = 16.dp)
-                    )
+                    albumCoverSection(Modifier.size(coverSize))
                 }
-    
-                Spacer(Modifier.weight(0.25f))
-    
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp),
-                    verticalArrangement = Arrangement.spacedBy(4.dp)
-                ) {
-                    trackMetadataSection()
-                    playerProgressSection()
-                }
-    
-                Column(
-                    modifier = Modifier
-                        .fillMaxHeight(),
-                ) {
-                    playbackControlsSection(50.dp)
-    
-                    Spacer(Modifier.weight(0.25f))
-    
-                    controlsSection(50.dp)
-    
-                    if (!isEpisode) {
-                        moreActions()
-                    }
-                }
+                Spacer(Modifier.size(48.dp))
             }
-
-            // Overlaid at the top-right of the inset area; the column layout is untouched.
-            Box(
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .padding(paddingValues)
-                    .padding(end = 24.dp, top = 8.dp)
-            ) {
-                brandSection()
-            }
+            trackMetadataSection()
+            playerProgressSection()
+            playbackControlsSection(50.dp)
+            controlsSection(50.dp)
+            if (!isEpisode) moreActions()
         }
     }
 }

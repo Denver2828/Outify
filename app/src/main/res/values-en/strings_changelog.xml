@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.15 -->
+    <string name="changelog_1_7_15_date">September 10, 2026</string>
+    <string name="changelog_1_7_15_title">More space in the landscape player</string>
+    <string-array name="changelog_1_7_15_bullets">
+        <item>The split landscape player keeps a Home button without repeating the brand shown in the browsing pane.</item>
+        <item>Compact artwork and content-sized spacing bring playback controls and the following lyrics card higher, while preserving system insets and scrolling.</item>
+    </string-array>
+
     <!-- 1.7.14 -->
     <string name="changelog_1_7_14_date">September 10, 2026</string>
     <string name="changelog_1_7_14_title">Larger lyrics playback controls</string>
