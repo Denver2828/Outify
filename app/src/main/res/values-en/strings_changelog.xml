@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.16 -->
+    <string name="changelog_1_7_16_date">September 10, 2026</string>
+    <string name="changelog_1_7_16_title">Emphasize only the current lyric</string>
+    <string-array name="changelog_1_7_16_bullets">
+        <item>Only the current timed line changes color and grows by 20% in the lyrics sheet, landscape lyrics and player card. Earlier and upcoming lines keep their normal appearance.</item>
+        <item>Unsynced lyrics and the time before the first line have no highlighted phrase. Stable line measurements avoid shifting the scroll target.</item>
+    </string-array>
+
     <!-- 1.7.15 -->
     <string name="changelog_1_7_15_date">September 10, 2026</string>
     <string name="changelog_1_7_15_title">More space in the landscape player</string>

@@ -1,8 +1,6 @@
 package cc.tomko.outify.ui.components.bottomsheet
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
-import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -49,8 +47,6 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.graphics.TransformOrigin
-import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -63,6 +59,9 @@ import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.components.player.LyricsFontFamily
+import cc.tomko.outify.ui.components.player.EmphasizedLyricText
+import cc.tomko.outify.ui.components.player.currentLyricIndex
+import cc.tomko.outify.ui.components.player.lyricLineScale
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
 
 /**
@@ -409,14 +408,10 @@ internal fun LyricsList(
 ) {
     val listState = rememberLazyListState()
 
-    val activeIndex = if (isSynced) {
-        lyrics.indexOfLast { it.timestampMs <= currentPositionMs }.coerceAtLeast(0)
-    } else {
-        -1
-    }
+    val activeIndex = currentLyricIndex(lyrics, currentPositionMs, isSynced)
 
     LaunchedEffect(activeIndex, isSynced) {
-        if (!isSynced || lyrics.isEmpty()) return@LaunchedEffect
+        if (activeIndex !in lyrics.indices) return@LaunchedEffect
 
         val layoutInfo = listState.layoutInfo
         val viewportHeight = layoutInfo.viewportEndOffset - layoutInfo.viewportStartOffset
@@ -446,50 +441,19 @@ internal fun LyricsList(
         modifier = modifier.fillMaxWidth()
     ) {
         itemsIndexed(lyrics) { index, line ->
-            val isActive = index <= activeIndex || !isSynced
-
-            val textColor by animateColorAsState(
-                targetValue = if (isActive) activeLineColor else inactiveTextColor.copy(alpha = 0.45f),
-                animationSpec = tween(durationMillis = 200),
-                label = "textColor"
-            )
-
-            val scale by animateFloatAsState(
-                targetValue = if (isActive) 1f else 20f / 22f,
-                animationSpec = tween(durationMillis = 250),
-                label = "lineScale"
-            )
-
-            // The bold toggle forces Bold on every line; otherwise the active line stays Bold
-            // and inactive lines keep their lighter Medium weight.
-            val fontWeight by remember(isActive, bold) {
-                mutableStateOf(
-                    when {
-                        bold -> FontWeight.Bold
-                        isActive -> FontWeight.Bold
-                        else -> FontWeight.Medium
-                    }
-                )
-            }
-
-            Text(
+            EmphasizedLyricText(
                 text = line.text,
-                style = MaterialTheme.typography.headlineSmall.copy(
-                    fontWeight = fontWeight,
+                visualScale = lyricLineScale(index, activeIndex, isSynced),
+                baseStyle = MaterialTheme.typography.headlineSmall.copy(
+                    fontWeight = if (bold) FontWeight.Bold else FontWeight.Medium,
                     fontFamily = fontFamily,
-                    // always measured at the largest size so auto-scroll centering stays correct
-                    fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp
+                    fontSize = (LYRIC_LINE_BASE_FONT_SIZE_SP * fontScale).sp,
                 ),
-                color = textColor,
-                textAlign = TextAlign.Start,
+                activeColor = activeLineColor,
+                inactiveColor = if (isSynced) inactiveTextColor.copy(alpha = 0.45f) else inactiveTextColor,
                 modifier = Modifier
                     .fillMaxWidth()
-                    .clickable { onLineClick(line.timestampMs) }
-                    .graphicsLayer {
-                        scaleX = scale
-                        scaleY = scale
-                        transformOrigin = TransformOrigin(0f, 0.5f)
-                    }
+                    .clickable { onLineClick(line.timestampMs) },
             )
         }
     }

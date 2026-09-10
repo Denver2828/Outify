@@ -403,6 +403,12 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Verificación.** Una prueba del componente real con secciones controladas comprueba Inicio, los espacios del sistema, la separación y la posición de la tarjeta siguiente. Se compila sin ejecutarla en un dispositivo; no se genera un APK.
 
+### 2026-09-10 — 1.7.16: énfasis exclusivo de la frase actual
+
+**Decisión.** Las vistas de letras comparten el texto con énfasis: solo el índice sincronizado actual usa el color activo y un tamaño visual un 20% mayor que la base elegida. Las líneas anteriores y posteriores vuelven al tamaño base y al mismo color normal. No hay línea activa antes de la primera marca ni en letras sin sincronización.
+
+**Estabilidad.** Cada línea se mide al tamaño máximo y se escala dentro de ese espacio; el cambio de frase no modifica el ajuste de línea ni el centro utilizado por el desplazamiento. Se mantienen los estilos y preferencias tipográficas de cada vista y las acciones de búsqueda temporal. Las pruebas de política se ejecutan en JVM; la regresión Compose del color y la medición se compila, sin acreditar ejecución en dispositivo. No se genera un APK.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

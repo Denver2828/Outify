@@ -1,6 +1,5 @@
 package cc.tomko.outify.ui.components.player
 
-import androidx.compose.animation.animateColorAsState
 import androidx.compose.animation.core.FastOutSlowInEasing
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
@@ -30,7 +29,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
-import androidx.compose.runtime.getValue
 import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -76,7 +74,7 @@ fun LyricsCard(
     // Same centering logic as LyricsBottomSheet's LyricsList: nudge a visible active line
     // to the viewport center, or jump to it with a half-viewport offset when it is not laid out.
     LaunchedEffect(activeIndex, isSynced) {
-        if (!isSynced || lines.isEmpty()) return@LaunchedEffect
+        if (!isSynced || activeIndex !in lines.indices) return@LaunchedEffect
 
         // On first composition the list has no layout yet; wait for a real viewport.
         snapshotFlow { listState.layoutInfo.viewportEndOffset - listState.layoutInfo.viewportStartOffset }
@@ -162,7 +160,7 @@ fun LyricsCard(
                     itemsIndexed(lines) { index, line ->
                         LyricsCardLine(
                             line = line,
-                            isActive = isSynced && index == activeIndex,
+                            visualScale = lyricLineScale(index, activeIndex, isSynced),
                             isSynced = isSynced,
                             fontScale = fontScale,
                             onSeek = onSeek,
@@ -190,35 +188,20 @@ fun LyricsCard(
 @Composable
 private fun LyricsCardLine(
     line: LyricLine,
-    isActive: Boolean,
+    visualScale: Float,
     isSynced: Boolean,
     fontScale: Float,
     onSeek: (Long) -> Unit,
 ) {
     val contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-    // Unsynced lyrics have no highlight: every line reads at full opacity.
-    val highlighted = isActive || !isSynced
-
-    val textColor by animateColorAsState(
-        targetValue = if (highlighted) contentColor else contentColor.copy(alpha = InactiveLineAlpha),
-        animationSpec = tween(durationMillis = 200),
-        label = "lyricsCardLineColor"
-    )
-
-    val style = if (isActive) {
-        MaterialTheme.typography.headlineSmall.let {
-            it.copy(fontWeight = FontWeight.Bold, fontSize = it.fontSize * fontScale)
-        }
-    } else {
-        MaterialTheme.typography.titleLarge.let {
-            it.copy(fontWeight = FontWeight.Normal, fontSize = it.fontSize * fontScale)
-        }
-    }
-
-    Text(
+    EmphasizedLyricText(
         text = line.text,
-        style = style,
-        color = textColor,
+        visualScale = visualScale,
+        baseStyle = MaterialTheme.typography.titleLarge.let {
+            it.copy(fontWeight = FontWeight.Normal, fontSize = it.fontSize * fontScale)
+        },
+        activeColor = contentColor,
+        inactiveColor = if (isSynced) contentColor.copy(alpha = InactiveLineAlpha) else contentColor,
         modifier = Modifier
             .fillMaxWidth()
             .then(

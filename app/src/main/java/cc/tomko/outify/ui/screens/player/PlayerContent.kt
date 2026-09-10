@@ -108,6 +108,7 @@ import cc.tomko.outify.ui.components.ToggleSegmentButton
 import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.ui.components.player.LyricsCard
+import cc.tomko.outify.ui.components.player.currentLyricIndex
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.viewmodel.player.PlayerViewModel
 import kotlinx.coroutines.launch
@@ -277,9 +278,7 @@ fun PlayerContent(
             if (lyricsTrack != null && lyrics.isNotEmpty()) {
                 item(key = "lyrics_card") {
                     val horizontalPadding = if (isLandscape) 16.dp else maxWidth * 0.06f
-                    val activeIndex = lyrics
-                        .indexOfLast { it.timestampMs <= lyricsEffectivePositionMs }
-                        .coerceAtLeast(0)
+                    val activeIndex = currentLyricIndex(lyrics, lyricsEffectivePositionMs, hasSyncedLyrics)
 
                     LyricsCard(
                         lines = lyrics,
