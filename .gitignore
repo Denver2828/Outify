@@ -23,3 +23,5 @@ rust/**/target/
 
 # CodeGraph index
 .codegraph/
+# Local Pi runtime state
+.atl/
