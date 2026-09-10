@@ -8,6 +8,7 @@ import androidx.glance.GlanceId
 import androidx.media3.common.util.UnstableApi
 import cc.tomko.outify.R
 import cc.tomko.outify.core.RateLimitGate
+import cc.tomko.outify.core.RateLimitPersistence
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.data.database.AppDatabase
@@ -18,6 +19,7 @@ import cc.tomko.outify.ui.viewmodel.detail.setDetailViewModelStore
 import cc.tomko.outify.utils.ExceptionCollector
 import dagger.hilt.android.HiltAndroidApp
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CoroutineExceptionHandler
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.flow.first
@@ -78,16 +80,9 @@ class OutifyApplication : Application() {
 
         appScope.launch { ProcessExitDiagnostics.logLastExit(applicationContext) }
 
-        // The shared gate exists before Hilt does; give it durable storage so a Spotify 429
-        // window survives the frequent restarts that otherwise re-trigger it.
-        RateLimitGate.shared.attachPersistence { untilMs ->
-            appScope.launch { settingsRepository.setRateLimitUntilMs(untilMs) }
-        }
-        appScope.launch {
-            RateLimitGate.shared.restoreFrom(settingsRepository.rateLimitUntilMs.first())
-        }
-
-        appScope.launch {
+        appScope.launch(CoroutineExceptionHandler { _, error ->
+            Log.e("OutifyApplication", "Cooldown persistence or native initialization failed", error)
+        }) {
             // A custom Client ID/Secret saved in settings must survive a process restart;
             // otherwise the app silently falls back to the build-time credentials.
             val customId = settingsRepository.clientId.first()?.trim().orEmpty()
@@ -96,10 +91,17 @@ class OutifyApplication : Application() {
             val effectiveId = if (useCustom) customId else spotifyId
             val effectiveSecret = if (useCustom) customSecret else spotifySecret
             Log.i("OutifyApplication", "Spotify client credentials: ${if (useCustom) "custom" else "build-time"}")
-            LibrespotFfi.libInit(applicationContext, effectiveId, effectiveSecret)
-
-            spircController.start()
-            spircWrapper.setRestartCallback { spircController.restart() }
+            RateLimitPersistence.run(
+                gate = RateLimitGate.shared,
+                read = { settingsRepository.rateLimitUntilMs.first() },
+                write = settingsRepository::setRateLimitUntilMs,
+            ) { untilMs, notify ->
+                LibrespotFfi.libInit(
+                    applicationContext, effectiveId, effectiveSecret, untilMs, RateLimitCallback(notify),
+                )
+                spircController.start()
+                spircWrapper.setRestartCallback { spircController.restart() }
+            }
         }
     }
 }

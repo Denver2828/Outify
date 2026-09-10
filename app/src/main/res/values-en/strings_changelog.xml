@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.11 -->
+    <string name="changelog_1_7_11_date">September 10, 2026</string>
+    <string name="changelog_1_7_11_title">Restore Spotify cooldowns</string>
+    <string-array name="changelog_1_7_11_bullets">
+        <item>Cooldowns detected by the native client are saved even when an operation returns only an error without details. Startup restores the saved cooldown before enabling requests.</item>
+        <item>Saving is asynchronous: if the process stops before the write completes, the latest update may be lost.</item>
+    </string-array>
+
     <!-- 1.7.10 -->
     <string name="changelog_1_7_10_date">September 10, 2026</string>
     <string name="changelog_1_7_10_title">Respect Spotify cooldowns</string>

@@ -41,13 +41,16 @@ class RateLimitGate(
     private var restored = false
 
     /**
-     * Attaches durable storage after construction. [shared] is created before Hilt exists,
-     * so the application wires the DataStore-backed writer here once; [write] receives every
-     * new window end and 0 on [reset]. The saved value is handed back through [restoreFrom]
-     * from a background coroutine, so no lookup ever blocks on disk.
+     * Optional synchronous persistence hook for local notes/reset. The application instead
+     * observes [untilMs] through [RateLimitPersistence] to include native-only updates.
      */
     fun attachPersistence(write: (Long) -> Unit) {
         persist = write
+    }
+
+    /** Adopts native notifications without requiring an error payload from the JNI caller. */
+    fun adoptNativeUntilMs(untilMs: Long) {
+        _untilMs.updateAndGet { max(it, untilMs) }
     }
 
     /** Adopts a window end read from storage, when it is still in the future and later than ours. */

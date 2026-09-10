@@ -365,6 +365,14 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Protección ante esperas de red.** La renovación usa el mismo tiempo máximo de cinco segundos que los demás envíos. Así, un servidor que no devuelve encabezados no retiene indefinidamente la admisión compartida. Una prueba con conexión local abierta y encabezados retenidos verifica el vencimiento y la liberación del turno.
 
+### 2026-09-10 — 1.7.11: persistencia y restauración de la pausa compartida
+
+**Decisión.** El cliente nativo notifica cada extensión del plazo absoluto a Kotlin mediante una referencia JNI global. La notificación no depende del resultado público de la operación, por lo que también cubre los errores booleanos. Un único recolector de estado guarda los cambios en DataStore en orden; los valores intermedios obsoletos pueden confluir en el más reciente.
+
+**Inicio.** Primero se lee el plazo guardado y después se restaura la autoridad nativa, antes de publicar el cliente Web API. Un fallo de lectura interrumpe esa inicialización y queda registrado como error; no se sustituye por un plazo vacío. Las excepciones del callback se registran y limpian sin eliminar la pausa nativa.
+
+**Límite.** La notificación no espera al disco: una terminación del proceso antes de completar el guardado puede perder la última extensión. No se garantiza atomicidad entre recibir un 429 y persistirlo. No cambia la política de sondas, cierre de sesión ni reloj.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

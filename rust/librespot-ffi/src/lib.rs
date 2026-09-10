@@ -28,8 +28,8 @@ use once_cell::sync::OnceCell;
 
 use jni::JNIEnv;
 use jni::JavaVM;
-use jni::objects::{JClass, JObject, JString};
-use jni::sys::jint;
+use jni::objects::{JClass, JObject, JString, JValue};
+use jni::sys::{jint, jlong};
 
 use tokio::runtime::Runtime;
 
@@ -52,6 +52,8 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
     context: JObject,
     client_id: JString,
     client_secret: JString,
+    rate_limit_until_ms: jlong,
+    rate_limit_callback: JObject,
 ) {
     let jvm = env.get_java_vm().unwrap();
 
@@ -91,7 +93,7 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
         Err(e) => {
             error!("failed to read client_id from jni: {e}");
             return;
-        },
+        }
     };
 
     let client_secret: String = match env.get_string(&client_secret) {
@@ -99,10 +101,48 @@ pub extern "system" fn Java_cc_tomko_outify_LibrespotFfi_libInit(
         Err(e) => {
             error!("failed to read client_secret from jni: {e}");
             return;
-        },
+        }
     };
 
-    spotify::client::init_client(client_id, client_secret);
+    let callback = match env.new_global_ref(rate_limit_callback) {
+        Ok(callback) => callback,
+        Err(error) => {
+            error!("failed to retain rate-limit callback: {error}");
+            let _ = env.throw_new(
+                "java/lang/IllegalStateException",
+                "Cooldown callback unavailable",
+            );
+            return;
+        }
+    };
+    spotify::client::init_client(
+        client_id,
+        client_secret,
+        rate_limit_until_ms,
+        Box::new(move |until| {
+            let Some(vm) = JVM.get() else {
+                error!("rate-limit notification has no JVM");
+                return;
+            };
+            let mut env = match vm.attach_current_thread() {
+                Ok(env) => env,
+                Err(error) => {
+                    error!("failed to attach rate-limit notifier: {error}");
+                    return;
+                }
+            };
+            if let Err(error) = env.call_method(
+                callback.as_obj(),
+                "onRateLimit",
+                "(J)V",
+                &[JValue::Long(until)],
+            ) {
+                error!("rate-limit callback failed: {error}");
+                // A throwing Kotlin callback must not poison subsequent JNI work on this thread.
+                let _ = env.exception_clear();
+            }
+        }),
+    );
 }
 
 #[unsafe(no_mangle)]

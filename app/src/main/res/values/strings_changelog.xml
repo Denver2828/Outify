@@ -3,6 +3,15 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.11 -->
+    <string name="changelog_1_7_11_version" translatable="false">1.7.11</string>
+    <string name="changelog_1_7_11_date">10 de septiembre de 2026</string>
+    <string name="changelog_1_7_11_title">Restauración de la pausa de Spotify</string>
+    <string-array name="changelog_1_7_11_bullets">
+        <item>Las pausas detectadas por el cliente nativo se guardan aunque la operación solo devuelva un error sin detalles. Al iniciar, el cliente restaura la pausa guardada antes de habilitar solicitudes.</item>
+        <item>El guardado es asíncrono: si el proceso termina antes de que se complete, puede perderse la actualización más reciente.</item>
+    </string-array>
+
     <!-- 1.7.10 -->
     <string name="changelog_1_7_10_version" translatable="false">1.7.10</string>
     <string name="changelog_1_7_10_date">10 de septiembre de 2026</string>

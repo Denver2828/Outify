@@ -65,6 +65,47 @@ fn run(test: impl Future<Output = ()>) {
 }
 
 #[test]
+fn restored_authority_blocks_dispatch_and_extensions_notify_without_a_result_payload() {
+    run(async {
+        let notifications = Arc::new(Mutex::new(Vec::new()));
+        let captured = notifications.clone();
+        let saved = now_ms() + 60_000;
+        init_client(
+            String::new(),
+            String::new(),
+            saved,
+            Box::new(move |until| {
+                captured.lock().unwrap().push(until);
+            }),
+        );
+        let result = get_client()
+            .client
+            .get("http://127.0.0.1:1")
+            .send_gated("restored", false)
+            .await;
+        assert!(matches!(result, Err(SpotifyApiError::RateLimited { .. })));
+        extend_rate_limit(saved - 1);
+        extend_rate_limit(saved + 1);
+        assert_eq!(*notifications.lock().unwrap(), vec![saved, saved + 1]);
+
+        // A real 429 notifies before its body or a boolean JNI result is consumed.
+        RATE_LIMIT_UNTIL_MS.store(0, Ordering::Release);
+        let fixture = response_fixture(429, "Retry-After: 120\r\n").await;
+        let pending = tokio::spawn(Client::new().get(&fixture.url).send_gated("native", false));
+        fixture.received.await.unwrap();
+        fixture.headers.send(()).unwrap();
+        let response = pending.await.unwrap().unwrap();
+        assert_eq!(
+            notifications.lock().unwrap().last().copied(),
+            Some(rate_limit_until_ms())
+        );
+        fixture.body.send(()).unwrap();
+        assert!(!response.status().is_success());
+        fixture.task.await.unwrap();
+    });
+}
+
+#[test]
 fn queued_dispatch_stops_at_headers_without_waiting_for_body() {
     run(async {
         let fixture = response_fixture(429, "Retry-After: 60\r\n").await;

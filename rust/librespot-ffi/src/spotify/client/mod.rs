@@ -45,6 +45,7 @@ static SPOTIFY_CLIENT: OnceCell<SpotifyClient> = OnceCell::new();
 /// Wall-clock millisecond timestamp until which the Web API must not be called
 /// (0 when no 429 is pending). Kotlin reads it through `SpClient.getRateLimitUntilMs`.
 static RATE_LIMIT_UNTIL_MS: AtomicI64 = AtomicI64::new(0);
+static RATE_LIMIT_OBSERVER: OnceCell<Box<dyn Fn(i64) + Send + Sync>> = OnceCell::new();
 static REQUEST_ADMISSION: tokio::sync::Mutex<()> = tokio::sync::Mutex::const_new(());
 
 /// Serialize dispatch through headers, not bodies or token acquisition. Token refresh
@@ -87,8 +88,20 @@ fn now_ms() -> i64 {
 /// Records a 429 so every caller (native and Kotlin) can hold off until it expires.
 pub(crate) fn note_rate_limited(retry_after_secs: u64) {
     let until = now_ms() + (retry_after_secs as i64) * 1000;
-    RATE_LIMIT_UNTIL_MS.fetch_max(until, Ordering::Release);
+    extend_rate_limit(until);
     warn!("spotify web api rate limited for {retry_after_secs} s");
+}
+
+fn extend_rate_limit(until: i64) {
+    let previous = RATE_LIMIT_UNTIL_MS.fetch_max(until, Ordering::AcqRel);
+    if until > previous {
+        if let Some(notify) = RATE_LIMIT_OBSERVER.get() {
+            // Notification failure must never unwind across JNI or discard native authority.
+            if std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| notify(until))).is_err() {
+                error!("rate-limit observer panicked");
+            }
+        }
+    }
 }
 
 /// Timestamp (ms since epoch) until which the Web API is rate limited, 0 when it is not.
@@ -211,7 +224,15 @@ pub(crate) async fn check_response_json<T: serde::de::DeserializeOwned>(
     Ok(data)
 }
 
-pub fn init_client(client_id: String, client_secret: String) {
+pub fn init_client(
+    client_id: String,
+    client_secret: String,
+    saved_until: i64,
+    observer: Box<dyn Fn(i64) + Send + Sync>,
+) {
+    let _ = RATE_LIMIT_OBSERVER.set(observer);
+    // Restore shared authority before any caller can obtain the client.
+    extend_rate_limit(saved_until);
     let client = SpotifyClient::new(client_id, client_secret);
     let _ = SPOTIFY_CLIENT.set(client);
 }
