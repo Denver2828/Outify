@@ -32,6 +32,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
@@ -105,6 +107,8 @@ fun LyricsBottomSheet(
     val isLoadingLyrics by viewModel.isLoading.collectAsState()
     val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
+    val hiddenUris by viewModel.hiddenUris.collectAsState()
+    val isHidden = displayedTrack?.uri in hiddenUris
 
     // Transport controls follow the playing track, not whether it has lyrics. Gating them
     // on hasSyncedContent hid play/pause/skip whenever a song had no (synced) lyrics.
@@ -191,22 +195,42 @@ fun LyricsBottomSheet(
                 }
 
                 if (!isEpisode) {
-                    IconButton(
-                        onClick = { viewModel.toggleLiked() },
-                        modifier = Modifier
-                            .align(Alignment.CenterEnd)
-                            .background(surfaceVariant, CircleShape)
-                            .size(40.dp)
+                    Row(
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.Favorite,
-                            contentDescription = stringResource(
-                                if (isLiked) R.string.sys_gesture_action_remove_from_favorites
-                                else R.string.sys_gesture_action_add_to_favorites
-                            ),
-                            tint = if (isLiked) MaterialTheme.colorScheme.primary
-                            else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
+                        IconButton(
+                            onClick = { viewModel.toggleLiked() },
+                            modifier = Modifier
+                                .background(surfaceVariant, CircleShape)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Favorite,
+                                contentDescription = stringResource(
+                                    if (isLiked) R.string.sys_gesture_action_remove_from_favorites
+                                    else R.string.sys_gesture_action_add_to_favorites
+                                ),
+                                tint = if (isLiked) MaterialTheme.colorScheme.primary
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+
+                        IconButton(
+                            onClick = { viewModel.toggleHideTrack() },
+                            modifier = Modifier
+                                .background(surfaceVariant, CircleShape)
+                                .size(40.dp)
+                        ) {
+                            Icon(
+                                imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                                contentDescription = stringResource(
+                                    if (isHidden) R.string.unhide_item else R.string.hide_track
+                                ),
+                                tint = if (isHidden) MaterialTheme.colorScheme.error
+                                else MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
                     }
                 }
             }

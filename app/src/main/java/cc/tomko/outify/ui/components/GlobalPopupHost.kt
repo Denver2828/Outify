@@ -45,6 +45,9 @@ fun GlobalPopupHost(
     openRadio: (Track) -> Unit,
     addToPlaylist: (Track) -> Unit,
     toggleLike: (OutifyUri) -> Unit,
+    hiddenUris: kotlinx.coroutines.flow.StateFlow<Set<String>>,
+    toggleHideTrack: (String) -> Unit,
+    toggleHideAlbum: (String) -> Unit,
 
     addToPlaylistViewModel: AddToPlaylistViewModel,
     createPlaylistViewModel: CreatePlaylistViewModel,
@@ -53,6 +56,7 @@ fun GlobalPopupHost(
 ) {
     val popups by GlobalPopupController.popups.collectAsState()
     val scope = rememberCoroutineScope()
+    val hidden by hiddenUris.collectAsState()
 
     popups.forEach { popup ->
         when (popup) {
@@ -61,7 +65,13 @@ fun GlobalPopupHost(
                     track = popup.track,
                     likedTrackIndex = popup.likedTrackIndex,
                     isLiked = popup.isLiked,
+                    isTrackHidden = popup.track.uri in hidden,
+                    isAlbumHidden = popup.track.album?.uri?.let { it in hidden } == true,
                     onDismiss = { GlobalPopupController.dismiss(popup.id) },
+                    onToggleHideTrack = { toggleHideTrack(popup.track.uri) },
+                    onToggleHideAlbum = {
+                        popup.track.album?.uri?.let { toggleHideAlbum(it) }
+                    },
                     onArtworkClick = {
                         val albumUri = popup.track.album?.uri
                         if (albumUri != null) {

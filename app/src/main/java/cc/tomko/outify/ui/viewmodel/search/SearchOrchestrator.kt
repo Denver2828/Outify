@@ -15,7 +15,7 @@ import kotlinx.coroutines.launch
 data class SearchSection(val type: String, val headerRes: Int)
 
 /** Why a section, or a whole search, failed. */
-enum class SearchErrorKind { NETWORK, RATE_LIMITED, OTHER }
+enum class SearchErrorKind { NETWORK, RATE_LIMITED, AUTH, OTHER }
 
 sealed class SectionStatus<out T> {
     data object Pending : SectionStatus<Nothing>()
@@ -157,6 +157,7 @@ class SearchOrchestrator<T>(
         val kinds = snapshots.map { (it.status as SectionStatus.Failed).kind }
         val kind = when {
             SearchErrorKind.RATE_LIMITED in kinds -> SearchErrorKind.RATE_LIMITED
+            SearchErrorKind.AUTH in kinds -> SearchErrorKind.AUTH
             SearchErrorKind.NETWORK in kinds -> SearchErrorKind.NETWORK
             else -> SearchErrorKind.OTHER
         }

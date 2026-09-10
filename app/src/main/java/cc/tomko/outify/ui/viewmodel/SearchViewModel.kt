@@ -1,6 +1,7 @@
 package cc.tomko.outify.ui.viewmodel
 
 import android.util.Log
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import androidx.annotation.StringRes
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
@@ -12,6 +13,7 @@ import cc.tomko.outify.core.UserProfile
 import cc.tomko.outify.core.model.*
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.SearchRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.data.repository.SyncErrorClassifier
@@ -38,6 +40,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.collectLatest
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.debounce
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
@@ -47,6 +50,9 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
+
+/** Substrings of a native error that mean the account token was rejected for good. */
+private val AUTH_REJECTION_HINTS = listOf("sign in again", "invalid_client", "invalid_grant")
 
 private val SEARCH_SECTIONS = listOf(
     SearchSection("track", R.string.search_section_tracks),
@@ -71,6 +77,7 @@ class SearchViewModel @Inject constructor(
     private val json: Json,
     private val userProfile: UserProfile,
     private val rateLimitGate: RateLimitGate,
+    private val hiddenItemsRepository: HiddenItemsRepository,
 ) : ViewModel() {
     /** A query plus an attempt counter so [retry] can re-issue an unchanged query. */
     private data class SearchRequest(val query: String = "", val attempt: Int = 0)
@@ -78,7 +85,21 @@ class SearchViewModel @Inject constructor(
     private val searchRequests = MutableStateFlow(SearchRequest())
 
     private val _results = MutableStateFlow<List<SearchUiModel>>(emptyList())
-    val results: StateFlow<List<SearchUiModel>> = _results
+
+    /** [_results] with hidden tracks and albums dropped, live against the hidden set. */
+    val results: StateFlow<List<SearchUiModel>> = combine(
+        _results,
+        hiddenItemsRepository.hiddenUris,
+    ) { results, hidden ->
+        if (hidden.isEmpty()) results
+        else results.filterNot { item ->
+            when (item) {
+                is SearchUiModel.TrackItem -> item.track.isHiddenIn(hidden)
+                is SearchUiModel.AlbumItem -> item.album.isHiddenIn(hidden)
+                else -> false
+            }
+        }
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), emptyList())
 
     private val _isLoading = MutableStateFlow(false)
     val isLoading: StateFlow<Boolean> = _isLoading
@@ -267,6 +288,18 @@ class SearchViewModel @Inject constructor(
 
     private fun classifySearchError(error: Throwable): SearchErrorKind {
         Log.w("SearchViewModel", "search section failed", error)
+        // The compact events section of the diagnostics report survives logcat floods.
+        AudioDiagnostics.record(
+            "Search",
+            "failed: ${error::class.simpleName}: ${error.message?.take(300)} " +
+                "(cause=${error.cause?.let { "${it::class.simpleName}: ${it.message?.take(200)}" }})"
+        )
+        val message = error.message.orEmpty()
+        if (AUTH_REJECTION_HINTS.any { it in message }) {
+            // The native layer already dropped the stored token; the screen must say so.
+            _isLoggedIn.value = spClient.isOAuthAuthenticated()
+            return SearchErrorKind.AUTH
+        }
         return when (SyncErrorClassifier.classify(error, rateLimitGate.isLimited())) {
             SyncFailure.RATE_LIMITED -> SearchErrorKind.RATE_LIMITED
             SyncFailure.TRANSIENT -> SearchErrorKind.NETWORK

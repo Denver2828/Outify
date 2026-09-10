@@ -142,8 +142,10 @@ fun SharedTransitionScope.PlaylistScreen(
             }
             val showAvatarCount = 4
 
-            val playlistRows = remember(playlist.uri, tracks) {
-                viewModel.buildPlaylistRows(playlist)
+            val hiddenUris by viewModel.hiddenUris.collectAsState()
+            val resolvedTracks by viewModel.trackMetadata.collectAsState()
+            val playlistRows = remember(playlist.uri, tracks, hiddenUris, resolvedTracks) {
+                viewModel.buildPlaylistRows(playlist, hiddenUris)
             }
 
             val filteredRows = remember(playlistRows, searchQuery, viewModel) {

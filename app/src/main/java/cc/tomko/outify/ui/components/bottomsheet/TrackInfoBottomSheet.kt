@@ -29,6 +29,9 @@ import androidx.compose.material.icons.filled.Queue
 import androidx.compose.material.icons.filled.Radio
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Widgets
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.ExperimentalMaterial3Api
@@ -41,10 +44,14 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberCoroutineScope
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -75,6 +82,8 @@ fun TrackInfoBottomSheet(
     modifier: Modifier = Modifier,
     likedTrackIndex: Int? = null,
     isLiked: Boolean = false,
+    isTrackHidden: Boolean = false,
+    isAlbumHidden: Boolean = false,
     onArtworkClick: (() -> Unit)? = null,
     onArtistClick: ((Artist) -> Unit)? = null,
     onOpenAlbum: (() -> Unit)? = null,
@@ -90,10 +99,14 @@ fun TrackInfoBottomSheet(
     onCopyUri: (() -> Unit)? = null,
     onScrollToLiked: (() -> Unit)? = null,
     onAddToWidget: (() -> Unit)? = null,
+    onToggleHideTrack: (() -> Unit)? = null,
+    onToggleHideAlbum: (() -> Unit)? = null,
 ) {
     val scope = rememberCoroutineScope()
     val context = LocalContext.current
     val clipboardManager = LocalClipboard.current
+
+    var showHideAlbumConfirm by remember { mutableStateOf(false) }
 
     val imageSize = 96.dp
 
@@ -353,6 +366,67 @@ fun TrackInfoBottomSheet(
                     modifier = Modifier.weight(1f),
                     isHighlighted = true,
                     highlightColor = MaterialTheme.colorScheme.primaryContainer
+                )
+            }
+
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                ActionCard(
+                    icon = if (isTrackHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                    title = stringResource(
+                        if (isTrackHidden) R.string.unhide_item else R.string.hide_track
+                    ),
+                    subtitle = stringResource(R.string.sheet_track_hide_subtitle),
+                    onClick = {
+                        onToggleHideTrack?.invoke()
+                        onDismiss()
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Only tracks that resolved an album can hide it; a card that silently did
+                // nothing would be worse than no card.
+                if (track.album != null) {
+                    ActionCard(
+                        icon = if (isAlbumHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                        title = stringResource(
+                            if (isAlbumHidden) R.string.unhide_item else R.string.hide_album
+                        ),
+                        subtitle = stringResource(R.string.sheet_album_hide_subtitle),
+                        onClick = {
+                            if (isAlbumHidden) {
+                                onToggleHideAlbum?.invoke()
+                                onDismiss()
+                            } else {
+                                showHideAlbumConfirm = true
+                            }
+                        },
+                        modifier = Modifier.weight(1f)
+                    )
+                }
+            }
+
+            if (showHideAlbumConfirm) {
+                AlertDialog(
+                    onDismissRequest = { showHideAlbumConfirm = false },
+                    title = { Text(stringResource(R.string.hide_album_confirm_title)) },
+                    text = { Text(stringResource(R.string.hide_album_confirm_message)) },
+                    confirmButton = {
+                        TextButton(onClick = {
+                            showHideAlbumConfirm = false
+                            onToggleHideAlbum?.invoke()
+                            onDismiss()
+                        }) {
+                            Text(stringResource(R.string.hide_album_confirm_action))
+                        }
+                    },
+                    dismissButton = {
+                        TextButton(onClick = { showHideAlbumConfirm = false }) {
+                            Text(stringResource(R.string.sheet_action_cancel))
+                        }
+                    }
                 )
             }
 

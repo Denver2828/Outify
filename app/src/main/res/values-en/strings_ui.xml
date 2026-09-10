@@ -135,6 +135,8 @@
     <string name="ui_notif_radio_started">Radio started</string>
     <string name="ui_notif_radio_failed">Could not start the radio</string>
     <string name="ui_notif_favorite_failed">Failed to update favorite</string>
+    <string name="ui_notif_track_hidden">Song hidden</string>
+    <string name="ui_notif_undo">Undo</string>
 
     <!-- Home top items range -->
     <string name="ui_top_items_last_4_weeks">Last 4 weeks</string>

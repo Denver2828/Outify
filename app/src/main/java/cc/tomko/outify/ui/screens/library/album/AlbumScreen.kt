@@ -10,6 +10,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
@@ -21,7 +22,10 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Favorite
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.rounded.Shuffle
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
@@ -30,6 +34,7 @@ import androidx.compose.material3.LargeExtendedFloatingActionButton
 import androidx.compose.material3.MaterialShapes
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.material3.toShape
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
@@ -104,6 +109,9 @@ fun SharedTransitionScope.AlbumDetailScreen(
 
             val likedTracksId by viewModel.likedTrackIds.collectAsState()
             val isSaved by viewModel.isSaved.collectAsState()
+            val hiddenUris by viewModel.hiddenUris.collectAsState()
+            val isAlbumHidden = album.uri in hiddenUris
+            var showHideAlbumConfirm by remember { mutableStateOf(false) }
 
             val lazyList = rememberLazyListState()
 
@@ -245,17 +253,54 @@ fun SharedTransitionScope.AlbumDetailScreen(
                         }
                     },
                     actionButtonContent = {
-                        FilledIconButton(onClick = { viewModel.toggleSave() }) {
-                            Icon(
-                                imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = stringResource(
-                                    if (isSaved) R.string.screen_unfavorite_cd
-                                    else R.string.screen_favorite_cd
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledIconButton(onClick = { viewModel.toggleSave() }) {
+                                Icon(
+                                    imageVector = if (isSaved) Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = stringResource(
+                                        if (isSaved) R.string.screen_unfavorite_cd
+                                        else R.string.screen_favorite_cd
+                                    )
                                 )
-                            )
+                            }
+
+                            FilledIconButton(
+                                onClick = {
+                                    if (isAlbumHidden) viewModel.toggleHideAlbum()
+                                    else showHideAlbumConfirm = true
+                                }
+                            ) {
+                                Icon(
+                                    imageVector = if (isAlbumHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                                    contentDescription = stringResource(
+                                        if (isAlbumHidden) R.string.unhide_item else R.string.hide_album
+                                    )
+                                )
+                            }
                         }
                     }
                 )
+
+                if (showHideAlbumConfirm) {
+                    AlertDialog(
+                        onDismissRequest = { showHideAlbumConfirm = false },
+                        title = { Text(stringResource(R.string.hide_album_confirm_title)) },
+                        text = { Text(stringResource(R.string.hide_album_confirm_message)) },
+                        confirmButton = {
+                            TextButton(onClick = {
+                                showHideAlbumConfirm = false
+                                viewModel.toggleHideAlbum()
+                            }) {
+                                Text(stringResource(R.string.hide_album_confirm_action))
+                            }
+                        },
+                        dismissButton = {
+                            TextButton(onClick = { showHideAlbumConfirm = false }) {
+                                Text(stringResource(R.string.sheet_action_cancel))
+                            }
+                        }
+                    )
+                }
 
                 Box(
                     modifier = Modifier.fillMaxSize(),

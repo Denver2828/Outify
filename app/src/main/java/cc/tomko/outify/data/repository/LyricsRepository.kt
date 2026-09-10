@@ -3,6 +3,7 @@ package cc.tomko.outify.data.repository
 import cc.tomko.outify.core.model.LyricsResult
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.remote.LrcLibClient
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Deferred
@@ -20,6 +21,13 @@ import javax.inject.Singleton
 
 private const val FALLBACK_TIMEOUT_MS = 10_000L
 private const val MAX_CACHE_ENTRIES = 64
+
+/** Short label for the diagnostics report: a found result also says whether it is synced. */
+private fun LyricsResult.kind(): String = when (this) {
+    is LyricsResult.Found -> "found(synced=${synced}, source=$source)"
+    LyricsResult.NotFound -> "notFound"
+    LyricsResult.Error -> "error"
+}
 
 /**
  * Single entry point for lyrics: Spotify first, then LRCLIB when the user allows it.
@@ -150,11 +158,16 @@ class LyricsRepository internal constructor(
 
     private suspend fun resolve(track: Track, fallbackEnabled: Boolean): LyricsResult {
         val spotify = spotifySource(track)
+        AudioDiagnostics.record(
+            "Lyrics",
+            "spotify=${spotify.kind()} fallbackEnabled=$fallbackEnabled track=${track.id}"
+        )
         if (spotify is LyricsResult.Found || !fallbackEnabled) return spotify
 
         val fallback = withTimeoutOrNull(FALLBACK_TIMEOUT_MS) {
             fallbackSource(track)
         } ?: LyricsResult.Error
+        AudioDiagnostics.record("Lyrics", "lrclib=${fallback.kind()} track=${track.id}")
 
         return when (fallback) {
             is LyricsResult.Found -> fallback

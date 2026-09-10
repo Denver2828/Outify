@@ -22,6 +22,7 @@ import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.core.model.toPlayableAudio
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.playback.callbacks.PlayerEventCallback
 import cc.tomko.outify.playback.model.PlaybackState
@@ -62,7 +63,14 @@ class Player @Inject constructor(
     val json: Json,
     val imageLoader: ImageLoader,
     private val modeController: PlaybackModeController,
+    private val hiddenItemsRepository: HiddenItemsRepository,
 ) : SimpleBasePlayer(application.mainLooper) {
+
+    /** Guards a fully-hidden queue from skipping forever: reset as soon as a shown track starts. */
+    private var consecutiveHiddenSkips = 0
+
+    /** Uri of the hidden track whose skip was requested and not yet answered by a track change. */
+    private var hiddenSkipInFlightUri: String? = null
 
     private val appContext: Context = application.applicationContext
 
@@ -116,6 +124,30 @@ class Player @Inject constructor(
                         }
                         track.toPlayableAudio()
                     }
+                    // A hidden track is skipped BEFORE it is published: the UI, the notification
+                    // and Android Auto keep showing the previous track until the next one starts.
+                    val trackUri = audio.sourceTrack?.uri
+                    val albumUri = audio.sourceTrack?.album?.uri
+                    val hidden = hiddenItemsRepository.hiddenUris.value
+                    val isHidden = (trackUri != null && trackUri in hidden) ||
+                        (albumUri != null && albumUri in hidden)
+
+                    if (isHidden && consecutiveHiddenSkips < MAX_CONSECUTIVE_HIDDEN_SKIPS) {
+                        if (hiddenSkipInFlightUri == spotify_uri) {
+                            // Duplicate change event for the track we are already leaving.
+                            return@launch
+                        }
+                        consecutiveHiddenSkips++
+                        hiddenSkipInFlightUri = spotify_uri
+                        AudioDiagnostics.record(
+                            "Player",
+                            "hidden track skipped uri=$spotify_uri (attempt $consecutiveHiddenSkips)"
+                        )
+                        scope.launch(Dispatchers.IO) { spirc.playerNext() }
+                        return@launch
+                    }
+                    hiddenSkipInFlightUri = null
+                    consecutiveHiddenSkips = 0
                     stateHolder.setAudio(audio)
 
                     val cover = if (audio.isEpisode()) {
@@ -582,5 +614,8 @@ class Player @Inject constructor(
 
         /** Media id of the synthetic "next" item published when the local queue has no upcoming track. */
         const val NEXT_PLACEHOLDER_ID = "spoty:next"
+
+        /** Upper bound on automatic hidden-track skips in a row, so a fully-hidden queue does not spin. */
+        const val MAX_CONSECUTIVE_HIDDEN_SKIPS = 5
     }
 }

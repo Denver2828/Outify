@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.player
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -13,6 +14,7 @@ import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
@@ -22,8 +24,10 @@ import cc.tomko.outify.playback.model.PlaybackState
 import cc.tomko.outify.playback.model.RepeatMode
 import cc.tomko.outify.ui.model.player.PlayerAction
 import cc.tomko.outify.ui.model.player.PlayerUIState
+import cc.tomko.outify.ui.notifications.showTrackHiddenNotification
 import coil3.ImageLoader
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -44,6 +48,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.Duration
 import kotlin.time.DurationUnit
@@ -60,7 +65,28 @@ class PlayerViewModel @Inject constructor(
     private val likedRepository: LikedRepository,
     private val spClient: SpClient,
     private val modeController: PlaybackModeController,
+    private val hiddenItemsRepository: HiddenItemsRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
+
+    /** Hides (or unhides) the playing track; hiding skips to the next one and offers Undo. */
+    fun toggleHideTrack() {
+        val audio = currentAudio.value ?: return
+        val trackUri = audio.uri
+        viewModelScope.launch {
+            if (hiddenUris.value.contains(trackUri)) {
+                hiddenItemsRepository.unhide(trackUri)
+            } else {
+                hiddenItemsRepository.hideTrack(trackUri)
+                withContext(Dispatchers.IO) { spirc.playerNext() }
+                showTrackHiddenNotification(context) {
+                    viewModelScope.launch { hiddenItemsRepository.unhide(trackUri) }
+                }
+            }
+        }
+    }
     private val _state = MutableStateFlow(PlaybackState())
     val state: StateFlow<PlaybackState> = _state.asStateFlow()
 

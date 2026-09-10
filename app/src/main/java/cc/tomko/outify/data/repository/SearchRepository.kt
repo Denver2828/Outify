@@ -15,6 +15,7 @@ class SearchRepository @Inject constructor(
 
     suspend fun search(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
         val uris = spClient.search(query, "track,artist,album,playlist")
+            ?: throw IllegalStateException(NATIVE_SEARCH_NULL)
 
         uris.mapNotNull { uri ->
             val type = when {
@@ -34,6 +35,7 @@ class SearchRepository @Inject constructor(
     suspend fun searchByType(query: String, type: String): List<SearchResult> =
         withContext(Dispatchers.IO) {
             val uris = spClient.search(query, type)
+                ?: throw IllegalStateException(NATIVE_SEARCH_NULL)
             uris.mapNotNull { uri ->
                 val resultType = when {
                     uri.startsWith("spotify:track:") -> SearchResultType.TRACK
@@ -47,4 +49,8 @@ class SearchRepository @Inject constructor(
                 resultType?.let { SearchResult(uri, it) }
             }
         }
+
+    private companion object {
+        const val NATIVE_SEARCH_NULL = "native search returned no result and no error"
+    }
 }

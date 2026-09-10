@@ -83,10 +83,12 @@ import cc.tomko.outify.ui.ThemeMode
 import cc.tomko.outify.ui.resolveDarkTheme
 import cc.tomko.outify.ui.components.GlobalPopupHost
 import cc.tomko.outify.ui.components.navigation.FloatingOutifyBottomNav
+import cc.tomko.outify.ui.components.navigation.LocalGoHome
 import cc.tomko.outify.ui.components.navigation.NavDestination
 import cc.tomko.outify.ui.components.navigation.NavigationRoot
 import cc.tomko.outify.ui.components.navigation.OutifyBottomNav
 import cc.tomko.outify.ui.components.navigation.Route
+import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.components.player.MiniPlayer
 import cc.tomko.outify.ui.components.player.PlayerSheet
 import cc.tomko.outify.ui.components.player.QueueBottomSheet
@@ -323,6 +325,11 @@ class MainActivity : ComponentActivity() {
                             LocalEpisodeSwipeActionHandler provides viewModel.episodeSwipeActionHandler,
                             LocalSwipeActionHandler provides viewModel.swipeActionHandler,
                             LocalUiSettings provides interfaceSettings,
+                            LocalGoHome provides {
+                                GlobalPopupController.dismissAll()
+                                scope.launch { playerSheetState.collapse() }
+                                backStack.selectTab(Route.HomeScreen)
+                            },
                         ) {
                             Scaffold { innerPadding ->
                                 Box(
@@ -363,6 +370,9 @@ class MainActivity : ComponentActivity() {
                                         },
                                         addToPlaylist = { viewModel.addToPlaylist(it) },
                                         toggleLike = { viewModel.favorite(it.toUriString()) },
+                                        hiddenUris = viewModel.hiddenUris,
+                                        toggleHideTrack = { viewModel.toggleHideTrack(it) },
+                                        toggleHideAlbum = { viewModel.toggleHideAlbum(it) },
 
                                         addToPlaylistViewModel = addToPlaylistViewModel,
                                         createPlaylistViewModel = createPlaylistViewModel,

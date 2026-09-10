@@ -19,6 +19,8 @@ import androidx.compose.material.icons.filled.Pause
 import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -78,6 +80,8 @@ fun LandscapeLyricsScreen(
     val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
     val isShuffling by viewModel.isShuffling.collectAsState()
+    val hiddenUris by viewModel.hiddenUris.collectAsState()
+    val isHidden = track.uri in hiddenUris
 
     val isSynced = lyricsSynced && hasSyncedContent && isCurrentTrack
 
@@ -143,6 +147,22 @@ fun LandscapeLyricsScreen(
                             else R.string.sys_gesture_action_add_to_favorites
                         ),
                         tint = if (isLiked) MaterialTheme.colorScheme.primary
+                        else MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+
+                IconButton(
+                    onClick = { viewModel.toggleHideTrack() },
+                    modifier = Modifier
+                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
+                        .size(48.dp)
+                ) {
+                    Icon(
+                        imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                        contentDescription = stringResource(
+                            if (isHidden) R.string.unhide_item else R.string.hide_track
+                        ),
+                        tint = if (isHidden) MaterialTheme.colorScheme.error
                         else MaterialTheme.colorScheme.onSurfaceVariant
                     )
                 }

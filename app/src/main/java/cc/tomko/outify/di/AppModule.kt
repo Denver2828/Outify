@@ -8,6 +8,7 @@ import cc.tomko.outify.data.dao.AlbumDao
 import cc.tomko.outify.data.dao.AlbumTrackDao
 import cc.tomko.outify.data.dao.ArtistDao
 import cc.tomko.outify.data.dao.EpisodeDao
+import cc.tomko.outify.data.dao.HiddenItemsDao
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.dao.LikedItemsDao
 import cc.tomko.outify.data.dao.PlaylistDao
@@ -176,6 +177,12 @@ object AppModule {
     @Singleton
     fun provideLikedItemsDao(database: AppDatabase): LikedItemsDao {
         return database.likedItemsDao()
+    }
+
+    @Provides
+    @Singleton
+    fun provideHiddenItemsDao(database: AppDatabase): HiddenItemsDao {
+        return database.hiddenItemsDao()
     }
 
     @Provides

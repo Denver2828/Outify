@@ -3,6 +3,20 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.9 -->
+    <string name="changelog_1_7_9_date">September 9, 2026</string>
+    <string name="changelog_1_7_9_title">Hide songs and albums, a home button, and a bigger brand mark</string>
+    <string-array name="changelog_1_7_9_bullets">
+        <item>A minus button next to every heart hides a song or an album forever: it disappears from every list and is skipped automatically if it starts playing. Restore hidden items from Settings &gt; Hidden.</item>
+        <item>A home button next to the "Spoty by Darius" mark, present on every screen, closes the player and lyrics and returns straight to Home.</item>
+        <item>The "Spoty by Darius" mark is now twice as large.</item>
+        <item>The audio diagnostics report now filters system noise out of the logcat (Samsung floods it) and records every search failure with its exact cause.</item>
+        <item>Steering wheel, Bluetooth headset and Android Auto buttons (next, previous, play/pause) are now applied directly to playback, bypassing the default Media3 handling that dropped them on the car box.</item>
+        <item>When a search fails, the real Spotify error reaches the app instead of an unexplained empty result.</item>
+        <item>If Spotify rejects the account session (it happens when the app credentials change after signing in), Spoty drops that session and asks to connect the account again from Home, instead of failing silently in search, likes and lists.</item>
+        <item>The diagnostics report is shared as two files: summary (state, events, process exits) and logcat, so the summary fits whole in a message. It also records which lyrics provider answered and with what result.</item>
+    </string-array>
+
     <!-- 1.7.8 -->
     <string name="changelog_1_7_8_date">September 8, 2026</string>
     <string name="changelog_1_7_8_title">Spoty by Darius mark, car controls and steering wheel next button</string>

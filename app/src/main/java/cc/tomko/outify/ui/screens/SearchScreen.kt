@@ -1209,6 +1209,7 @@ private fun searchErrorMessage(kind: SearchErrorKind, rateLimitRemainingSeconds:
             rateLimitRemainingSeconds.coerceAtLeast(1),
         )
 
+        SearchErrorKind.AUTH -> stringResource(R.string.screen_search_error_auth)
         SearchErrorKind.OTHER -> stringResource(R.string.screen_search_error_generic)
     }
 

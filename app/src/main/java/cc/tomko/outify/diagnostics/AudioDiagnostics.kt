@@ -46,8 +46,17 @@ object AudioDiagnostics {
         synchronized(snapshotProviders) { snapshotProviders += provider }
     }
 
-    fun buildReport(context: Context, playbackState: PlaybackState): String = buildString {
-        appendLine("=== Spoty audio diagnostics ===")
+    /** The complete report: the summary followed by the logcat sections. */
+    fun buildReport(context: Context, playbackState: PlaybackState): String =
+        buildSummary(context, playbackState) + "\n" + buildLogcat(context)
+
+    /**
+     * Part 1 of the shareable report: device, playback and audio state, recorded events and
+     * process exits. Small enough to paste whole into a chat; it is the part that decides
+     * most questions.
+     */
+    fun buildSummary(context: Context, playbackState: PlaybackState): String = buildString {
+        appendLine("=== Spoty audio diagnostics (1/2: summary) ===")
         appendLine("Generated: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")
         appendLine("App: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
         appendLine("Device: ${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE}, ${Build.PRODUCT})")
@@ -81,6 +90,13 @@ object AudioDiagnostics {
 
         appendLine("--- Process exits (last 10) ---")
         append(ProcessExitDiagnostics.describe(context))
+    }
+
+    /** Part 2 of the shareable report: the logcat of this process and of any crashed one. */
+    fun buildLogcat(context: Context): String = buildString {
+        appendLine("=== Spoty audio diagnostics (2/2: logcat) ===")
+        appendLine("Generated: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US).format(Date())}")
+        appendLine("App: ${BuildConfig.VERSION_NAME} (${BuildConfig.VERSION_CODE})")
         appendLine()
 
         // The logcat buffer is system-wide, and an app may read every line its own UID wrote,
@@ -156,19 +172,41 @@ object AudioDiagnostics {
         else -> "TYPE_$type"
     }
 
-    /** Reads the logcat lines of [pid]; no permission needed for pids of the caller's own UID. */
+    /**
+     * Reads the last [lines] useful logcat lines of [pid]; no permission needed for pids of the
+     * caller's own UID. `logcat -t` tails the raw buffer before any filter, and some OEM
+     * builds (Samsung One UI) flood it with framework chatter, so a larger tail is read and
+     * the noise is dropped here; otherwise the app's own lines never make it into the report.
+     */
     private fun readLogcat(pid: Int, lines: Int): String {
         return try {
             val process = ProcessBuilder(
-                "logcat", "-d", "-v", "threadtime", "-t", lines.toString(),
+                "logcat", "-d", "-v", "threadtime", "-t", (lines * LOGCAT_NOISE_FACTOR).toString(),
                 "--pid=$pid",
             ).redirectErrorStream(true).start()
             val text = BufferedReader(InputStreamReader(process.inputStream)).use { it.readText() }
             process.waitFor()
-            text.ifBlank { "(empty)" }
+            text.lineSequence()
+                .filterNot { line -> LOGCAT_NOISE.any { it in line } }
+                .toList()
+                .takeLast(lines)
+                .joinToString("\n")
+                .ifBlank { "(empty)" }
         } catch (e: Exception) {
             Log.w(TAG, "logcat read failed", e)
             "logcat unavailable: $e"
         }
     }
+
+    /** Raw lines read per useful line kept; the OEM chatter can outnumber app lines 50:1. */
+    private const val LOGCAT_NOISE_FACTOR = 12
+
+    /** Substrings that mark framework noise with no diagnostic value. */
+    private val LOGCAT_NOISE = listOf(
+        "setRequestedFrameRate",
+        "I ViewRootImpl",
+        "I InsetsController",
+        "I ImeTracker",
+        "I DecorView",
+    )
 }

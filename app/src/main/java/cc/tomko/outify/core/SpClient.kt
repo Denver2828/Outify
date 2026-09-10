@@ -51,17 +51,21 @@ class SpClient @Inject constructor() {
     external fun probeCurrentUserProfile(): String?
     external fun probeUserTop(type: String?, timeRange: String): String?
 
+    /**
+     * Native search. Throws a `RuntimeException` carrying the Spotify error when the request
+     * fails; a null return is the JNI layer's last resort and callers must treat it as failure.
+     */
     external fun search(
         query: String,
         type: String,
         offset: Int = -1,
         pages: Int = -1
-    ): Array<String>
+    ): Array<String>?
 
     external fun searchContext(
         query: String,
         type: String,
-    ): Array<String>
+    ): Array<String>?
 
     external fun getUserCollection(query: String? = null): String?
 

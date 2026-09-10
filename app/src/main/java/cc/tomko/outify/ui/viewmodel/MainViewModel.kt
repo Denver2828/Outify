@@ -15,6 +15,7 @@ import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.core.model.toSpotifyUri
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.InterfaceSettings
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.PlayerRepository
@@ -26,7 +27,9 @@ import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.GlobalPopupController
 import cc.tomko.outify.ui.PopupSpec
 import cc.tomko.outify.ui.notifications.InAppNotificationController
+import cc.tomko.outify.ui.notifications.showTrackHiddenNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -34,6 +37,7 @@ import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import kotlinx.serialization.json.Json
 import javax.inject.Inject
 import android.content.Context
@@ -50,8 +54,46 @@ class MainViewModel @Inject constructor(
     private val spClient: SpClient,
     private val likedRepository: LikedRepository,
     private val playerRepository: PlayerRepository,
+    private val hiddenItemsRepository: HiddenItemsRepository,
     private val json: Json,
 ) : ViewModel() {
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
+
+    /**
+     * Track hide, from the shared TrackInfo sheet. Skips to next if the hidden track is
+     * playing, and shows an in-app notification with an Undo action (the same mechanism used
+     * for "copied to clipboard" elsewhere) since this hide is not confirmed with a dialog.
+     */
+    fun toggleHideTrack(uri: String) {
+        viewModelScope.launch {
+            if (hiddenUris.value.contains(uri)) {
+                hiddenItemsRepository.unhide(uri)
+            } else {
+                hiddenItemsRepository.hideTrack(uri)
+                if (playbackStateHolder.state.value.currentAudio?.uri == uri) {
+                    withContext(Dispatchers.IO) { spirc.playerNext() }
+                }
+                showTrackHiddenNotification(context) {
+                    viewModelScope.launch { hiddenItemsRepository.unhide(uri) }
+                }
+            }
+        }
+    }
+
+    /** Album hide, from the shared TrackInfo sheet; the sheet itself asks for confirmation. */
+    fun toggleHideAlbum(uri: String) {
+        viewModelScope.launch {
+            if (hiddenUris.value.contains(uri)) {
+                hiddenItemsRepository.unhide(uri)
+            } else {
+                hiddenItemsRepository.hideAlbum(uri)
+                val playingAlbumUri = playbackStateHolder.state.value.currentAudio?.sourceTrack?.album?.uri
+                if (playingAlbumUri == uri) {
+                    withContext(Dispatchers.IO) { spirc.playerNext() }
+                }
+            }
+        }
+    }
     val swipeSettings: Flow<List<GestureSetting>> =
         settingsRepository.interfaceSettings.map { it.gestureSettings }
 

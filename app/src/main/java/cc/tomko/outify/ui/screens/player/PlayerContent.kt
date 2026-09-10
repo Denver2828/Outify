@@ -47,6 +47,8 @@ import androidx.compose.material.icons.filled.Repeat
 import androidx.compose.material.icons.filled.RepeatOne
 import androidx.compose.material.icons.filled.SkipNext
 import androidx.compose.material.icons.filled.SkipPrevious
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material.icons.outlined.Pause
 import androidx.compose.material.icons.outlined.PlayArrow
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
@@ -126,6 +128,8 @@ fun PlayerContent(
     val isShuffling by viewModel.isShuffling.collectAsState()
     val repeatMode by viewModel.repeatMode.collectAsStateWithLifecycle(initialValue = RepeatMode.NONE)
     val isFavorite by viewModel.isLiked.collectAsState()
+    val hiddenUris by viewModel.hiddenUris.collectAsState()
+    val isHidden = audio?.uri?.let { it in hiddenUris } == true
     val uiState by viewModel.uiState.collectAsState()
     val elapsedMs by viewModel.positionMs.collectAsState()
     val forwardMilliseconds by viewModel.forwardMilliseconds.collectAsState(15_000)
@@ -167,9 +171,11 @@ fun PlayerContent(
             isShuffleEnabled = isShuffling,
             repeatMode = repeatMode,
             isFavorite = isFavorite,
+            isHidden = isHidden,
             onShuffleToggle = { viewModel.onAction(PlayerAction.ShuffleToggle) },
             onRepeatToggle = { viewModel.onAction(PlayerAction.RepeatToggle) },
             onFavoriteToggle = { viewModel.toggleFavorite() },
+            onHideToggle = { viewModel.toggleHideTrack() },
             height = height,
         )
     }
@@ -422,10 +428,12 @@ private fun PlayerControlsContent(
     isShuffleEnabled: Boolean,
     repeatMode: RepeatMode,
     isFavorite: Boolean,
+    isHidden: Boolean,
     height: Dp,
     onShuffleToggle: () -> Unit,
     onRepeatToggle: () -> Unit,
     onFavoriteToggle: () -> Unit,
+    onHideToggle: () -> Unit,
     modifier: Modifier = Modifier,
     activeColorMain: Color = MaterialTheme.colorScheme.primary,
     onActiveColorMain: Color = MaterialTheme.colorScheme.onPrimary,
@@ -524,6 +532,16 @@ private fun PlayerControlsContent(
                     contentDesc = stringResource(R.string.ui_player_favorite_desc)
                 )
             }
+        }
+
+        IconButton(onClick = onHideToggle) {
+            Icon(
+                imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                contentDescription = stringResource(
+                    if (isHidden) R.string.unhide_item else R.string.hide_track
+                ),
+                tint = if (isHidden) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant
+            )
         }
     }
 }

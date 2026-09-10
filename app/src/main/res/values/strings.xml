@@ -23,4 +23,12 @@
     <string name="like">Me gusta</string>
     <string name="outify_playback_widget_description">Una forma rápida de reproducir tus canciones favoritas</string>
     <string name="shortcut_play_liked_label">Reproducir canciones que te gustan</string>
+
+    <string name="hide_track">Ocultar canción</string>
+    <string name="hide_album">Ocultar disco</string>
+    <string name="unhide_item">Restaurar</string>
+    <string name="hide_album_confirm_title">¿Ocultar este disco?</string>
+    <string name="hide_album_confirm_message">Sus canciones no volverán a mostrarse. Podés restaurarlo después desde Ajustes &gt; Ocultos.</string>
+    <string name="hide_album_confirm_action">Ocultar</string>
+    <string name="go_home">Ir al inicio</string>
 </resources>

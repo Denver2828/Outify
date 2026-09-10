@@ -11,6 +11,7 @@ import cc.tomko.outify.data.dao.AlbumDao
 import cc.tomko.outify.data.dao.AlbumTrackDao
 import cc.tomko.outify.data.dao.ArtistDao
 import cc.tomko.outify.data.dao.EpisodeDao
+import cc.tomko.outify.data.dao.HiddenItemsDao
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.dao.LikedItemsDao
 import cc.tomko.outify.data.dao.PlaylistDao
@@ -49,8 +50,9 @@ import cc.tomko.outify.data.database.track.PlaylistTrackEntity
         ShowEntity::class,
         EpisodeEntity::class,
         ShowEpisodeCrossRef::class,
+        HiddenItemsEntity::class,
     ],
-    version = 23,
+    version = 24,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -64,6 +66,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun playlistDao(): PlaylistDao
     abstract fun likedDao(): LikedDao
     abstract fun likedItemsDao(): LikedItemsDao
+    abstract fun hiddenItemsDao(): HiddenItemsDao
     abstract fun showDao(): ShowDao
     abstract fun episodeDao(): EpisodeDao
     abstract fun showEpisodeDao(): ShowEpisodeDao
@@ -216,6 +219,20 @@ abstract class AppDatabase : RoomDatabase() {
             }
         }
 
+        private val MIGRATION_23_24 = object : Migration(23, 24) {
+            override fun migrate(database: SupportSQLiteDatabase) {
+                database.execSQL(
+                    """
+                    CREATE TABLE IF NOT EXISTS hidden_items (
+                        uri TEXT NOT NULL PRIMARY KEY,
+                        type TEXT NOT NULL,
+                        hiddenAt INTEGER NOT NULL DEFAULT 0
+                    )
+                    """.trimIndent()
+                )
+            }
+        }
+
         fun getInstance(context: Context): AppDatabase {
             return INSTANCE ?: synchronized(this) {
                 val instance = Room.databaseBuilder(
@@ -223,7 +240,7 @@ abstract class AppDatabase : RoomDatabase() {
                     AppDatabase::class.java,
                     "outify_database"
                 )
-                    .addMigrations(MIGRATION_15_16, MIGRATION_16_17, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23)
+                    .addMigrations(MIGRATION_15_16, MIGRATION_16_17, MIGRATION_18_19, MIGRATION_19_20, MIGRATION_20_21, MIGRATION_21_22, MIGRATION_22_23, MIGRATION_23_24)
                     .build()
                 INSTANCE = instance
                 instance

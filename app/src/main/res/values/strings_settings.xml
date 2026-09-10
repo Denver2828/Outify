@@ -36,6 +36,13 @@
     <string name="settings_about_description">Número de compilación</string>
     <string name="settings_accounts_title">Cuentas</string>
     <string name="settings_accounts_description">Tu cuenta de Spotify</string>
+    <string name="settings_hidden_title">Ocultos</string>
+    <string name="settings_hidden_description">Canciones y discos que no se muestran</string>
+    <string name="settings_hidden_empty">Todavía no ocultaste ninguna canción ni disco</string>
+    <string name="settings_hidden_section_tracks">Canciones</string>
+    <string name="settings_hidden_section_albums">Discos</string>
+    <string name="settings_hidden_restore_all">Restaurar todo</string>
+    <string name="settings_hidden_restore_all_confirm_message">Todas las canciones y discos ocultos volverán a mostrarse en tus listas.</string>
 
     <!-- Permissions -->
     <string name="settings_permissions_header">Permisos</string>

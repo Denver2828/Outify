@@ -9,9 +9,11 @@ import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.CoverSize
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.dropHidden
 import cc.tomko.outify.core.model.getCover
 import cc.tomko.outify.data.database.toDomain
 import cc.tomko.outify.data.metadata.RefreshFailure
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LikedSyncCoordinator
 import cc.tomko.outify.data.repository.SyncOutcome
@@ -64,6 +66,7 @@ class LikedViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     private val syncNotificationManager: SyncNotificationManager,
     private val rateLimitGate: RateLimitGate,
+    private val hiddenItemsRepository: HiddenItemsRepository,
 ) : ViewModel() {
     val isRefreshing = MutableStateFlow(false)
 
@@ -126,15 +129,23 @@ class LikedViewModel @Inject constructor(
                 }
             }
             .flatMapLatest { tracks ->
-                // Combine with filter/sort states
+                // Combine with filter/sort states and the live hidden set
                 kotlinx.coroutines.flow.combine(
                     filterExplicit,
                     filterArtistName,
                     filterTrackName,
                     sortBy,
-                    sortAscending
-                ) { explicit, artist, trackName, sort, ascending ->
-                    applyFiltersAndSorts(tracks, explicit, artist, trackName, sort, ascending)
+                    sortAscending,
+                    hiddenItemsRepository.hiddenUris,
+                ) { values ->
+                    @Suppress("UNCHECKED_CAST")
+                    val explicit = values[0] as ExplicitFilter
+                    val artist = values[1] as String
+                    val trackName = values[2] as String
+                    val sort = values[3] as SortBy
+                    val ascending = values[4] as Boolean
+                    val hidden = values[5] as Set<String>
+                    applyFiltersAndSorts(tracks.dropHidden(hidden), explicit, artist, trackName, sort, ascending)
                 }
             }
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())

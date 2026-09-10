@@ -114,21 +114,30 @@ class AudioDiagnosticsViewModel @Inject constructor(
         }
     }
 
-    /** Writes the current report to the cache dir and returns a share intent chooser for it. */
+    /**
+     * Writes the current report to the cache dir as two files (summary, logcat) and returns
+     * a share intent chooser for both. The summary alone fits in a chat message; the logcat
+     * is the part that used to push everything else past the paste limit.
+     */
     suspend fun buildShareIntent(subject: String, chooserTitle: String): Intent = withContext(Dispatchers.IO) {
-        val text = AudioDiagnostics.buildReport(context, playbackStateHolder.state.value)
-        _report.value = text
+        val summary = AudioDiagnostics.buildSummary(context, playbackStateHolder.state.value)
+        val logcat = AudioDiagnostics.buildLogcat(context)
+        _report.value = summary + "\n" + logcat
 
         val dir = File(context.cacheDir, "diagnostics").apply { mkdirs() }
         val stamp = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(Date())
-        val file = File(dir, "spoty-audio-$stamp.txt")
-        file.writeText(text)
+        val files = listOf(
+            File(dir, "spoty-audio-$stamp-1-summary.txt").apply { writeText(summary) },
+            File(dir, "spoty-audio-$stamp-2-logcat.txt").apply { writeText(logcat) },
+        )
 
-        val uri = FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", file)
-        val send = Intent(Intent.ACTION_SEND).apply {
+        val uris = ArrayList(
+            files.map { FileProvider.getUriForFile(context, "${context.packageName}.fileprovider", it) }
+        )
+        val send = Intent(Intent.ACTION_SEND_MULTIPLE).apply {
             type = "text/plain"
             putExtra(Intent.EXTRA_SUBJECT, subject)
-            putExtra(Intent.EXTRA_STREAM, uri)
+            putParcelableArrayListExtra(Intent.EXTRA_STREAM, uris)
             addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION)
         }
         Intent.createChooser(send, chooserTitle).apply {

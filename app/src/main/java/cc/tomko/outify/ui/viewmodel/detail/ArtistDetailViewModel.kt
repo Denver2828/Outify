@@ -10,9 +10,11 @@ import cc.tomko.outify.core.model.Album
 import cc.tomko.outify.core.model.Artist
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.dropHidden
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -54,6 +56,7 @@ class ArtistDetailViewModel @Inject constructor(
     private val playbackStateHolder: PlaybackStateHolder,
     val spirc: SpircWrapper,
     val likedDao: LikedDao,
+    private val hiddenItemsRepository: HiddenItemsRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
     val json = Json { ignoreUnknownKeys = true }
@@ -149,6 +152,7 @@ class ArtistDetailViewModel @Inject constructor(
             if (uris.isEmpty()) flowOf(emptyList())
             else metadata.observeTracks(uris)
         }
+        .combine(hiddenItemsRepository.hiddenUris) { tracks, hidden -> tracks.dropHidden(hidden) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),
@@ -161,6 +165,7 @@ class ArtistDetailViewModel @Inject constructor(
             if (uris.isEmpty()) flowOf(emptyList())
             else metadata.observeAlbums(uris)
         }
+        .combine(hiddenItemsRepository.hiddenUris) { albums, hidden -> albums.dropHidden(hidden) }
         .stateIn(
             scope = viewModelScope,
             started = SharingStarted.WhileSubscribed(5_000),

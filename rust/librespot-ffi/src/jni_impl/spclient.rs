@@ -123,6 +123,12 @@ pub extern "system" fn spotify_search(
         Ok(u) => u,
         Err(e) => {
             error!("spotify search api failed: {e}");
+            // Kotlin only sees the array or the exception; a bare null hid the reason for
+            // days (it surfaced as "Attempt to get length of null array").
+            let _ = env.throw_new(
+                "java/lang/RuntimeException",
+                format!("Spotify search failed: {e}"),
+            );
             return std::ptr::null_mut();
         }
     };

@@ -3,6 +3,21 @@
     <string name="changelog_title">Registro de cambios</string>
     <string name="changelog_settings_description">Novedades de cada versión</string>
 
+    <!-- 1.7.9 -->
+    <string name="changelog_1_7_9_version" translatable="false">1.7.9</string>
+    <string name="changelog_1_7_9_date">9 de septiembre de 2026</string>
+    <string name="changelog_1_7_9_title">Ocultar canciones y discos, botón de inicio y marca más grande</string>
+    <string-array name="changelog_1_7_9_bullets">
+        <item>Un botón de menos junto a cada corazón oculta una canción o un disco para siempre: desaparecen de todas las listas y se saltan automáticamente si suenan. Se pueden restaurar desde Ajustes &gt; Ocultos.</item>
+        <item>Un botón de inicio junto a la marca "Spoty by Darius", presente en todas las pantallas, cierra el reproductor y la letra y vuelve directo al inicio.</item>
+        <item>La marca "Spoty by Darius" ahora se ve el doble de grande.</item>
+        <item>El reporte de diagnóstico de audio ahora filtra el ruido del sistema en el logcat (Samsung lo inunda) y registra cada fallo de búsqueda con su causa exacta.</item>
+        <item>Los botones del volante, de auriculares Bluetooth y de Android Auto (siguiente, anterior, reproducir/pausar) ahora se aplican directo sobre la reproducción, sin pasar por el manejo por defecto de Media3 que los descartaba en la caja del auto.</item>
+        <item>Cuando una búsqueda falla, el error real de Spotify llega a la app en vez de un vacío sin explicación.</item>
+        <item>Si Spotify rechaza la sesión de la cuenta (pasa cuando cambian las credenciales de la app después de iniciar sesión), Spoty descarta esa sesión y avisa que hay que volver a conectar la cuenta desde Inicio, en vez de fallar en silencio en búsquedas, favoritos y listas.</item>
+        <item>El reporte de diagnóstico se comparte en dos archivos: resumen (estado, eventos, cierres del proceso) y logcat, para que el resumen entre entero en un mensaje. Además registra qué proveedor de letras respondió y con qué resultado.</item>
+    </string-array>
+
     <!-- 1.7.8 -->
     <string name="changelog_1_7_8_version" translatable="false">1.7.8</string>
     <string name="changelog_1_7_8_date">8 de septiembre de 2026</string>

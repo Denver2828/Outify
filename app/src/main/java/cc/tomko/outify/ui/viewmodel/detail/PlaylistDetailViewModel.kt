@@ -14,11 +14,13 @@ import cc.tomko.outify.core.model.Playlist
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.getCover
+import cc.tomko.outify.core.model.isHiddenIn
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.CacheFirstResult
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.RefreshFailure
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.R
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -53,8 +55,16 @@ class PlaylistDetailViewModel @Inject constructor(
     val likedDao: LikedDao,
     val spClient: SpClient,
     private val rateLimitGate: RateLimitGate,
+    private val hiddenItemsRepository: HiddenItemsRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
+
+    /**
+     * Live hidden-uri set the screen passes to [buildPlaylistRows]. A playlist item only
+     * carries the track uri, so a hide through the album is applied once the track's
+     * metadata is resolved; the screen rebuilds the rows when either input changes.
+     */
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
 
     private val PLAYLIST_STATE_KEY = "playlist_state"
     private val PLAYLIST_URI_KEY = "playlist_uri"
@@ -258,14 +268,20 @@ class PlaylistDetailViewModel @Inject constructor(
         return fetched
     }
 
-    fun buildPlaylistRows(playlist: Playlist): List<PlaylistRow> =
-        playlist.contents.mapIndexed { index, item ->
-            PlaylistRow(
-                key = "${playlist.uri}:$index:${item.uri}",
-                trackUri = item.uri,
-                addedBy = item.attributes.addedBy
-            )
-        }
+    fun buildPlaylistRows(playlist: Playlist, hidden: Set<String>): List<PlaylistRow> {
+        return playlist.contents
+            .filterNot { item ->
+                hidden.isNotEmpty() &&
+                    (item.uri in hidden || getTrackState(item.uri)?.isHiddenIn(hidden) == true)
+            }
+            .mapIndexed { index, item ->
+                PlaylistRow(
+                    key = "${playlist.uri}:$index:${item.uri}",
+                    trackUri = item.uri,
+                    addedBy = item.attributes.addedBy
+                )
+            }
+    }
 
     suspend fun getArtworkUrl(playlist: Playlist): String {
         return playlist.getCover(metadata) ?: "unknown cover"

@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.WindowInsets
 import androidx.compose.foundation.layout.asPaddingValues
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
@@ -102,17 +103,25 @@ fun CollapsingHeader(
             }
 
             // Brand mark stays visible at every collapse fraction, left of the optional action.
+            // The row starts right of the back button so the mark shrinks instead of overlapping
+            // it on narrow phone widths.
             Row(
-                modifier = Modifier.align(Alignment.TopEnd),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .fillMaxWidth()
+                    .padding(start = 72.dp),
+                horizontalArrangement = Arrangement.End,
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 if (actionButtonContent != null) {
-                    SpotyBrand(modifier = Modifier.padding(end = 8.dp))
+                    SpotyBrand(modifier = Modifier.weight(1f, fill = false).padding(end = 8.dp))
                     Box(modifier = Modifier.padding(end = 12.dp, top = 4.dp)) {
                         actionButtonContent()
                     }
                 } else {
-                    SpotyBrand(modifier = Modifier.padding(end = 16.dp, top = 12.dp))
+                    SpotyBrand(
+                        modifier = Modifier.weight(1f, fill = false).padding(end = 16.dp, top = 12.dp)
+                    )
                 }
             }
 

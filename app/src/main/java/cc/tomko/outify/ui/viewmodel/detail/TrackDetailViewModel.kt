@@ -9,6 +9,8 @@ import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.repository.HiddenItemsRepository
+import cc.tomko.outify.ui.notifications.showTrackHiddenNotification
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
@@ -38,8 +40,11 @@ class TrackDetailViewModel @Inject constructor(
     private val lyricsRepository: LyricsRepository,
     private val likedRepository: LikedRepository,
     private val likedDao: LikedDao,
+    private val hiddenItemsRepository: HiddenItemsRepository,
     settingsRepository: SettingsRepository,
 ) : ViewModel() {
+
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
 
     private val _uiState = MutableStateFlow(TrackUiState())
     val uiState: StateFlow<TrackUiState> = _uiState
@@ -128,6 +133,22 @@ class TrackDetailViewModel @Inject constructor(
         viewModelScope.launch {
             // Shared optimistic toggle: main-safe, rolled back if Spotify rejects it.
             likedRepository.toggleTrackLiked(trackUri.substringAfterLast(":"))
+        }
+    }
+
+    fun toggleHideTrack(trackUri: String) {
+        viewModelScope.launch {
+            if (hiddenUris.value.contains(trackUri)) {
+                hiddenItemsRepository.unhide(trackUri)
+            } else {
+                hiddenItemsRepository.hideTrack(trackUri)
+                if (currentAudio.value?.uri == trackUri) {
+                    withContext(Dispatchers.IO) { spirc.playerNext() }
+                }
+                showTrackHiddenNotification(context) {
+                    viewModelScope.launch { hiddenItemsRepository.unhide(trackUri) }
+                }
+            }
         }
     }
 

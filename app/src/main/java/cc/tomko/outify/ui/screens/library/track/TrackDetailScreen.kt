@@ -29,6 +29,8 @@ import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.KeyboardArrowUp
 import androidx.compose.material.icons.rounded.Favorite
 import androidx.compose.material.icons.rounded.PlayArrow
+import androidx.compose.material.icons.rounded.RemoveCircle
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ExperimentalMaterial3ExpressiveApi
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.FloatingActionButton
@@ -110,6 +112,8 @@ fun SharedTransitionScope.TrackDetailScreen(
             val spirc = viewModel.spirc
 
             val likedTrackIds by viewModel.likedTrackIds.collectAsState()
+            val hiddenUris by viewModel.hiddenUris.collectAsState()
+            val isTrackHidden = track.uri in hiddenUris
 
             val lazyList = rememberLazyListState()
 
@@ -272,15 +276,26 @@ fun SharedTransitionScope.TrackDetailScreen(
                         }
                     },
                     actionButtonContent = {
-                        FilledIconButton(onClick = { viewModel.toggleLike(track.uri) }) {
-                            Icon(
-                                imageVector = if (track.id in likedTrackIds)
-                                    Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
-                                contentDescription = stringResource(
-                                    if (track.id in likedTrackIds) R.string.screen_track_unlike_cd
-                                    else R.string.screen_track_like_cd
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            FilledIconButton(onClick = { viewModel.toggleLike(track.uri) }) {
+                                Icon(
+                                    imageVector = if (track.id in likedTrackIds)
+                                        Icons.Rounded.Favorite else Icons.Filled.FavoriteBorder,
+                                    contentDescription = stringResource(
+                                        if (track.id in likedTrackIds) R.string.screen_track_unlike_cd
+                                        else R.string.screen_track_like_cd
+                                    )
                                 )
-                            )
+                            }
+
+                            FilledIconButton(onClick = { viewModel.toggleHideTrack(track.uri) }) {
+                                Icon(
+                                    imageVector = if (isTrackHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                                    contentDescription = stringResource(
+                                        if (isTrackHidden) R.string.unhide_item else R.string.hide_track
+                                    )
+                                )
+                            }
                         }
                     }
                 )

@@ -8,9 +8,12 @@ import cc.tomko.outify.core.SpClient
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.dropHidden
 import cc.tomko.outify.core.model.toPlayableAudio
 import cc.tomko.outify.data.dao.LikedDao
 import cc.tomko.outify.data.metadata.Metadata
+import cc.tomko.outify.data.repository.HiddenItemsRepository
+import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.playback.PlaybackStateHolder
 import cc.tomko.outify.ui.screens.library.album.AlbumUiState
 import cc.tomko.outify.R
@@ -21,6 +24,7 @@ import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
@@ -40,10 +44,11 @@ class AlbumDetailViewModel @Inject constructor(
     val spClient: SpClient,
     val json: Json,
     val likedDao: LikedDao,
+    private val hiddenItemsRepository: HiddenItemsRepository,
     private val savedStateHandle: SavedStateHandle,
 ) : ViewModel() {
 
-    private val _uiState = MutableStateFlow(
+    private val rawUiState = MutableStateFlow(
         savedStateHandle.get<String>(ALBUM_STATE_KEY)?.let {
             try {
                 json.decodeFromString<AlbumUiState>(it)
@@ -52,7 +57,33 @@ class AlbumDetailViewModel @Inject constructor(
             }
         } ?: AlbumUiState()
     )
-    val uiState: StateFlow<AlbumUiState> = _uiState
+
+    /** [rawUiState] with hidden tracks dropped, live against the hidden set. */
+    val uiState: StateFlow<AlbumUiState> = combine(
+        rawUiState,
+        hiddenItemsRepository.hiddenUris,
+    ) { state, hidden -> state.copy(tracks = state.tracks.dropHidden(hidden)) }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), rawUiState.value)
+
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
+
+    fun toggleHideAlbum() {
+        viewModelScope.launch {
+            val album = rawUiState.value.album ?: return@launch
+            val uri = album.uri
+            if (hiddenUris.value.contains(uri)) {
+                hiddenItemsRepository.unhide(uri)
+            } else {
+                hiddenItemsRepository.hideAlbum(uri)
+                // If the hidden album is currently playing, skip away from it immediately.
+                val playingAlbumUri = currentAudio.value?.sourceTrack?.album?.uri
+                if (playingAlbumUri == uri) {
+                    AudioDiagnostics.record("AlbumDetailViewModel", "hidden album was playing, skipping: $uri")
+                    withContext(Dispatchers.IO) { spirc.playerNext() }
+                }
+            }
+        }
+    }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     val likedTrackIds: StateFlow<Set<String>> =
@@ -87,7 +118,7 @@ class AlbumDetailViewModel @Inject constructor(
 
     fun toggleSave() {
         viewModelScope.launch {
-            val album = _uiState.value.album ?: return@launch
+            val album = rawUiState.value.album ?: return@launch
             val uri = album.uri
             if (_isSaved.value) {
                 withContext(Dispatchers.IO) { spClient.deleteItems(arrayOf(uri)) }
@@ -106,7 +137,7 @@ class AlbumDetailViewModel @Inject constructor(
         val uri = _lastAlbumUri ?: return
         viewModelScope.launch {
             spirc.restart()
-            _uiState.value = _uiState.value.copy(isLoading = true, error = null)
+            rawUiState.value = rawUiState.value.copy(isLoading = true, error = null)
             loadAlbum(uri)
         }
     }
@@ -133,7 +164,7 @@ class AlbumDetailViewModel @Inject constructor(
                     isLoading = false,
                     error = context.getString(R.string.screen_error_album_not_found)
                 )
-                _uiState.value = newState
+                rawUiState.value = newState
                 saveState(newState)
                 return
             }
@@ -151,7 +182,7 @@ class AlbumDetailViewModel @Inject constructor(
                 album = album,
                 tracks = tracks,
             )
-            _uiState.value = newState
+            rawUiState.value = newState
             _isSaved.value = false
             checkIsSaved(albumUri)
             saveState(newState)
@@ -160,7 +191,7 @@ class AlbumDetailViewModel @Inject constructor(
                 isLoading = false,
                 error = e.message
             )
-            _uiState.value = newState
+            rawUiState.value = newState
             saveState(newState)
         }
     }
@@ -176,7 +207,7 @@ class AlbumDetailViewModel @Inject constructor(
                     isLoading = false,
                     error = context.getString(R.string.screen_error_album_for_track_not_found)
                 )
-                _uiState.value = newState
+                rawUiState.value = newState
                 saveState(newState)
                 return
             }
@@ -187,7 +218,7 @@ class AlbumDetailViewModel @Inject constructor(
                 isLoading = false,
                 error = e.message
             )
-            _uiState.value = newState
+            rawUiState.value = newState
             saveState(newState)
         }
     }

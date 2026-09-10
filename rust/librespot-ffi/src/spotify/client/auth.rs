@@ -332,6 +332,20 @@ impl SpotifyClient {
             Ok(r) => r,
             Err(e @ SpotifyApiError::Generic(_)) | Err(e @ SpotifyApiError::Http(..)) => {
                 let message = e.to_string();
+                if message.contains("invalid_client") || message.contains("invalid_grant") {
+                    // The refresh token belongs to another client id (credentials changed
+                    // after login) or was revoked: no retry will ever succeed. Dropping the
+                    // stored account flips the UI to "connect with Spotify", the only way out.
+                    warn!("refresh_token rejected, dropping the stored account token: {message}");
+                    cache.token = None;
+                    cache.refresh_failure = None;
+                    if let Err(remove_err) = self.remove_token() {
+                        error!("rejected token could not be removed: {remove_err}");
+                    }
+                    return Err(SpotifyApiError::Generic(format!(
+                        "account token rejected, sign in again: {message}"
+                    )));
+                }
                 warn!("refresh_token failed, not retrying for {} s: {message}", REFRESH_FAILURE_TTL.as_secs());
                 cache.refresh_failure = Some((Instant::now() + REFRESH_FAILURE_TTL, message));
                 return Err(e);

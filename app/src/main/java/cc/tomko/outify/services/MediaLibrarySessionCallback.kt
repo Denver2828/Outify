@@ -11,6 +11,7 @@ import androidx.core.net.toUri
 import androidx.media3.common.MediaItem
 import androidx.media3.common.MediaMetadata
 import androidx.media3.common.MediaMetadata.MEDIA_TYPE_MUSIC
+import androidx.media3.common.Player
 import androidx.media3.common.util.UnstableApi
 import androidx.media3.session.LibraryResult
 import androidx.media3.session.MediaLibraryService
@@ -33,6 +34,7 @@ import cc.tomko.outify.core.spirc.SpircController
 import cc.tomko.outify.core.spirc.SpircWrapper
 import cc.tomko.outify.data.metadata.Metadata
 import cc.tomko.outify.data.metadata.NativeErrorHandler
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.SearchRepository
 import cc.tomko.outify.diagnostics.AudioDiagnostics
 import cc.tomko.outify.ui.model.search.SearchResultType
@@ -87,7 +89,17 @@ class MediaLibrarySessionCallback @Inject constructor(
     private val searchRepository: SearchRepository,
     private val json: Json,
     private val rateLimitGate: RateLimitGate,
+    private val hiddenItemsRepository: HiddenItemsRepository,
 ) : MediaLibraryService.MediaLibrarySession.Callback {
+
+    /** Drops tracks whose own uri, or whose album uri, is in the hidden set. */
+    private fun List<Track>.dropHiddenTracks(): List<Track> {
+        val hidden = hiddenItemsRepository.hiddenUris.value
+        if (hidden.isEmpty()) return this
+        return filterNot { track ->
+            track.uri in hidden || (track.album?.uri?.let { it in hidden } == true)
+        }
+    }
 
     companion object {
         val TAG = MediaLibrarySessionCallback::class.simpleName.toString()
@@ -173,20 +185,68 @@ class MediaLibrarySessionCallback @Inject constructor(
         )
     }
 
-    // Diagnostics only: the shareable audio report shows which hardware keys (steering wheel,
-    // Bluetooth, Android Auto) actually reach the session. Default handling is untouched.
+    /**
+     * Hardware transport keys (steering wheel, Bluetooth, Android Auto) are applied here
+     * directly instead of through Media3's default media-button handling.
+     *
+     * Field evidence (Doro car box, 2026-09-09): every NEXT/PREVIOUS key reached this callback
+     * and Media3 dropped it before `Player.handleSeek` ran, so the default path cannot be
+     * trusted on that device. The real queue lives in librespot anyway, so next/previous go
+     * straight to it; play/pause go through the Media3 player so audio focus and the
+     * notification stay in sync. Double-tap-for-next on headsets is deliberately not
+     * reproduced. Every event is still written to the diagnostics report.
+     */
     override fun onMediaButtonEvent(
         session: MediaSession,
         controllerInfo: MediaSession.ControllerInfo,
         intent: Intent
     ): Boolean {
         val event = IntentCompat.getParcelableExtra(intent, Intent.EXTRA_KEY_EVENT, KeyEvent::class.java)
+            ?: return super.onMediaButtonEvent(session, controllerInfo, intent)
         AudioDiagnostics.record(
             "MediaSession",
-            "media button keyCode=${event?.keyCode} action=${event?.action} " +
-                "repeat=${event?.repeatCount} from=${controllerInfo.packageName}"
+            "media button keyCode=${event.keyCode} action=${event.action} " +
+                "repeat=${event.repeatCount} from=${controllerInfo.packageName}"
         )
-        return super.onMediaButtonEvent(session, controllerInfo, intent)
+        if (event.keyCode !in TRANSPORT_KEY_CODES) {
+            return super.onMediaButtonEvent(session, controllerInfo, intent)
+        }
+        // The key-up half of a handled key is consumed too, so Media3 never sees a lone UP.
+        if (event.action != KeyEvent.ACTION_DOWN || event.repeatCount > 0) return true
+
+        val player = session.player
+        AudioDiagnostics.record(
+            "MediaSession",
+            "player before key: state=${player.playbackState} playWhenReady=${player.playWhenReady} " +
+                "windows=${player.currentTimeline.windowCount} hasNext=${player.hasNextMediaItem()} " +
+                "canNext=${player.isCommandAvailable(Player.COMMAND_SEEK_TO_NEXT)}"
+        )
+        when (event.keyCode) {
+            KeyEvent.KEYCODE_MEDIA_NEXT, KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD ->
+                dispatchTransport("next") { spirc.playerNext() }
+            KeyEvent.KEYCODE_MEDIA_PREVIOUS, KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD ->
+                dispatchTransport("previous") { spirc.playerPrevious() }
+            KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE, KeyEvent.KEYCODE_HEADSETHOOK -> {
+                if (player.playWhenReady) player.pause() else player.play()
+                AudioDiagnostics.record("MediaSession", "applied play/pause -> playWhenReady=${player.playWhenReady}")
+            }
+            KeyEvent.KEYCODE_MEDIA_PLAY -> {
+                player.play()
+                AudioDiagnostics.record("MediaSession", "applied play")
+            }
+            KeyEvent.KEYCODE_MEDIA_PAUSE, KeyEvent.KEYCODE_MEDIA_STOP -> {
+                player.pause()
+                AudioDiagnostics.record("MediaSession", "applied pause")
+            }
+        }
+        return true
+    }
+
+    private fun dispatchTransport(name: String, command: () -> Boolean) {
+        scope.launch(Dispatchers.IO) {
+            val accepted = command()
+            AudioDiagnostics.record("MediaSession", "applied $name -> accepted=$accepted")
+        }
     }
 
     override fun onPlaybackResumption(
@@ -560,7 +620,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             .filter { it.startsWith(TRACK_URI_PREFIX) }
             .window(page, pageSize, MAX_PLAYLIST_TRACKS)
 
-        return metadata.getTrackMetadata(trackUris).map { it.toMediaItem(contextUri = playlistUri) }
+        return metadata.getTrackMetadata(trackUris).dropHiddenTracks().map { it.toMediaItem(contextUri = playlistUri) }
     }
 
     private suspend fun getTopArtists(): List<MediaItem> {
@@ -604,7 +664,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             .filter { it.startsWith(TRACK_URI_PREFIX) }
             .distinct()
 
-        return metadata.getTrackMetadata(trackUris).map { it.toMediaItem(contextUri = artistUri) }
+        return metadata.getTrackMetadata(trackUris).dropHiddenTracks().map { it.toMediaItem(contextUri = artistUri) }
     }
 
     private suspend fun getLikedTracks(page: Int, pageSize: Int): List<MediaItem> {
@@ -614,6 +674,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             .window(page, pageSize, MAX_LIKED_TRACKS)
 
         return metadata.getTrackMetadata(trackUris)
+            .dropHiddenTracks()
             .map { it.toMediaItem(contextUri = OutifyUri.Liked.toUriString()) }
     }
 
@@ -632,7 +693,7 @@ class MediaLibrarySessionCallback @Inject constructor(
             .distinct()
             .take(MAX_RECENT_TRACKS)
 
-        return metadata.getTrackMetadata(trackUris).map { it.toMediaItem() }
+        return metadata.getTrackMetadata(trackUris).dropHiddenTracks().map { it.toMediaItem() }
     }
 
     // endregion
@@ -867,3 +928,16 @@ class MediaLibrarySessionCallback @Inject constructor(
 
     // endregion
 }
+
+/** Hardware keys applied directly to playback by [MediaLibrarySessionCallback.onMediaButtonEvent]. */
+private val TRANSPORT_KEY_CODES = setOf(
+    KeyEvent.KEYCODE_MEDIA_NEXT,
+    KeyEvent.KEYCODE_MEDIA_SKIP_FORWARD,
+    KeyEvent.KEYCODE_MEDIA_PREVIOUS,
+    KeyEvent.KEYCODE_MEDIA_SKIP_BACKWARD,
+    KeyEvent.KEYCODE_MEDIA_PLAY_PAUSE,
+    KeyEvent.KEYCODE_HEADSETHOOK,
+    KeyEvent.KEYCODE_MEDIA_PLAY,
+    KeyEvent.KEYCODE_MEDIA_PAUSE,
+    KeyEvent.KEYCODE_MEDIA_STOP,
+)

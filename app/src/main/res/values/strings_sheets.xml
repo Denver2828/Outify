@@ -9,6 +9,8 @@
     <string name="sheet_action_share">Compartir</string>
     <string name="sheet_action_copy_link">Copiar enlace</string>
     <string name="sheet_action_close">Cerrar</string>
+    <string name="sheet_track_hide_subtitle">No se muestra ni suena nunca más</string>
+    <string name="sheet_album_hide_subtitle">Ninguna de sus canciones se muestra</string>
     <string name="sheet_action_open">Abrir</string>
     <string name="sheet_action_not_now">Ahora no</string>
     <string name="sheet_copied_to_clipboard">Copiado al portapapeles</string>

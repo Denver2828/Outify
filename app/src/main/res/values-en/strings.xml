@@ -16,4 +16,12 @@
     <string name="like">Like</string>
     <string name="outify_playback_widget_description">Fast way to play your favorite tracks</string>
     <string name="shortcut_play_liked_label">Play liked tracks</string>
+
+    <string name="hide_track">Hide song</string>
+    <string name="hide_album">Hide album</string>
+    <string name="unhide_item">Restore</string>
+    <string name="hide_album_confirm_title">Hide this album?</string>
+    <string name="hide_album_confirm_message">Its songs will no longer show up. You can restore it later from Settings &gt; Hidden.</string>
+    <string name="hide_album_confirm_action">Hide</string>
+    <string name="go_home">Go home</string>
 </resources>

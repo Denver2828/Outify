@@ -39,6 +39,7 @@ import cc.tomko.outify.ui.screens.settings.AudioDiagnosticsScreen
 import cc.tomko.outify.ui.screens.settings.ChangelogScreen
 import cc.tomko.outify.ui.screens.settings.DebugScreen
 import cc.tomko.outify.ui.screens.settings.GestureSettingsScreen
+import cc.tomko.outify.ui.screens.settings.HiddenItemsScreen
 import cc.tomko.outify.ui.screens.settings.InterfaceSettingScreen
 import cc.tomko.outify.ui.screens.settings.MiscSettingsScreen
 import cc.tomko.outify.ui.screens.settings.PlaybackSettingScreen
@@ -58,6 +59,7 @@ import cc.tomko.outify.ui.viewmodel.settings.AccountsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AppearanceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.DebugViewModel
 import cc.tomko.outify.ui.viewmodel.settings.GestureSettingViewModel
+import cc.tomko.outify.ui.viewmodel.settings.HiddenItemsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.InterfaceViewModel
 import cc.tomko.outify.ui.viewmodel.settings.AudioDiagnosticsViewModel
 import cc.tomko.outify.ui.viewmodel.settings.MiscSettingsViewModel
@@ -309,7 +311,18 @@ fun SharedTransitionScope.NavigationRoot(
                     },
                     openAccountSettings = {
                         backStack.add(Route.AccountsScreen)
+                    },
+                    openHiddenItems = {
+                        backStack.add(Route.HiddenItemsScreen)
                     }
+                )
+            }
+
+            entry<Route.HiddenItemsScreen> {
+                val viewModel: HiddenItemsViewModel = hiltViewModel()
+                HiddenItemsScreen(
+                    viewModel = viewModel,
+                    onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
                 )
             }
 

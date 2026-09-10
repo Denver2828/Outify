@@ -27,6 +27,7 @@ import androidx.compose.material.icons.filled.History
 import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.Interests
 import androidx.compose.material.icons.filled.Notifications
+import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -67,6 +68,7 @@ fun SettingsScreen(
     openAudioDiagnostics: (() -> Unit),
     openAboutSettings: (() -> Unit),
     openAccountSettings: (() -> Unit),
+    openHiddenItems: (() -> Unit),
 ) {
     val context = LocalContext.current
 
@@ -228,6 +230,13 @@ fun SettingsScreen(
                         description = stringResource(R.string.settings_about_description),
                         icon = { Icon(Icons.Default.Info, contentDescription = null) },
                         onClick = openAboutSettings,
+                    )
+
+                    PreferenceEntry(
+                        title = { Text(stringResource(R.string.settings_hidden_title)) },
+                        description = stringResource(R.string.settings_hidden_description),
+                        icon = { Icon(Icons.Rounded.RemoveCircleOutline, contentDescription = null) },
+                        onClick = openHiddenItems,
                     )
                 }
             }

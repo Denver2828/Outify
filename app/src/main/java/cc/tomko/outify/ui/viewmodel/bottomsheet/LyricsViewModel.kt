@@ -1,5 +1,6 @@
 package cc.tomko.outify.ui.viewmodel.bottomsheet
 
+import android.content.Context
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import cc.tomko.outify.core.spirc.SpircWrapper
@@ -9,13 +10,17 @@ import cc.tomko.outify.core.model.LyricsSource
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Track
 import cc.tomko.outify.data.dao.LikedDao
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.LikedRepository
 import cc.tomko.outify.data.repository.LyricsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.playback.PlaybackModeController
 import cc.tomko.outify.playback.PlaybackStateHolder
+import cc.tomko.outify.ui.notifications.showTrackHiddenNotification
 import dagger.hilt.android.lifecycle.HiltViewModel
+import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CancellationException
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -30,6 +35,7 @@ import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import javax.inject.Inject
 import kotlin.time.DurationUnit
 import kotlin.time.toDuration
@@ -62,7 +68,11 @@ class LyricsViewModel @Inject constructor(
     private val likedDao: LikedDao,
     private val likedRepository: LikedRepository,
     private val modeController: PlaybackModeController,
+    private val hiddenItemsRepository: HiddenItemsRepository,
+    @ApplicationContext private val context: Context,
 ) : ViewModel() {
+
+    val hiddenUris: StateFlow<Set<String>> = hiddenItemsRepository.hiddenUris
 
     private val _lyricsState = MutableStateFlow<LyricsUiState>(LyricsUiState.Missing)
     val lyricsState: StateFlow<LyricsUiState> = _lyricsState.asStateFlow()
@@ -287,6 +297,24 @@ class LyricsViewModel @Inject constructor(
         val trackId = _displayedTrack.value?.id ?: return
         viewModelScope.launch {
             likedRepository.toggleTrackLiked(trackId)
+        }
+    }
+
+    fun toggleHideTrack() {
+        if (_isEpisode.value) return
+        val trackUri = _displayedTrack.value?.uri ?: return
+        viewModelScope.launch {
+            if (hiddenUris.value.contains(trackUri)) {
+                hiddenItemsRepository.unhide(trackUri)
+            } else {
+                hiddenItemsRepository.hideTrack(trackUri)
+                if (isCurrentTrack.value) {
+                    withContext(Dispatchers.IO) { spirc.playerNext() }
+                }
+                showTrackHiddenNotification(context) {
+                    viewModelScope.launch { hiddenItemsRepository.unhide(trackUri) }
+                }
+            }
         }
     }
 

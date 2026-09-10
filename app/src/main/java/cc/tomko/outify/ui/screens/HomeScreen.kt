@@ -348,7 +348,7 @@ private fun HeaderSection(
         }
 
         Row(verticalAlignment = Alignment.CenterVertically) {
-            SpotyBrand(modifier = Modifier.padding(end = 4.dp))
+            SpotyBrand(modifier = Modifier.padding(end = 4.dp), showHome = false)
             IconButton(onClick = onAccountClick) {
                 if (userAvatarUrl != null) {
                     SmartImage(

@@ -12,11 +12,13 @@ import cc.tomko.outify.core.UserProfile
 import cc.tomko.outify.core.model.PlayableAudio
 import cc.tomko.outify.core.model.Profile
 import cc.tomko.outify.core.model.Track
+import cc.tomko.outify.core.model.dropHidden
 import cc.tomko.outify.core.model.toOutifyUri
 import cc.tomko.outify.data.metadata.NativeError
 import cc.tomko.outify.data.metadata.NativeErrorHandler
 import cc.tomko.outify.data.metadata.RefreshFailure
 import cc.tomko.outify.data.metadata.TrackMetadataHelper
+import cc.tomko.outify.data.repository.HiddenItemsRepository
 import cc.tomko.outify.data.repository.SettingsRepository
 import cc.tomko.outify.ui.viewmodel.home.TopsDecision
 import cc.tomko.outify.ui.viewmodel.home.TopsFreshness
@@ -31,6 +33,7 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.distinctUntilChanged
 import kotlinx.coroutines.flow.first
 import kotlinx.coroutines.flow.map
@@ -95,10 +98,21 @@ class HomeViewModel @Inject constructor(
     private val settingsRepository: SettingsRepository,
     private val authManager: AuthManager,
     private val rateLimitGate: RateLimitGate,
+    private val hiddenItemsRepository: HiddenItemsRepository,
 ) : ViewModel() {
 
     private val _uiState = MutableStateFlow<HomeUiState>(HomeUiState.Loading)
-    val uiState: StateFlow<HomeUiState> = _uiState
+
+    /**
+     * Re-filters [topTracks][HomeUiState.Success.topTracks] against the hidden set live, so a
+     * track hidden (or restored) elsewhere disappears (or comes back) without a reload.
+     */
+    val uiState: StateFlow<HomeUiState> = combine(
+        _uiState,
+        hiddenItemsRepository.hiddenUris,
+    ) { state, hidden ->
+        if (state is HomeUiState.Success) state.copy(topTracks = state.topTracks.dropHidden(hidden)) else state
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), HomeUiState.Loading)
 
     /**
      * Set when the top items could not be refreshed while cached ones are on screen. The
