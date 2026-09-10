@@ -389,6 +389,12 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Verificación.** Se incorpora una prueba Compose de acceso a ambos campos con texto grande, teclado y desplazamiento, además del cierre por flecha y Atrás. La compilación de esa prueba no equivale a ejecutarla en un dispositivo; queda pendiente la validación visual real.
 
+### 2026-09-10 — 1.7.14: controles accesibles en el panel de Letras
+
+**Decisión.** El panel de Letras incorpora Aleatorio a la izquierda, conectado al estado persistido y al controlador de reproducción existentes. La barra de progreso y los cuatro controles ocupan filas separadas; los controles tienen áreas de 64 dp y reproducción alcanza 80 dp cuando hay espacio. Las ventanas excepcionalmente estrechas permiten desplazamiento horizontal sin superponer controles.
+
+**Verificación.** Las pruebas Compose del componente usado por el panel comprueban tamaño, separación, estado y acciones con anchos vertical y horizontal. Su compilación no acredita ejecución visual en un dispositivo. No se modifica la autenticación ni el cliente nativo; esta preparación no genera un APK.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.14 -->
+    <string name="changelog_1_7_14_date">September 10, 2026</string>
+    <string name="changelog_1_7_14_title">Larger lyrics playback controls</string>
+    <string-array name="changelog_1_7_14_bullets">
+        <item>The lyrics sheet includes Shuffle at the left of the playback controls, using the same shuffle state as the player.</item>
+        <item>Previous, play/pause and next have larger separate touch targets. The progress slider uses its own row in portrait and landscape.</item>
+    </string-array>
+
     <!-- 1.7.13 -->
     <string name="changelog_1_7_13_date">September 10, 2026</string>
     <string name="changelog_1_7_13_title">Accessible advanced settings</string>

@@ -19,7 +19,6 @@ import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBarsPadding
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.itemsIndexed
 import androidx.compose.foundation.lazy.rememberLazyListState
@@ -28,17 +27,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material.icons.rounded.RemoveCircle
 import androidx.compose.material.icons.rounded.RemoveCircleOutline
 import androidx.compose.material3.ExperimentalMaterial3Api
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.ModalBottomSheet
 import androidx.compose.material3.SheetState
@@ -99,6 +92,7 @@ fun LyricsBottomSheet(
     val lyricsFontFamily by viewModel.lyricsFontFamily.collectAsState()
     val isCurrentTrack by viewModel.isCurrentTrack.collectAsState()
     val isPlaying by viewModel.isPlaying.collectAsState()
+    val isShuffling by viewModel.isShuffling.collectAsState()
     val durationMs by viewModel.durationMs.collectAsState()
     val displayedTrack by viewModel.displayedTrack.collectAsState()
     val isEpisode by viewModel.isEpisode.collectAsState()
@@ -287,82 +281,54 @@ fun LyricsBottomSheet(
                 )
             }
 
-            // Compact controls laid out after the list, so lyrics are never drawn underneath
+            // Reserve separate rows for seeking and transport; neither overlays the lyrics.
             if (showPlaybackControls) {
-                Row(
+                Column(
                     modifier = Modifier
                         .fillMaxWidth()
                         .navigationBarsPadding()
                         .padding(horizontal = 16.dp, vertical = 8.dp)
-                        .height(56.dp),
-                    verticalAlignment = Alignment.CenterVertically
                 ) {
-                    IconButton(
-                        onClick = { onSkipPrevious() },
-                        modifier = Modifier.size(40.dp)
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Icon(
-                            imageVector = Icons.Default.SkipPrevious,
-                            contentDescription = stringResource(R.string.sheet_previous_cd),
-                            modifier = Modifier.size(24.dp)
+                        Text(
+                            text = formatTime(positionMs),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+
+                        WavyMusicSlider(
+                            value = sliderPosition,
+                            onValueChange = {
+                                isDragging = true
+                                sliderPosition = it.coerceIn(0f, 1f)
+                            },
+                            onValueChangeFinished = {
+                                onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
+                                isDragging = false
+                            },
+                            inactiveTrackColor = MaterialTheme.colorScheme.secondary,
+                            isPlaying = isPlaying,
+                            modifier = Modifier
+                                .weight(1f)
+                                .padding(horizontal = 8.dp)
+                        )
+
+                        Text(
+                            text = formatTime(durationMs),
+                            style = MaterialTheme.typography.labelSmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-
-                    FilledIconButton(
-                        onClick = { onPlayPause() },
-                        modifier = Modifier.size(44.dp),
-                        colors = IconButtonDefaults.filledIconButtonColors(
-                            containerColor = MaterialTheme.colorScheme.primaryContainer,
-                            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
-                    ) {
-                        Icon(
-                            imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                            contentDescription = if (isPlaying) stringResource(R.string.sheet_pause_cd) else stringResource(R.string.sheet_play_cd),
-                            modifier = Modifier.size(26.dp)
-                        )
-                    }
-
-                    IconButton(
-                        onClick = { onSkipNext() },
-                        modifier = Modifier.size(40.dp)
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.SkipNext,
-                            contentDescription = stringResource(R.string.sheet_next_cd),
-                            modifier = Modifier.size(24.dp)
-                        )
-                    }
-
-                    Spacer(modifier = Modifier.width(8.dp))
-
-                    Text(
-                        text = formatTime(positionMs),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-
-                    WavyMusicSlider(
-                        value = sliderPosition,
-                        onValueChange = {
-                            isDragging = true
-                            sliderPosition = it.coerceIn(0f, 1f)
-                        },
-                        onValueChangeFinished = {
-                            onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
-                            isDragging = false
-                        },
-                        inactiveTrackColor = MaterialTheme.colorScheme.secondary,
+                    LyricsPlaybackControls(
                         isPlaying = isPlaying,
-                        modifier = Modifier
-                            .weight(1f)
-                            .padding(horizontal = 8.dp)
-                    )
-
-                    Text(
-                        text = formatTime(durationMs),
-                        style = MaterialTheme.typography.labelSmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        isShuffling = isShuffling,
+                        onShuffle = viewModel::toggleShuffle,
+                        onPrevious = onSkipPrevious,
+                        onPlayPause = onPlayPause,
+                        onNext = onSkipNext,
                     )
                 }
             }
