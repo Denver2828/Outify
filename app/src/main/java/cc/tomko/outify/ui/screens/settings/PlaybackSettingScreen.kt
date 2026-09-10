@@ -39,6 +39,7 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableFloatStateOf
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
@@ -92,6 +93,17 @@ fun PlaybackSettingScreen(
     val lyricsFallbackEnabled by viewModel.lyricsFallbackEnabled.collectAsState(initial = true)
     val savedClientId by viewModel.clientId.collectAsState(initial = null)
     val savedClientSecret by viewModel.clientSecret.collectAsState(initial = null)
+    var showAdvancedSettings by rememberSaveable { mutableStateOf(false) }
+
+    if (showAdvancedSettings) {
+        AdvancedSettingsDialog(
+            savedClientId = savedClientId,
+            savedClientSecret = savedClientSecret,
+            onClientIdChange = viewModel::setClientId,
+            onClientSecretChange = viewModel::setClientSecret,
+            onDismiss = { showAdvancedSettings = false },
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -360,51 +372,11 @@ fun PlaybackSettingScreen(
             }
 
             item {
-                var advancedSettings by remember { mutableStateOf(false) }
-                ElevatedCard(modifier = modifier.fillMaxWidth()) {
+                ElevatedCard(modifier = Modifier.fillMaxWidth()) {
                     PreferenceEntry(
                         title = { Text(stringResource(R.string.settings_advanced_title)) },
-                        onClick = { advancedSettings = !advancedSettings }
+                        onClick = { showAdvancedSettings = true }
                     )
-
-                    if (advancedSettings) {
-                        Column {
-                            var clientIdInput by remember(savedClientId) {
-                                mutableStateOf(savedClientId ?: "")
-                            }
-                            var clientSecretInput by remember(savedClientSecret) {
-                                mutableStateOf(savedClientSecret ?: "")
-                            }
-
-                            LaunchedEffect(clientIdInput) {
-                                delay(500)
-                                if (clientIdInput != (savedClientId ?: "")) {
-                                    viewModel.setClientId(clientIdInput)
-                                }
-                            }
-
-                            LaunchedEffect(clientSecretInput) {
-                                delay(500)
-                                if (clientSecretInput != (savedClientSecret ?: "")) {
-                                    viewModel.setClientSecret(clientSecretInput)
-                                }
-                            }
-
-                            TextInputPreferenceEntry(
-                                title = { Text(stringResource(R.string.settings_client_id_title)) },
-                                placeholder = stringResource(R.string.settings_leave_empty_default),
-                                value = clientIdInput,
-                                onValueChange = { clientIdInput = it },
-                            )
-
-                            TextInputPreferenceEntry(
-                                title = { Text(stringResource(R.string.settings_client_secret_title)) },
-                                placeholder = stringResource(R.string.settings_leave_empty_default),
-                                value = clientSecretInput,
-                                onValueChange = { clientSecretInput = it },
-                            )
-                        }
-                    }
                 }
             }
         }

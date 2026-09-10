@@ -381,6 +381,14 @@ Además, un botón de inicio (`Icons.Rounded.Home`) se agregó a la izquierda de
 
 **Límites y pruebas.** Las pruebas ejecutan el coordinador de acceso y el orquestador reales con una comprobación de cuenta controlada; la conexión con el ciclo de vida Android se revisa estáticamente, sin prueba de dispositivo. No cambia el comportamiento nativo ante un 401 ni la política de renovación o duración de las pausas.
 
+### 2026-09-10 — 1.7.13: ajustes avanzados en una ventana independiente
+
+**Decisión.** Los campos avanzados dejan de expandirse dentro del último elemento de la lista de Reproducción. Se abren en un diálogo de ventana completa, por encima de la navegación y del reproductor, con lista desplazable y espacios para las barras del sistema y el teclado. La flecha superior y Atrás cierran la ventana.
+
+**Semántica.** Se conservan ambos campos, sus valores vacíos como selección predeterminada y el guardado automático tras 500 ms. Las credenciales no se copian a estado guardable ni a registros. No cambian la autenticación, la búsqueda ni el cliente nativo.
+
+**Verificación.** Se incorpora una prueba Compose de acceso a ambos campos con texto grande, teclado y desplazamiento, además del cierre por flecha y Atrás. La compilación de esa prueba no equivale a ejecutarla en un dispositivo; queda pendiente la validación visual real.
+
 ## Problemas conocidos heredados
 
 - **Doble padding inferior en la hoja del reproductor.** Ver la entrada 1.1.1 y 1.1.2. Mitigado por el dimensionado de la tapa, no corregido en su origen.

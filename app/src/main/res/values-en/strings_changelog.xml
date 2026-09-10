@@ -3,6 +3,14 @@
     <string name="changelog_title">Changelog</string>
     <string name="changelog_settings_description">What is new in each version</string>
 
+    <!-- 1.7.13 -->
+    <string name="changelog_1_7_13_date">September 10, 2026</string>
+    <string name="changelog_1_7_13_title">Accessible advanced settings</string>
+    <string-array name="changelog_1_7_13_bullets">
+        <item>Advanced playback settings open in an independent scrollable window, above the bottom navigation and player.</item>
+        <item>The window accounts for system bars and the keyboard. Close it with the top arrow or Back; field autosave behavior is unchanged.</item>
+    </string-array>
+
     <!-- 1.7.12 -->
     <string name="changelog_1_7_12_date">September 10, 2026</string>
     <string name="changelog_1_7_12_title">Clear search account state and errors</string>
