@@ -26,6 +26,9 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.setValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
@@ -35,6 +38,7 @@ import androidx.compose.ui.text.AnnotatedString
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.unit.dp
 import cc.tomko.outify.R
+import cc.tomko.outify.diagnostics.CloudReport
 import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.viewmodel.settings.AudioDiagnosticsViewModel
 import kotlinx.coroutines.launch
@@ -52,6 +56,9 @@ fun AudioDiagnosticsScreen(
     val context = LocalContext.current
     val clipboard = LocalClipboardManager.current
     val scope = rememberCoroutineScope()
+    var cloudOpen by remember { mutableStateOf(false) }
+    var cloudSnapshot by remember { mutableStateOf<CloudReport?>(null) }
+    if (cloudOpen) CloudDiagnosticsDialog(cloudSnapshot) { cloudOpen = false; cloudSnapshot = null }
     val shareSubject = stringResource(R.string.settings_audio_diagnostics_share_subject)
     val shareTitle = stringResource(R.string.settings_audio_diagnostics_share)
 
@@ -146,6 +153,11 @@ fun AudioDiagnosticsScreen(
             }
 
             Spacer(Modifier.height(8.dp))
+
+            OutlinedButton(enabled = !busy, onClick = {
+                cloudSnapshot = CloudReport.prepare(report)
+                cloudOpen = true
+            }) { Text(stringResource(R.string.cloud_title)) }
 
             Text(
                 text = if (busy && report.isEmpty()) stringResource(R.string.settings_audio_diagnostics_loading) else report,
