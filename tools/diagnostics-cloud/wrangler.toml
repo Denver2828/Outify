@@ -1,0 +1,21 @@
+name = "spoty-diagnostics"
+main = "worker.mjs"
+compatibility_date = "2026-09-11"
+account_id = "87118d45d31909a16af0e58b8ebcac65"
+workers_dev = true
+preview_urls = false
+
+[limits]
+cpu_ms = 10
+
+[observability]
+enabled = false
+
+[triggers]
+crons = ["0 * * * *"]
+
+[[d1_databases]]
+binding = "DB"
+database_name = "spoty-diagnostics"
+database_id = "9e9de14c-c23c-43f3-af74-1672a9a5513a"
+migrations_dir = "migrations"
