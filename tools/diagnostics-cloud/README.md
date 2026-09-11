@@ -46,7 +46,8 @@ same transactional D1 batch as insertion; the INSERT itself checks capacity atom
 Expired reports are immediately excluded from reads; hourly cleanup deletes stored rows.
 Physical deletion can lag if scheduled execution fails; D1 backup retention is separate.
 Worker observability is disabled and code never logs bodies or authorization headers.
-The 10 ms CPU setting and bounded storage are not a guarantee against account quota exhaustion;
+The platform's native Free-plan limits apply; no custom CPU limit is configured.
+Those limits and bounded storage do not guarantee protection against account quota exhaustion;
 stolen upload capabilities and request floods require operator revocation/access controls.
 
 Run from repository root: `node --test tools/diagnostics-cloud/*.test.mjs` (Node 24).

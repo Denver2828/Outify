@@ -5,9 +5,6 @@ account_id = "87118d45d31909a16af0e58b8ebcac65"
 workers_dev = true
 preview_urls = false
 
-[limits]
-cpu_ms = 10
-
 [observability]
 enabled = false
 
