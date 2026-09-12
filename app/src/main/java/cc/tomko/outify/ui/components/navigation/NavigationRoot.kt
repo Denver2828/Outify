@@ -22,6 +22,7 @@ import androidx.navigation3.runtime.entryProvider
 import androidx.navigation3.runtime.rememberSaveableStateHolderNavEntryDecorator
 import androidx.navigation3.ui.NavDisplay
 import cc.tomko.outify.reccobeats.PendingRecommendation
+import cc.tomko.outify.updates.UpdateState
 import cc.tomko.outify.ui.screens.HomeScreen
 import cc.tomko.outify.ui.screens.SearchScreen
 import cc.tomko.outify.ui.screens.library.LibraryScreen
@@ -67,10 +68,12 @@ import cc.tomko.outify.ui.viewmodel.settings.PlaybackSettingViewModel
 import cc.tomko.outify.ui.viewmodel.settings.SettingsViewModel
 
 @Composable
-fun SharedTransitionScope.NavigationRoot(
+internal fun SharedTransitionScope.NavigationRoot(
     backStack: NavBackStack<NavKey>,
     modifier: Modifier = Modifier,
-    bottomPadding: Dp = 0.dp
+    bottomPadding: Dp = 0.dp,
+    updateState: UpdateState = UpdateState.Idle,
+    onCheckForUpdates: () -> Unit = {},
 ) {
     NavDisplay(
         backStack = backStack,
@@ -380,6 +383,8 @@ fun SharedTransitionScope.NavigationRoot(
             entry<Route.AboutScreen> {
                 AboutScreen(
                     onNavigateBack = { backStack.removeAt(backStack.lastIndex) },
+                    updateState = updateState,
+                    onCheckForUpdates = onCheckForUpdates,
                 )
             }
 

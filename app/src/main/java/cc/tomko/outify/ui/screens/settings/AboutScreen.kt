@@ -21,6 +21,8 @@ import androidx.compose.material.icons.filled.Info
 import androidx.compose.material.icons.filled.LibraryMusic
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.Button
+import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ElevatedCard
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -42,13 +44,18 @@ import androidx.compose.ui.unit.sp
 import cc.tomko.outify.BuildConfig
 import cc.tomko.outify.R
 import cc.tomko.outify.ui.components.SpotyBrand
+import cc.tomko.outify.updates.UpdateState
+import java.text.DateFormat
+import java.util.Date
 
 private const val DEVELOPER = "Darius"
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun AboutScreen(
+internal fun AboutScreen(
     onNavigateBack: () -> Unit,
+    updateState: UpdateState = UpdateState.Idle,
+    onCheckForUpdates: () -> Unit = {},
     modifier: Modifier = Modifier,
 ) {
     Scaffold(
@@ -196,6 +203,76 @@ fun AboutScreen(
                     }
                 }
             }
+
+            item {
+                UpdateCheckCard(
+                    state = updateState,
+                    onCheckForUpdates = onCheckForUpdates,
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(horizontal = 16.dp),
+                )
+            }
+        }
+    }
+}
+
+@Composable
+internal fun UpdateCheckCard(
+    state: UpdateState,
+    onCheckForUpdates: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    ElevatedCard(
+        modifier = modifier,
+        shape = RoundedCornerShape(20.dp),
+        elevation = CardDefaults.elevatedCardElevation(defaultElevation = 2.dp),
+    ) {
+        Column(
+            modifier = Modifier.padding(20.dp),
+            verticalArrangement = Arrangement.spacedBy(12.dp),
+        ) {
+            Text(
+                text = stringResource(R.string.settings_update_title),
+                style = MaterialTheme.typography.titleMedium.copy(fontWeight = FontWeight.SemiBold),
+            )
+            Text(
+                text = updateStatusText(state),
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+            Button(
+                onClick = onCheckForUpdates,
+                enabled = state == UpdateState.Idle || state == UpdateState.UpToDate || state is UpdateState.Error,
+                modifier = Modifier.fillMaxWidth(),
+            ) {
+                if (state == UpdateState.Checking) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(18.dp),
+                        strokeWidth = 2.dp,
+                    )
+                } else {
+                    Text(stringResource(R.string.settings_update_check))
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun updateStatusText(state: UpdateState): String = when (state) {
+    UpdateState.Idle -> stringResource(R.string.settings_update_description)
+    UpdateState.Checking -> stringResource(R.string.settings_update_checking)
+    UpdateState.UpToDate -> stringResource(R.string.settings_update_up_to_date)
+    is UpdateState.Available -> stringResource(R.string.settings_update_available, state.release.versionName)
+    is UpdateState.Downloading -> stringResource(R.string.settings_update_downloading)
+    is UpdateState.Ready -> stringResource(R.string.settings_update_ready)
+    is UpdateState.Error -> buildString {
+        append(stringResource(if (state.reason == "rate") R.string.update_rate_error else R.string.update_network_error))
+        if (state.retryAt > 0) {
+            append(' ')
+            append(stringResource(R.string.update_retry_time,
+                DateFormat.getDateTimeInstance().format(Date(state.retryAt))))
         }
     }
 }

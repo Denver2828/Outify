@@ -23,7 +23,7 @@ class UpdatePromptTest {
         var downloads = 0
         var dismissed = 0
         compose.setContent { MaterialTheme {
-            UpdatePrompt(UpdateState.Available(release), { downloads++ }, { dismissed++ }, {}, {})
+            UpdatePrompt(UpdateState.Available(release), { downloads++ }, { dismissed++ }, {})
         } }
         compose.runOnIdle { assertEquals(0, downloads) }
         compose.onNodeWithText(text(R.string.update_download)).performClick()
@@ -34,7 +34,7 @@ class UpdatePromptTest {
     @Test fun downloadProgressIsAccessibleAndCancellable() {
         var cancelled = 0
         compose.setContent { MaterialTheme {
-            UpdatePrompt(UpdateState.Downloading(release, 50), {}, { cancelled++ }, {}, {})
+            UpdatePrompt(UpdateState.Downloading(release, 50), {}, { cancelled++ }, {})
         } }
         compose.onAllNodes(hasProgressBarRangeInfo(ProgressBarRangeInfo(0.5f, 0f..1f))).assertCountEquals(1)
         compose.onNodeWithText(text(R.string.update_cancel)).performClick()
@@ -44,7 +44,7 @@ class UpdatePromptTest {
     @Test fun readyPromptRequiresInstallTap() {
         var installs = 0
         compose.setContent { MaterialTheme {
-            UpdatePrompt(UpdateState.Ready(release, File("fixture.apk")), {}, {}, {}, { installs++ })
+            UpdatePrompt(UpdateState.Ready(release, File("fixture.apk")), {}, {}, { installs++ })
         } }
         compose.runOnIdle { assertEquals(0, installs) }
         compose.onNodeWithText(text(R.string.update_install)).performClick()

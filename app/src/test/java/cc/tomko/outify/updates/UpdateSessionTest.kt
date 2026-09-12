@@ -25,32 +25,44 @@ class UpdateSessionTest {
         assertNull(ReleasePolicy.validateCached(release, "1.7.19", 20719))
     }
 
-    @Test fun checksOnceAndRestoresAvailableDuringCooldownWithoutDownloading() = runBlocking {
-        val store = MemoryStore()
+    @Test fun restoringAtStartupNeverChecksTheNetwork() = runBlocking {
+        val store = MemoryStore(UpdateCache(nextCheck = 10000))
         var checks = 0
-        val session = UpdateSession(this, store, { 1000 }, { checks++; UpdateCheck.Available(release) },
+        val session = UpdateSession(this, store, { 1000 }, { checks++; UpdateCheck.NoUpdate },
             { _, _ -> error("No automatic download") }, temporary.root, ApkVerifier { _, _ -> true })
-        session.start(true); yield()
-        assertEquals(UpdateState.Available(release), session.state.value)
-        session.start(false); yield()
-        assertEquals(1, checks)
-        val restarted = UpdateSession(this, store, { 2000 }, { error("Cooldown must prevent check") },
-            { _, _ -> error("No automatic download") }, temporary.root, ApkVerifier { _, _ -> true })
-        restarted.start(true); yield()
-        assertEquals(UpdateState.Available(release), restarted.state.value)
-        restarted.start(false, dismissed = true); yield()
-        assertEquals(UpdateState.Idle, restarted.state.value)
+        session.restore(); yield()
+        assertEquals(0, checks)
+        assertEquals(UpdateState.Idle, session.state.value)
     }
 
-    @Test fun rateResetBlocksEvenExplicitRetry() = runBlocking {
-        val store = MemoryStore()
+    @Test fun manualCheckBypassesNextCheckAndReportsNoUpdate() = runBlocking {
+        val store = MemoryStore(UpdateCache(nextCheck = 10000))
         var checks = 0
-        val session = UpdateSession(this, store, { 1000 }, { checks++; UpdateCheck.RateLimited(Long.MAX_VALUE) },
-            { _, _ -> error("No download") }, temporary.root, ApkVerifier { _, _ -> false })
-        session.start(true); yield()
-        assertTrue(store.value.rateUntil in 61000..86401000)
-        session.start(true, retry = true); yield()
+        val session = UpdateSession(this, store, { 1000 }, { checks++; UpdateCheck.NoUpdate },
+            { _, _ -> error("No automatic download") }, temporary.root, ApkVerifier { _, _ -> true })
+        session.checkNow(); yield()
         assertEquals(1, checks)
+        assertEquals(UpdateState.UpToDate, session.state.value)
+        assertEquals(1000 + 6 * 60 * 60_000L, store.value.nextCheck)
+    }
+
+    @Test fun persistedRateLimitBlocksManualCheckAndReportsDeadline() = runBlocking {
+        val store = MemoryStore(UpdateCache(rateUntil = 5000))
+        var checks = 0
+        val session = UpdateSession(this, store, { 1000 }, { checks++; UpdateCheck.NoUpdate },
+            { _, _ -> error("No download") }, temporary.root, ApkVerifier { _, _ -> false })
+        session.checkNow(); yield()
+        assertEquals(0, checks)
+        assertEquals(UpdateState.Error("rate", 5000), session.state.value)
+    }
+
+    @Test fun serverRateLimitIsPersistedAndReported() = runBlocking {
+        val store = MemoryStore()
+        val session = UpdateSession(this, store, { 1000 }, { UpdateCheck.RateLimited(Long.MAX_VALUE) },
+            { _, _ -> error("No download") }, temporary.root, ApkVerifier { _, _ -> false })
+        session.checkNow(); yield()
+        assertTrue(store.value.rateUntil in 61000..86401000)
+        assertEquals(UpdateState.Error("rate", store.value.rateUntil), session.state.value)
     }
 
     @Test fun explicitDownloadCancellationPropagatesAndProgressIsBounded() = runBlocking {
@@ -59,7 +71,7 @@ class UpdateSessionTest {
         val session = UpdateSession(this, store, { 1000 }, { error("No check") }, { _, progress ->
             try { progress(9999, 10); awaitCancellation() } finally { cancelled = true }
         }, temporary.root, ApkVerifier { _, _ -> false })
-        session.start(false); yield()
+        session.restore(); yield()
         session.download(); yield()
         assertEquals(UpdateState.Downloading(release, 10), session.state.value)
         session.dismiss(); yield()
@@ -86,7 +98,7 @@ class UpdateSessionTest {
         val session = UpdateSession(this, MemoryStore(UpdateCache(Long.MAX_VALUE, release = release)),
             { 100000000 }, { error("No check") }, { _, _ -> error("No download") },
             temporary.root, ApkVerifier { _, _ -> true })
-        session.start(true); yield()
+        session.restore(); yield()
         assertEquals(listOf(pending), directory.listFiles()!!.toList())
         assertEquals(UpdateState.Ready(release, pending), session.state.value)
     }

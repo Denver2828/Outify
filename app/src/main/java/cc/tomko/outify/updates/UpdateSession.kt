@@ -11,6 +11,7 @@ import java.io.File
 internal sealed interface UpdateState {
     data object Idle : UpdateState
     data object Checking : UpdateState
+    data object UpToDate : UpdateState
     data class Available(val release: UpdateRelease) : UpdateState
     data class Downloading(val release: UpdateRelease, val bytes: Long) : UpdateState
     data class Ready(val release: UpdateRelease, val file: File) : UpdateState
@@ -28,46 +29,75 @@ internal class UpdateSession(private val scope: CoroutineScope, private val stor
     private var cached = UpdateCache()
     private val installer = UpdateInstaller(verifier)
 
-    fun start(checkThisProcess: Boolean, dismissed: Boolean = false, retry: Boolean = false) {
+    fun restore(dismissed: Boolean = false) {
         if (job?.isActive == true) return
         job = scope.launch {
             try {
-                mutable.value = UpdateState.Checking
                 cached = store.load()
                 val time = now()
-                // Bound persisted timestamps after clock changes/corruption to avoid permanent suppression.
-                val rate = cached.rateUntil.coerceIn(0, time + 24 * 60 * 60_000L)
-                val due = cached.nextCheck.coerceIn(0, time + 6 * 60 * 60_000L)
-                if (rate != cached.rateUntil || due != cached.nextCheck) {
-                    cached = cached.copy(rateUntil = rate, nextCheck = due)
-                    store.save(cached)
-                }
-                if (checkThisProcess && time >= rate && (retry || time >= due)) {
-                    store.save(cached.copy(nextCheck = time + 6 * 60 * 60_000L))
-                    when (val result = check()) {
-                        is UpdateCheck.Available -> cached = UpdateCache(time + 6 * 60 * 60_000L, 0, result.release)
-                        UpdateCheck.NoUpdate -> cached = UpdateCache(time + 6 * 60 * 60_000L)
-                        is UpdateCheck.RateLimited -> cached = cached.copy(rateUntil =
-                            ((result.resetAtSeconds?.times(1000)) ?: (time + 60 * 60_000L))
-                                .coerceIn(time + 60_000L, time + 24 * 60 * 60_000L))
-                        else -> { mutable.value = UpdateState.Error("check"); return@launch }
-                    }
-                    store.save(cached)
-                }
+                boundCache(time)
                 val release = cached.release
                 val pending = release?.let { File(cacheDir, "updates/${it.sha256}.apk") }
-                if (checkThisProcess) File(cacheDir, "updates").listFiles()?.forEach {
+                File(cacheDir, "updates").listFiles()?.forEach {
                     if (it != pending && (it.extension == "part" || time - it.lastModified() > 24 * 60 * 60_000L)) it.delete()
                 }
                 mutable.value = when {
                     dismissed -> UpdateState.Idle
-                    release == null && cached.rateUntil > time -> UpdateState.Error("rate", cached.rateUntil)
                     release == null -> UpdateState.Idle
                     pending != null && pending.isFile && verifier.verify(pending, release) -> UpdateState.Ready(release, pending)
                     else -> UpdateState.Available(release)
                 }
             } catch (cancel: CancellationException) { throw cancel }
               catch (_: Exception) { mutable.value = UpdateState.Error("storage") }
+        }
+    }
+
+    fun checkNow() {
+        if (job?.isActive == true && mutable.value != UpdateState.Idle) return
+        job?.cancel()
+        mutable.value = UpdateState.Checking
+        job = scope.launch {
+            try {
+                cached = store.load()
+                val time = now()
+                boundCache(time)
+                if (cached.rateUntil > time) {
+                    mutable.value = UpdateState.Error("rate", cached.rateUntil)
+                    return@launch
+                }
+                store.save(cached.copy(nextCheck = time + 6 * 60 * 60_000L))
+                when (val result = check()) {
+                    is UpdateCheck.Available -> {
+                        cached = UpdateCache(time + 6 * 60 * 60_000L, 0, result.release)
+                        store.save(cached)
+                        mutable.value = UpdateState.Available(result.release)
+                    }
+                    UpdateCheck.NoUpdate -> {
+                        cached = UpdateCache(time + 6 * 60 * 60_000L)
+                        store.save(cached)
+                        mutable.value = UpdateState.UpToDate
+                    }
+                    is UpdateCheck.RateLimited -> {
+                        cached = cached.copy(rateUntil =
+                            ((result.resetAtSeconds?.times(1000)) ?: (time + 60 * 60_000L))
+                                .coerceIn(time + 60_000L, time + 24 * 60 * 60_000L))
+                        store.save(cached)
+                        mutable.value = UpdateState.Error("rate", cached.rateUntil)
+                    }
+                    else -> mutable.value = UpdateState.Error("check")
+                }
+            } catch (cancel: CancellationException) { throw cancel }
+              catch (_: Exception) { mutable.value = UpdateState.Error("storage") }
+        }
+    }
+
+    private suspend fun boundCache(time: Long) {
+        // Bound persisted timestamps after clock changes/corruption to avoid permanent suppression.
+        val rate = cached.rateUntil.coerceIn(0, time + 24 * 60 * 60_000L)
+        val due = cached.nextCheck.coerceIn(0, time + 6 * 60 * 60_000L)
+        if (rate != cached.rateUntil || due != cached.nextCheck) {
+            cached = cached.copy(rateUntil = rate, nextCheck = due)
+            store.save(cached)
         }
     }
 

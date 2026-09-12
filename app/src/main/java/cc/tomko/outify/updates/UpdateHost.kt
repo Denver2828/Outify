@@ -67,7 +67,7 @@ internal fun UpdateHost(viewModel: UpdateViewModel = hiltViewModel()) {
         install(resumed = true)
     }
     LifecycleEventEffect(Lifecycle.Event.ON_RESUME) { install(resumed = true) }
-    UpdatePrompt(state, viewModel::download, viewModel::later, viewModel::retry, {
+    UpdatePrompt(state, viewModel::download, viewModel::later, {
         install(resumed = false) {
             permissions.launch(Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                 Uri.parse("package:${context.packageName}")))
@@ -77,8 +77,8 @@ internal fun UpdateHost(viewModel: UpdateViewModel = hiltViewModel()) {
 
 @Composable
 internal fun UpdatePrompt(state: UpdateState, download: () -> Unit, later: () -> Unit,
-    retry: () -> Unit, install: () -> Unit, planning: Boolean = false) {
-    if (state == UpdateState.Idle || state == UpdateState.Checking) return
+    install: () -> Unit, planning: Boolean = false) {
+    if (state == UpdateState.Idle || state == UpdateState.Checking || state == UpdateState.UpToDate) return
     val release = when (state) {
         is UpdateState.Available -> state.release
         is UpdateState.Downloading -> state.release
@@ -117,7 +117,6 @@ internal fun UpdatePrompt(state: UpdateState, download: () -> Unit, later: () ->
             when (state) {
                 is UpdateState.Available -> TextButton(onClick = download) { Text(stringResource(R.string.update_download)) }
                 is UpdateState.Ready -> TextButton(onClick = install, enabled = !planning) { Text(stringResource(R.string.update_install)) }
-                is UpdateState.Error -> TextButton(onClick = retry) { Text(stringResource(R.string.update_retry)) }
                 else -> Unit
             }
         },

@@ -54,6 +54,14 @@
     <string name="settings_about_version_label">Version</string>
     <string name="settings_about_build_label">Build</string>
     <string name="settings_about_made_by">Made by</string>
+    <string name="settings_update_title">Updates</string>
+    <string name="settings_update_description">The app will only check for new versions when you press the button.</string>
+    <string name="settings_update_check">Check for updates</string>
+    <string name="settings_update_checking">Checking for updates…</string>
+    <string name="settings_update_up_to_date">Spoty is up to date.</string>
+    <string name="settings_update_available">Spoty %1$s is available.</string>
+    <string name="settings_update_downloading">Downloading the update…</string>
+    <string name="settings_update_ready">The update is ready to install.</string>
 
     <!-- Accounts -->
     <string name="settings_accounts_premium_required_title">Spotify Premium required</string>

@@ -20,8 +20,8 @@ internal class UpdateViewModel @Inject constructor(@ApplicationContext context: 
         store, clock::millis, { GitHubReleaseClient().check() }, downloader::download, context.cacheDir, verifier)
     val state = session.state
 
-    init { session.start(store.started.compareAndSet(false, true), store.dismissed) }
-    fun retry() { store.dismissed = false; session.start(true, retry = true) }
+    init { session.restore(store.dismissed) }
+    fun checkNow() { store.dismissed = false; session.checkNow() }
     fun download() = session.download()
     fun later() { store.dismissed = true; session.dismiss() }
     suspend fun installPlan(allowed: Boolean, resumed: Boolean = false): InstallPlan = withContext(Dispatchers.IO) {

@@ -79,6 +79,7 @@ import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
 import cc.tomko.outify.updates.UpdateHost
+import cc.tomko.outify.updates.UpdateViewModel
 import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.ThemeMode
 import cc.tomko.outify.ui.resolveDarkTheme
@@ -159,8 +160,9 @@ class MainActivity : ComponentActivity() {
 
         setContent {
             val mainViewModel: MainViewModel = hiltViewModel()
+            val updateViewModel: UpdateViewModel = hiltViewModel()
 
-            App(mainViewModel)
+            App(mainViewModel, updateViewModel)
         }
     }
 
@@ -176,8 +178,9 @@ class MainActivity : ComponentActivity() {
     @OptIn(ExperimentalMaterial3Api::class)
     @SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
     @Composable
-    fun App(
+    private fun App(
         viewModel: MainViewModel,
+        updateViewModel: UpdateViewModel,
     ) {
         val startRoute = Route.HomeScreen
 
@@ -259,6 +262,7 @@ class MainActivity : ComponentActivity() {
 
         val trackSwipeSettings by viewModel.swipeSettings.collectAsState(initial = interfaceSettings.gestureSettings)
         val currentAudio by viewModel.currentAudio.collectAsState(initial = null)
+        val updateState by updateViewModel.state.collectAsState()
 
         val density = LocalDensity.current
         val fixedDensity = Density(density.density, fontScale = interfaceSettings.fontScale)
@@ -316,7 +320,7 @@ class MainActivity : ComponentActivity() {
             pureBlack = interfaceSettings.pureBlack,
             highContrastCompat = interfaceSettings.highContrastCompat,
             content = {
-                UpdateHost()
+                UpdateHost(updateViewModel)
                 CompositionLocalProvider(
                     LocalDensity provides fixedDensity
                 ) {
@@ -351,7 +355,9 @@ class MainActivity : ComponentActivity() {
                                     NavigationRoot(
                                         backStack,
                                         modifier = Modifier.matchParentSize(),
-                                        bottomPadding = if (currentAudio != null) 156.dp else if (interfaceSettings.experimentalFloatingNav) 60.dp else 56.dp
+                                        bottomPadding = if (currentAudio != null) 156.dp else if (interfaceSettings.experimentalFloatingNav) 60.dp else 56.dp,
+                                        updateState = updateState,
+                                        onCheckForUpdates = updateViewModel::checkNow,
                                     )
 
                                     InAppNotificationHost(
@@ -457,7 +463,9 @@ class MainActivity : ComponentActivity() {
                                                 NavigationRoot(
                                                     backStack = backStack,
                                                     modifier = Modifier.fillMaxSize(),
-                                                    bottomPadding = if (interfaceSettings.experimentalFloatingNav) 60.dp else 56.dp
+                                                    bottomPadding = if (interfaceSettings.experimentalFloatingNav) 60.dp else 56.dp,
+                                                    updateState = updateState,
+                                                    onCheckForUpdates = updateViewModel::checkNow,
                                                 )
 
                                                 InAppNotificationHost(

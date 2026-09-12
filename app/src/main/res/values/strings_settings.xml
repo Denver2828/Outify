@@ -57,6 +57,14 @@
     <string name="settings_about_build_label">Compilación</string>
     <string name="settings_about_build_number" translatable="false">#%1$d</string>
     <string name="settings_about_made_by">Hecho por</string>
+    <string name="settings_update_title">Actualizaciones</string>
+    <string name="settings_update_description">La aplicación solo buscará nuevas versiones cuando presione el botón.</string>
+    <string name="settings_update_check">Buscar actualizaciones</string>
+    <string name="settings_update_checking">Buscando actualizaciones…</string>
+    <string name="settings_update_up_to_date">Spoty está actualizado.</string>
+    <string name="settings_update_available">Spoty %1$s está disponible.</string>
+    <string name="settings_update_downloading">Descargando la actualización…</string>
+    <string name="settings_update_ready">La actualización está lista para instalar.</string>
 
     <!-- Accounts -->
     <string name="settings_accounts_premium_required_title">Se requiere Spotify Premium</string>

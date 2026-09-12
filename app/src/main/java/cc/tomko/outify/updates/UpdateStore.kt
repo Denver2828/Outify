@@ -8,7 +8,6 @@ import androidx.datastore.preferences.core.stringPreferencesKey
 import cc.tomko.outify.BuildConfig
 import kotlinx.coroutines.flow.first
 import kotlinx.serialization.json.Json
-import java.util.concurrent.atomic.AtomicBoolean
 import javax.inject.Inject
 import javax.inject.Singleton
 
@@ -20,7 +19,6 @@ internal interface UpdatePersistence {
 
 @Singleton
 internal class UpdateStore @Inject constructor(private val data: DataStore<Preferences>) : UpdatePersistence {
-    val started = AtomicBoolean(false)
     var dismissed = false
     private val next = longPreferencesKey("update_next_check")
     private val rate = longPreferencesKey("update_rate_until")
