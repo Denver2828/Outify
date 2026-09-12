@@ -31,7 +31,7 @@ class LyricsPlaybackControlsTest {
     fun compactLandscapeKeepsButtonsAndSeekBarOnOneLine() = checkCompactControls(600.dp)
 
     @Test
-    fun compactNarrowLandscapeKeepsSeparateTouchTargets() = checkCompactControls(400.dp)
+    fun compactPortraitKeepsButtonsAndSeekBarOnOneLine() = checkCompactControls(288.dp)
 
     private fun checkCompactControls(width: Dp) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext

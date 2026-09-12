@@ -99,7 +99,7 @@ internal fun LyricsShuffleButton(
     }
 }
 
-/** Landscape-only footer: preserve lyric height without shrinking touch targets. */
+/** Compact lyrics footer for every orientation, preserving lyric height and touch targets. */
 @Composable
 internal fun CompactLyricsPlaybackControls(
     isPlaying: Boolean,
@@ -115,7 +115,7 @@ internal fun CompactLyricsPlaybackControls(
     onSeekFinished: () -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    // A very narrow landscape window scrolls rather than overlapping the seek bar.
+    // A very narrow window scrolls rather than overlapping the seek bar.
     BoxWithConstraints(modifier.fillMaxWidth()) {
         Row(
             modifier = Modifier.horizontalScroll(rememberScrollState())

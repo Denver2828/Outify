@@ -36,8 +36,6 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
-import android.content.res.Configuration
-import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -59,7 +57,6 @@ import androidx.compose.ui.unit.sp
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.LyricLine
 import cc.tomko.outify.core.model.LyricsSource
-import cc.tomko.outify.ui.components.WavyMusicSlider
 import cc.tomko.outify.ui.components.player.LyricsFontFamily
 import cc.tomko.outify.ui.components.player.EmphasizedLyricText
 import cc.tomko.outify.ui.components.player.currentLyricIndex
@@ -107,7 +104,6 @@ fun LyricsBottomSheet(
 
     // Transport controls follow the playing track, not whether it has lyrics. Gating them
     // on hasSyncedContent hid play/pause/skip whenever a song had no (synced) lyrics.
-    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val showPlaybackControls = isCurrentTrack
     // Line highlighting and tap-to-seek still require timestamps on the current track.
     val canSeekLines = hasSyncedContent && isCurrentTrack
@@ -283,8 +279,8 @@ fun LyricsBottomSheet(
                 )
             }
 
-            // Landscape shares one compact row; portrait keeps the larger two-row layout.
-            if (showPlaybackControls && isLandscape) {
+            // Keep transport, progress, and timing on one compact row in every orientation.
+            if (showPlaybackControls) {
                 CompactLyricsPlaybackControls(
                     isPlaying = isPlaying,
                     isShuffling = isShuffling,
@@ -305,55 +301,6 @@ fun LyricsBottomSheet(
                     },
                     modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
-            } else if (showPlaybackControls) {
-                Column(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .navigationBarsPadding()
-                        .padding(horizontal = 16.dp, vertical = 8.dp)
-                ) {
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Text(
-                            text = formatTime(positionMs),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-
-                        WavyMusicSlider(
-                            value = sliderPosition,
-                            onValueChange = {
-                                isDragging = true
-                                sliderPosition = it.coerceIn(0f, 1f)
-                            },
-                            onValueChangeFinished = {
-                                onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
-                                isDragging = false
-                            },
-                            inactiveTrackColor = MaterialTheme.colorScheme.secondary,
-                            isPlaying = isPlaying,
-                            modifier = Modifier
-                                .weight(1f)
-                                .padding(horizontal = 8.dp)
-                        )
-
-                        Text(
-                            text = formatTime(durationMs),
-                            style = MaterialTheme.typography.labelSmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    LyricsPlaybackControls(
-                        isPlaying = isPlaying,
-                        isShuffling = isShuffling,
-                        onShuffle = viewModel::toggleShuffle,
-                        onPrevious = onSkipPrevious,
-                        onPlayPause = onPlayPause,
-                        onNext = onSkipNext,
-                    )
-                }
             }
         }
     }
