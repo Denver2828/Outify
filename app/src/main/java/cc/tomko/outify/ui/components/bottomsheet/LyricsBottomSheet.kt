@@ -36,6 +36,8 @@ import androidx.compose.material3.SheetState
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.material3.rememberModalBottomSheetState
+import android.content.res.Configuration
+import androidx.compose.ui.platform.LocalConfiguration
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -105,6 +107,7 @@ fun LyricsBottomSheet(
 
     // Transport controls follow the playing track, not whether it has lyrics. Gating them
     // on hasSyncedContent hid play/pause/skip whenever a song had no (synced) lyrics.
+    val isLandscape = LocalConfiguration.current.orientation == Configuration.ORIENTATION_LANDSCAPE
     val showPlaybackControls = isCurrentTrack
     // Line highlighting and tap-to-seek still require timestamps on the current track.
     val canSeekLines = hasSyncedContent && isCurrentTrack
@@ -280,8 +283,29 @@ fun LyricsBottomSheet(
                 )
             }
 
-            // Reserve separate rows for seeking and transport; neither overlays the lyrics.
-            if (showPlaybackControls) {
+            // Landscape shares one compact row; portrait keeps the larger two-row layout.
+            if (showPlaybackControls && isLandscape) {
+                CompactLyricsPlaybackControls(
+                    isPlaying = isPlaying,
+                    isShuffling = isShuffling,
+                    position = sliderPosition,
+                    elapsed = formatTime(positionMs),
+                    duration = formatTime(durationMs),
+                    onShuffle = viewModel::toggleShuffle,
+                    onPrevious = onSkipPrevious,
+                    onPlayPause = onPlayPause,
+                    onNext = onSkipNext,
+                    onPositionChange = {
+                        isDragging = true
+                        sliderPosition = it.coerceIn(0f, 1f)
+                    },
+                    onSeekFinished = {
+                        onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
+                        isDragging = false
+                    },
+                    modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 4.dp),
+                )
+            } else if (showPlaybackControls) {
                 Column(
                     modifier = Modifier
                         .fillMaxWidth()
