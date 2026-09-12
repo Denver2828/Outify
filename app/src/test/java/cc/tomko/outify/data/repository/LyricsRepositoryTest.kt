@@ -63,6 +63,35 @@ class LyricsRepositoryTest {
     )
 
     @Test
+    fun `plain Spotify lyrics upgrade only when fallback enabled including cache changes`() = runBlocking {
+        val plain = found.copy(source = LyricsSource.SPOTIFY, synced = false)
+        val h = Harness(spotify = plain, lrclib = found)
+        assertEquals(plain, h.repository.getLyrics(track))
+        assertEquals(0, h.lrclibCalls)
+        h.fallback.value = true
+        assertNull(h.repository.peek(track))
+        assertEquals(found, h.repository.getLyrics(track))
+        assertEquals(1, h.lrclibCalls)
+    }
+
+    @Test
+    fun `missing failed or plain fallback retains Spotify text`() = runBlocking {
+        val plain = found.copy(source = LyricsSource.SPOTIFY, synced = false)
+        for (fallback in listOf(LyricsResult.NotFound, LyricsResult.Error, found.copy(synced = false))) {
+            val h = Harness(spotify = plain, lrclib = fallback, fallbackEnabled = true)
+            assertEquals(plain, h.repository.getLyrics(track))
+            assertEquals(1, h.lrclibCalls)
+        }
+    }
+
+    @Test
+    fun `synchronized Spotify lyrics never query fallback`() = runBlocking {
+        val h = Harness(spotify = found, lrclib = found, fallbackEnabled = true)
+        assertEquals(found, h.repository.getLyrics(track))
+        assertEquals(0, h.lrclibCalls)
+    }
+
+    @Test
     fun `not found cached with fallback off is refetched through lrclib once fallback is on`() = runBlocking {
         val h = Harness(spotify = LyricsResult.NotFound, lrclib = found, fallbackEnabled = false)
 

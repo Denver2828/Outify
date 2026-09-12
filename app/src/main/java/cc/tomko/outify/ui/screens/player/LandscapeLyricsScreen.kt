@@ -27,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
+import cc.tomko.outify.ui.components.bottomsheet.LyricsShuffleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -220,26 +221,11 @@ fun LandscapeLyricsScreen(
                 .navigationBarsPadding()
                 .padding(vertical = 8.dp)
         ) {
-            IconButton(
-                onClick = { viewModel.toggleShuffle() },
-                modifier = Modifier
-                    .align(Alignment.CenterStart)
-                    .padding(start = 24.dp)
-                    .background(
-                        if (isShuffling) MaterialTheme.colorScheme.primaryContainer
-                        else MaterialTheme.colorScheme.surfaceVariant,
-                        CircleShape
-                    )
-                    .size(64.dp)
-            ) {
-                Icon(
-                    imageVector = MyIcons.Shuffle,
-                    contentDescription = stringResource(R.string.ui_player_shuffle_desc),
-                    modifier = Modifier.size(40.dp),
-                    tint = if (isShuffling) MaterialTheme.colorScheme.onPrimaryContainer
-                    else MaterialTheme.colorScheme.onSurfaceVariant
-                )
-            }
+            LyricsShuffleButton(
+                checked = isShuffling,
+                onClick = viewModel::toggleShuffle,
+                modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp),
+            )
 
             Row(
                 modifier = Modifier.align(Alignment.Center),

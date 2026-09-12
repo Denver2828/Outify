@@ -72,12 +72,7 @@ class LrcLibClient @Inject constructor(
 
         try {
             val exact = fetchExact(title, artist, track.album?.name, durationSeconds)
-            if (exact != null) return@withContext exact.toResult()
-
-            val candidates = search(title, artist)
-            val best = pickBestMatch(candidates, durationSeconds)
-                ?: return@withContext LyricsResult.NotFound
-            best.toResult()
+            resolveLrcLib(exact, durationSeconds) { search(title, artist) }
         } catch (e: CancellationException) {
             throw e
         } catch (e: IOException) {
@@ -142,15 +137,37 @@ class LrcLibClient @Inject constructor(
 internal fun pickBestMatch(candidates: List<LrcLibTrack>, durationSeconds: Int): LrcLibTrack? =
     candidates
         .asSequence()
-        .filter { it.hasLyrics && !it.instrumental }
+        .filter { it.toResult() is LyricsResult.Found }
         .map { it to abs((it.duration ?: 0.0).roundToInt() - durationSeconds) }
         .filter { (_, diff) -> diff <= LRCLIB_DURATION_TOLERANCE_SECONDS }
         .sortedWith(
-            compareBy<Pair<LrcLibTrack, Int>>({ (track, _) -> track.syncedLyrics.isNullOrBlank() })
+            compareBy<Pair<LrcLibTrack, Int>>({ (track, _) -> (track.toResult() as? LyricsResult.Found)?.synced != true })
                 .thenBy { (_, diff) -> diff }
         )
         .firstOrNull()
         ?.first
+
+/** Try one synchronized upgrade without losing usable exact-match text. */
+internal suspend fun resolveLrcLib(
+    exact: LrcLibTrack?,
+    durationSeconds: Int,
+    search: suspend () -> List<LrcLibTrack>,
+): LyricsResult {
+    val original = exact?.toResult()
+    if (exact?.instrumental == true || (original as? LyricsResult.Found)?.synced == true) {
+        return original ?: LyricsResult.NotFound
+    }
+    val alternative = try {
+        pickBestMatch(search(), durationSeconds)?.toResult() ?: LyricsResult.NotFound
+    } catch (error: CancellationException) {
+        throw error
+    } catch (error: Exception) {
+        if (original is LyricsResult.Found) return original
+        throw error
+    }
+    return if (alternative is LyricsResult.Found && alternative.synced) alternative
+    else original as? LyricsResult.Found ?: alternative
+}
 
 internal fun LrcLibTrack.toResult(): LyricsResult {
     if (instrumental || !hasLyrics) return LyricsResult.NotFound

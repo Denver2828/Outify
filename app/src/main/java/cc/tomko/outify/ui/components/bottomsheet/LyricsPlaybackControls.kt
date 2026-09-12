@@ -16,7 +16,8 @@ import androidx.compose.material.icons.filled.SkipPrevious
 import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconToggleButton
+import androidx.compose.material3.FilledIconToggleButton
+import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
@@ -44,19 +45,7 @@ internal fun LyricsPlaybackControls(
             horizontalArrangement = Arrangement.SpaceBetween,
             verticalAlignment = Alignment.CenterVertically,
         ) {
-            IconToggleButton(
-                checked = isShuffling,
-                onCheckedChange = { onShuffle() },
-                modifier = Modifier.size(64.dp),
-            ) {
-                Icon(
-                    Icons.Default.Shuffle,
-                    stringResource(R.string.sheet_shuffle_cd),
-                    modifier = Modifier.size(32.dp),
-                    tint = if (isShuffling) MaterialTheme.colorScheme.primary
-                    else MaterialTheme.colorScheme.onSurfaceVariant,
-                )
-            }
+            LyricsShuffleButton(isShuffling, onShuffle)
             IconButton(onClick = onPrevious, modifier = Modifier.size(64.dp)) {
                 Icon(
                     Icons.Default.SkipPrevious,
@@ -79,5 +68,27 @@ internal fun LyricsPlaybackControls(
                 )
             }
         }
+    }
+}
+
+/** Checked state has a filled indicator as well as accessible toggle semantics. */
+@Composable
+internal fun LyricsShuffleButton(
+    checked: Boolean,
+    onClick: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    FilledIconToggleButton(
+        checked = checked,
+        onCheckedChange = { onClick() },
+        modifier = modifier.size(64.dp),
+        colors = IconButtonDefaults.filledIconToggleButtonColors(
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant,
+            checkedContainerColor = MaterialTheme.colorScheme.primary,
+            checkedContentColor = MaterialTheme.colorScheme.onPrimary,
+        ),
+    ) {
+        Icon(Icons.Default.Shuffle, stringResource(R.string.sheet_shuffle_cd), Modifier.size(32.dp))
     }
 }

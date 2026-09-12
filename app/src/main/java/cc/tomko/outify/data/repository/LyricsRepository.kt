@@ -33,7 +33,7 @@ private fun LyricsResult.kind(): String = when (this) {
  * Single entry point for lyrics: Spotify first, then LRCLIB when the user allows it.
  *
  * The repository owns the cache AND its validity, so no caller needs to know the rules:
- * - [LyricsResult.Found] is valid forever (the song has lyrics, whatever the settings are).
+ * - Synced lyrics remain valid; plain lyrics are reconsidered when providers change.
  * - [LyricsResult.NotFound] is valid only for the provider set it was computed with
  *   (the fallback toggle) and only for [NEGATIVE_TTL_MS]; after that it is looked up again.
  * - [LyricsResult.Error] is transient (timeout, network, parse) and is never stored.
@@ -132,7 +132,7 @@ class LyricsRepository internal constructor(
     private fun validEntry(trackId: String, fallbackEnabled: Boolean): CacheEntry? {
         val entry = cache[trackId] ?: return null
         val valid = when (entry.result) {
-            is LyricsResult.Found -> true
+            is LyricsResult.Found -> entry.result.synced || entry.fallbackEnabled == fallbackEnabled
             LyricsResult.NotFound ->
                 entry.fallbackEnabled == fallbackEnabled &&
                     clock() - entry.storedAtMs <= NEGATIVE_TTL_MS
@@ -162,12 +162,21 @@ class LyricsRepository internal constructor(
             "Lyrics",
             "spotify=${spotify.kind()} fallbackEnabled=$fallbackEnabled track=${track.id}"
         )
-        if (spotify is LyricsResult.Found || !fallbackEnabled) return spotify
+        if (!fallbackEnabled || (spotify is LyricsResult.Found && spotify.synced)) return spotify
 
         val fallback = withTimeoutOrNull(FALLBACK_TIMEOUT_MS) {
-            fallbackSource(track)
+            try {
+                fallbackSource(track)
+            } catch (error: CancellationException) {
+                throw error
+            } catch (_: Exception) {
+                LyricsResult.Error
+            }
         } ?: LyricsResult.Error
         AudioDiagnostics.record("Lyrics", "lrclib=${fallback.kind()} track=${track.id}")
+
+        if (spotify is LyricsResult.Found &&
+            (fallback !is LyricsResult.Found || !fallback.synced)) return spotify
 
         return when (fallback) {
             is LyricsResult.Found -> fallback

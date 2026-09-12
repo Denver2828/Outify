@@ -45,7 +45,12 @@ import java.util.Date
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
-internal fun CloudDiagnosticsDialog(snapshot: CloudReport?, onClose: () -> Unit) {
+internal fun CloudDiagnosticsDialog(
+    snapshot: CloudReport?,
+    configured: Boolean = CloudUploader.isConfigured,
+    upload: suspend (CloudReport) -> CloudResult = CloudUploader::upload,
+    onClose: () -> Unit,
+) {
     var sending by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<CloudResult?>(null) }
     val scope = rememberCoroutineScope()
@@ -61,19 +66,23 @@ internal fun CloudDiagnosticsDialog(snapshot: CloudReport?, onClose: () -> Unit)
                     TextButton(onClick = close) {
                         Text(stringResource(if (sending) R.string.cloud_cancel else R.string.cloud_close))
                     }
-                    Button(enabled = snapshot != null && CloudUploader.isConfigured && !sending && result?.receipt == null,
+                    Button(enabled = snapshot != null && configured && !sending && result?.receipt == null,
                         onClick = {
-                            if (!sending && snapshot != null && CloudUploader.isConfigured) {
+                            if (!sending && result?.receipt == null && snapshot != null && configured) {
                                 sending = true
                                 result = null
                                 scope.launch {
                                     try {
-                                        result = withContext(Dispatchers.IO) { CloudUploader.upload(snapshot) }
+                                        result = withContext(Dispatchers.IO) { upload(snapshot) }
                                     } finally { sending = false }
                                 }
                             }
                         }) {
-                        Text(stringResource(if (sending) R.string.cloud_sending else R.string.cloud_send))
+                        Text(stringResource(when {
+                            result?.receipt != null -> R.string.cloud_sent
+                            sending -> R.string.cloud_sending
+                            else -> R.string.cloud_send
+                        }))
                     }
                 }
             },

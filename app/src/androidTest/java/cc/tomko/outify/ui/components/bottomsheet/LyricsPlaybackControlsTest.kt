@@ -7,6 +7,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
+import androidx.compose.ui.graphics.toPixelMap
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
@@ -62,10 +63,16 @@ class LyricsPlaybackControlsTest {
         bounds.zipWithNext().forEach { (left, right) -> assertTrue(left.right <= right.left) }
         // Invoke semantics directly so a wide fixture also works on a portrait test host.
         nodes.first().assertIsOff()
+        val off = nodes.first().captureToImage().toPixelMap()
+        val offFill = off[off.width / 2, 8]
         nodes.first().performSemanticsAction(SemanticsActions.OnClick) { it() }
         nodes.first().assertIsOn()
+        val on = nodes.first().captureToImage().toPixelMap()
+        org.junit.Assert.assertNotEquals(offFill, on[on.width / 2, 8])
+        nodes.first().performSemanticsAction(SemanticsActions.OnClick) { it() }
+        nodes.first().assertIsOff()
         nodes.drop(1).forEach { node -> node.performSemanticsAction(SemanticsActions.OnClick) { it() } }
         compose.onNodeWithContentDescription(context.getString(R.string.sheet_pause_cd)).assertExists()
-        compose.runOnIdle { assertEquals(listOf("shuffle", "previous", "play", "next"), calls) }
+        compose.runOnIdle { assertEquals(listOf("shuffle", "shuffle", "previous", "play", "next"), calls) }
     }
 }

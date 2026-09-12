@@ -129,3 +129,37 @@ class LrcLibMatchingTest {
         assertEquals(LyricsResult.NotFound, track(200.0, synced = "[00:01.00]x", instrumental = true).toResult())
     }
 }
+
+class LrcLibSelectionTest {
+    private val plain = LrcLibTrack(duration = 200.0, plainLyrics = "Original")
+    private val synced = LrcLibTrack(duration = 201.0, syncedLyrics = "[00:01.00]Timed")
+
+    @Test fun `exact plain upgrades to synchronized search result`() = kotlinx.coroutines.runBlocking {
+        val result = resolveLrcLib(plain, 200) { listOf(synced) } as LyricsResult.Found
+        assertTrue(result.synced)
+        assertEquals(1000L, result.lines.first().timestampMs)
+    }
+
+    @Test fun `exact synchronized lyrics never search`() = kotlinx.coroutines.runBlocking {
+        assertEquals(synced.toResult(), resolveLrcLib(synced, 200) { error("unexpected search") })
+    }
+
+    @Test fun `missing or failed upgrade preserves exact plain`() = kotlinx.coroutines.runBlocking {
+        assertEquals(plain.toResult(), resolveLrcLib(plain, 200) { emptyList() })
+        assertEquals(plain.toResult(), resolveLrcLib(plain, 200) { throw java.io.IOException() })
+        assertEquals(plain.toResult(), resolveLrcLib(plain, 200) { listOf(synced.copy(duration = 220.0)) })
+    }
+
+    @Test fun `malformed synchronized text cannot outrank usable timestamps`() {
+        val malformed = plain.copy(syncedLyrics = "not timestamped")
+        assertEquals(synced, pickBestMatch(listOf(malformed, synced), 200))
+        assertEquals(plain, pickBestMatch(listOf(malformed.copy(plainLyrics = null), plain), 200))
+    }
+
+    @Test fun `upgrade cancellation propagates`() = kotlinx.coroutines.runBlocking {
+        try {
+            resolveLrcLib(plain, 200) { throw kotlinx.coroutines.CancellationException("cancel") }
+            org.junit.Assert.fail("cancellation swallowed")
+        } catch (_: kotlinx.coroutines.CancellationException) { }
+    }
+}

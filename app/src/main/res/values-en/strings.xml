@@ -28,6 +28,7 @@
     <string name="cloud_close">Close</string>
     <string name="cloud_cancel">Cancel and close</string>
     <string name="cloud_send">Send summary</string>
+    <string name="cloud_sent">Sent ✓</string>
     <string name="cloud_sending">Sending…</string>
     <string name="cloud_notice">Review this exact payload before sending to the destination below. Only selected audio counters are included; raw logs, track information and identifiers are omitted. Local sharing is unchanged. Stored for seven days. Canceling stops this request but cannot undo a report already received.</string>
     <string name="cloud_invalid">No valid summary is available. Refresh the report first. Empty reports and reports over 256 KiB cannot be uploaded.</string>

@@ -35,6 +35,7 @@
     <string name="cloud_close">Cerrar</string>
     <string name="cloud_cancel">Cancelar y cerrar</string>
     <string name="cloud_send">Enviar resumen</string>
+    <string name="cloud_sent">Enviado ✓</string>
     <string name="cloud_sending">Enviando…</string>
     <string name="cloud_notice">Revise este contenido exacto antes de enviarlo al destino indicado. Solo incluye contadores de audio seleccionados; se omiten registros completos, información de canciones e identificadores. El uso compartido local no cambia. Se conserva siete días. Cancelar detiene la solicitud, pero no elimina un informe ya recibido.</string>
     <string name="cloud_invalid">No hay un resumen válido. Actualice el informe primero. No se pueden subir informes vacíos ni mayores de 256 KiB.</string>
