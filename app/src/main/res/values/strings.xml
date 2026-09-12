@@ -38,9 +38,7 @@
     <string name="cloud_sending">Enviando…</string>
     <string name="cloud_notice">Revise este contenido exacto antes de enviarlo al destino indicado. Solo incluye contadores de audio seleccionados; se omiten registros completos, información de canciones e identificadores. El uso compartido local no cambia. Se conserva siete días. Cancelar detiene la solicitud, pero no elimina un informe ya recibido.</string>
     <string name="cloud_invalid">No hay un resumen válido. Actualice el informe primero. No se pueden subir informes vacíos ni mayores de 256 KiB.</string>
-    <string name="cloud_token">Clave de acceso solo para subir</string>
-    <string name="cloud_token_help">Ingrese la clave de subida de 64 caracteres proporcionada por el operador. No se guarda; nunca use la clave de lectura.</string>
-    <string name="cloud_auth">Acceso rechazado. Solicite al operador que revise su clave de subida.</string>
+    <string name="cloud_auth">Se rechazó el acceso de subida. Contacte al responsable de la aplicación para obtener una versión actualizada.</string>
     <string name="cloud_size">El resumen supera el límite del servidor. Genere un informe más pequeño.</string>
     <string name="cloud_capacity">El almacenamiento de informes está lleno. Inténtelo más tarde o contacte al operador.</string>
     <string name="cloud_unavailable">El servicio no pudo confirmar la subida. Contacte al operador antes de reintentar para evitar duplicados.</string>
@@ -48,4 +46,5 @@
     <string name="cloud_success">ID del informe: %1$s
 Vence: %2$s</string>
     <string name="cloud_copy_id">Copiar ID del informe</string>
+    <string name="cloud_not_configured">La subida a la nube no está configurada en esta versión. Contacte al responsable de la aplicación.</string>
 </resources>

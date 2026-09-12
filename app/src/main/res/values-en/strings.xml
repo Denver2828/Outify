@@ -31,9 +31,7 @@
     <string name="cloud_sending">Sending…</string>
     <string name="cloud_notice">Review this exact payload before sending to the destination below. Only selected audio counters are included; raw logs, track information and identifiers are omitted. Local sharing is unchanged. Stored for seven days. Canceling stops this request but cannot undo a report already received.</string>
     <string name="cloud_invalid">No valid summary is available. Refresh the report first. Empty reports and reports over 256 KiB cannot be uploaded.</string>
-    <string name="cloud_token">Upload-only access token</string>
-    <string name="cloud_token_help">Enter the 64-character upload key provided by the operator. It is not saved; never use the read key.</string>
-    <string name="cloud_auth">Upload access rejected. Ask the operator to check your upload-only key.</string>
+    <string name="cloud_auth">Upload access was rejected. Contact the app maintainer for an updated build.</string>
     <string name="cloud_size">The summary exceeds the server size limit. Generate a smaller report.</string>
     <string name="cloud_capacity">Report storage is full. Try later or contact the operator.</string>
     <string name="cloud_unavailable">The service could not confirm the upload. Contact the operator before retrying to avoid duplicates.</string>
@@ -41,4 +39,5 @@
     <string name="cloud_success">Report ID: %1$s
 Expires: %2$s</string>
     <string name="cloud_copy_id">Copy report ID</string>
+    <string name="cloud_not_configured">Cloud upload is not configured in this build. Contact the app maintainer.</string>
 </resources>

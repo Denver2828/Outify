@@ -26,7 +26,11 @@ ksp {
 
 val majorVersion = 1
 val minorVersion = 7
-val patchVersion = 17
+val patchVersion = 18
+val diagnosticsUploadToken = providers.environmentVariable("SPOTY_DIAGNOSTICS_UPLOAD_TOKEN").orElse("").get()
+require(diagnosticsUploadToken.isEmpty() || Regex("[0-9a-fA-F]{64}").matches(diagnosticsUploadToken)) {
+    "SPOTY_DIAGNOSTICS_UPLOAD_TOKEN must be empty or exactly 64 hexadecimal characters"
+}
 
 extensions.configure<ApplicationExtension>("android") {
     compileSdk = 37
@@ -44,6 +48,7 @@ extensions.configure<ApplicationExtension>("android") {
         // app upgrades in place after the version restart at 1.0.0.
         versionCode = 10_000 + majorVersion * 10_000 + minorVersion * 100 + patchVersion
         versionName = "$majorVersion.$minorVersion.$patchVersion"
+        buildConfigField("String", "DIAGNOSTICS_UPLOAD_TOKEN", "\"$diagnosticsUploadToken\"")
 
         buildConfigField("String", "SPOTIFY_CLIENT_ID", "\"${keystoreProps.getProperty("spotify.playback.clientId", "")}\"")
         buildConfigField("String", "SPOTIFY_CLIENT_SECRET", "\"${keystoreProps.getProperty("spotify.playback.clientSecret", "")}\"")

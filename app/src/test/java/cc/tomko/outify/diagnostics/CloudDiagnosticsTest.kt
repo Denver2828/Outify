@@ -4,6 +4,16 @@ import org.junit.Assert.*
 import org.junit.Test
 
 class CloudDiagnosticsTest {
+    @Test fun uploadConfigurationAcceptsOnlyCompleteHexCapabilities() {
+        assertTrue(CloudUploader.validToken("a".repeat(64)))
+        listOf("", "a".repeat(63), "g".repeat(64), "a".repeat(64) + "\n").forEach {
+            assertFalse(CloudUploader.validToken(it))
+        }
+        val configured = cc.tomko.outify.BuildConfig.DIAGNOSTICS_UPLOAD_TOKEN
+        assertEquals(configured.isNotEmpty(), CloudUploader.isConfigured)
+        assertTrue(configured.isEmpty() || CloudUploader.validToken(configured))
+    }
+
     private val audio = "pcm: frames=12 lastSize=32 lastRate=44100 lastChannels=2"
     private fun report(extra: String = "") = "--- Audio engine ---\n$audio\n$extra\n--- Recorded events (oldest first) ---\nsecret"
 

@@ -1,5 +1,6 @@
 package cc.tomko.outify.diagnostics
 
+import cc.tomko.outify.BuildConfig
 import kotlinx.coroutines.suspendCancellableCoroutine
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.jsonObject
@@ -21,6 +22,8 @@ internal data class CloudReceipt(val id: String, val expiresAt: Long)
 internal data class CloudResult(val receipt: CloudReceipt? = null, val failure: CloudFailure? = null)
 
 internal object CloudUploader {
+    val isConfigured: Boolean get() = validToken(BuildConfig.DIAGNOSTICS_UPLOAD_TOKEN)
+    internal fun validToken(token: String) = Regex("[0-9a-fA-F]{64}").matches(token)
     const val DESTINATION = "https://spoty-diagnostics.hdarioburgos38.workers.dev"
     // Dedicated client: no interceptors, shared cookies, redirects or automatic replay.
     val client = OkHttpClient.Builder().followRedirects(false).followSslRedirects(false)
@@ -42,10 +45,10 @@ internal object CloudUploader {
         return CloudReceipt(id, expiry)
     }
 
-    suspend fun upload(report: CloudReport, token: String): CloudResult {
-        if (!Regex("[0-9a-fA-F]{64}").matches(token)) return CloudResult(failure = CloudFailure.AUTH)
+    suspend fun upload(report: CloudReport): CloudResult {
+        if (!isConfigured) return CloudResult(failure = CloudFailure.UNAVAILABLE)
         val request = Request.Builder().url("$DESTINATION/reports")
-            .header("Authorization", "Bearer $token")
+            .header("Authorization", "Bearer ${BuildConfig.DIAGNOSTICS_UPLOAD_TOKEN}")
             .post(report.text.toRequestBody("text/plain; charset=utf-8".toMediaType())).build()
         return suspendCancellableCoroutine { continuation ->
             val call = client.newCall(request)

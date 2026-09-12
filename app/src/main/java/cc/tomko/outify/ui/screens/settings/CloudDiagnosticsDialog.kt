@@ -15,7 +15,6 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -30,7 +29,6 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalClipboardManager
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.AnnotatedString
-import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.window.Dialog
 import androidx.compose.ui.window.DialogProperties
@@ -48,12 +46,11 @@ import java.util.Date
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 internal fun CloudDiagnosticsDialog(snapshot: CloudReport?, onClose: () -> Unit) {
-    var token by remember { mutableStateOf("") }
     var sending by remember { mutableStateOf(false) }
     var result by remember { mutableStateOf<CloudResult?>(null) }
     val scope = rememberCoroutineScope()
     val clipboard = LocalClipboardManager.current
-    val close = { token = ""; onClose() }
+    val close = onClose
     Dialog(onDismissRequest = close, properties = DialogProperties(usePlatformDefaultWidth = false)) {
         Scaffold(
             modifier = Modifier.fillMaxSize().imePadding(),
@@ -64,16 +61,14 @@ internal fun CloudDiagnosticsDialog(snapshot: CloudReport?, onClose: () -> Unit)
                     TextButton(onClick = close) {
                         Text(stringResource(if (sending) R.string.cloud_cancel else R.string.cloud_close))
                     }
-                    Button(enabled = snapshot != null && token.length == 64 && !sending && result?.receipt == null,
+                    Button(enabled = snapshot != null && CloudUploader.isConfigured && !sending && result?.receipt == null,
                         onClick = {
-                            if (!sending && snapshot != null) {
+                            if (!sending && snapshot != null && CloudUploader.isConfigured) {
                                 sending = true
                                 result = null
-                                val capability = token
-                                token = ""
                                 scope.launch {
                                     try {
-                                        result = withContext(Dispatchers.IO) { CloudUploader.upload(snapshot, capability) }
+                                        result = withContext(Dispatchers.IO) { CloudUploader.upload(snapshot) }
                                     } finally { sending = false }
                                 }
                             }
@@ -89,11 +84,7 @@ internal fun CloudDiagnosticsDialog(snapshot: CloudReport?, onClose: () -> Unit)
                 Text(CloudUploader.DESTINATION, style = MaterialTheme.typography.bodySmall)
                 if (snapshot == null) Text(stringResource(R.string.cloud_invalid))
                 else Text(snapshot.text, style = MaterialTheme.typography.bodySmall)
-                OutlinedTextField(value = token, onValueChange = { token = it.take(64) },
-                    modifier = Modifier.fillMaxWidth(), enabled = !sending && result?.receipt == null,
-                    singleLine = true, visualTransformation = PasswordVisualTransformation(),
-                    label = { Text(stringResource(R.string.cloud_token)) },
-                    supportingText = { Text(stringResource(R.string.cloud_token_help)) })
+                if (!CloudUploader.isConfigured) Text(stringResource(R.string.cloud_not_configured))
                 result?.failure?.let { failure ->
                     Text(stringResource(when (failure) {
                         CloudFailure.AUTH -> R.string.cloud_auth
