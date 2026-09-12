@@ -13,6 +13,7 @@ internal sealed interface UpdateCheck {
     data object Invalid : UpdateCheck
 }
 
+@Serializable
 internal data class UpdateRelease(val versionName: String, val versionCode: Int,
     val url: String, val bytes: Long, val sha256: String)
 
@@ -28,6 +29,13 @@ internal object ReleasePolicy {
     const val ASSET = "app-arm64-v8a-release.apk"
     const val MAX_APK_BYTES = 100L * 1024 * 1024
     private val json = Json { ignoreUnknownKeys = true }
+    fun validateCached(value: UpdateRelease, installedName: String, installedCode: Int): UpdateRelease? {
+        if (versionCode(value.versionName) != value.versionCode) return null
+        val payload = ReleasePayload("v${value.versionName}", false, false, listOf(
+            AssetPayload(ASSET, value.url, value.bytes, "sha256:${value.sha256}", "application/octet-stream")))
+        return (evaluate(json.encodeToString(ReleasePayload.serializer(), payload), installedName, installedCode)
+            as? UpdateCheck.Available)?.release
+    }
     private val versionPattern = Regex("(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)\\.(0|[1-9][0-9]*)")
 
     // Minor/patch are limited to two decimal digits by the app's version-code scheme.
