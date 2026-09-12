@@ -25,6 +25,12 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Slider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableFloatStateOf
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
@@ -97,6 +103,56 @@ internal fun LyricsShuffleButton(
     ) {
         Icon(Icons.Default.Shuffle, stringResource(R.string.sheet_shuffle_cd), Modifier.size(if (compact) 24.dp else 32.dp))
     }
+}
+
+/** Shared stateful footer so every lyrics surface exposes the same progress and seek behavior. */
+@Composable
+internal fun LyricsPlaybackFooter(
+    isPlaying: Boolean,
+    isShuffling: Boolean,
+    positionMs: Long,
+    durationMs: Long,
+    onShuffle: () -> Unit,
+    onPrevious: () -> Unit,
+    onPlayPause: () -> Unit,
+    onNext: () -> Unit,
+    onSeek: (Long) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var sliderPosition by remember { mutableFloatStateOf(0f) }
+    var isDragging by remember { mutableStateOf(false) }
+
+    LaunchedEffect(positionMs, durationMs, isDragging) {
+        if (!isDragging && durationMs > 0L) {
+            sliderPosition = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
+        }
+    }
+
+    CompactLyricsPlaybackControls(
+        isPlaying = isPlaying,
+        isShuffling = isShuffling,
+        position = sliderPosition,
+        elapsed = formatLyricsTime(positionMs),
+        duration = formatLyricsTime(durationMs),
+        onShuffle = onShuffle,
+        onPrevious = onPrevious,
+        onPlayPause = onPlayPause,
+        onNext = onNext,
+        onPositionChange = {
+            isDragging = true
+            sliderPosition = it.coerceIn(0f, 1f)
+        },
+        onSeekFinished = {
+            onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
+            isDragging = false
+        },
+        modifier = modifier,
+    )
+}
+
+private fun formatLyricsTime(ms: Long): String {
+    val seconds = (ms / 1_000).coerceAtLeast(0L)
+    return "%01d:%02d".format(seconds / 60, seconds % 60)
 }
 
 /** Compact lyrics footer for every orientation, preserving lyric height and touch targets. */

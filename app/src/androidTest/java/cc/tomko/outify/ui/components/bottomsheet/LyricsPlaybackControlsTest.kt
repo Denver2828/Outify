@@ -40,6 +40,52 @@ class LyricsPlaybackControlsTest {
     @Test
     fun landscapeFavoriteAndHideActionsHaveSeparatedTouchTargets() = checkTrackActions(600.dp)
 
+    @Test
+    fun sharedFooterDerivesProgressTimesAndDispatchesSeek() {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val calls = mutableListOf<String>()
+        var seekPosition = -1L
+        compose.setContent {
+            MaterialTheme {
+                Box(Modifier.requiredWidth(600.dp)) {
+                    LyricsPlaybackFooter(
+                        isPlaying = false,
+                        isShuffling = false,
+                        positionMs = 60_000L,
+                        durationMs = 240_000L,
+                        onShuffle = { calls.add("shuffle") },
+                        onPrevious = { calls.add("previous") },
+                        onPlayPause = { calls.add("play") },
+                        onNext = { calls.add("next") },
+                        onSeek = {
+                            seekPosition = it
+                            calls.add("seek")
+                        },
+                    )
+                }
+            }
+        }
+
+        compose.onNodeWithText("1:00").assertExists()
+        compose.onNodeWithText("4:00").assertExists()
+        val labels = listOf(
+            R.string.sheet_shuffle_cd,
+            R.string.sheet_previous_cd,
+            R.string.sheet_play_cd,
+            R.string.sheet_next_cd,
+        ).map(context::getString)
+        labels.map(compose::onNodeWithContentDescription).forEach { node ->
+            node.performSemanticsAction(SemanticsActions.OnClick) { it() }
+        }
+        compose.onNode(SemanticsMatcher.keyIsDefined(SemanticsActions.SetProgress))
+            .performSemanticsAction(SemanticsActions.SetProgress) { it(0.5f) }
+
+        compose.runOnIdle {
+            assertEquals(120_000L, seekPosition)
+            assertEquals(listOf("shuffle", "previous", "play", "next", "seek"), calls)
+        }
+    }
+
     private fun checkTrackActions(width: Dp) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext
         val liked = mutableStateOf(false)
@@ -78,10 +124,10 @@ class LyricsPlaybackControlsTest {
         assertEquals(48.dp, favoriteBounds.bottom - favoriteBounds.top)
         assertEquals(48.dp, hideBounds.right - hideBounds.left)
         assertEquals(48.dp, hideBounds.bottom - hideBounds.top)
-        assertTrue(hideBounds.left - favoriteBounds.right >= 16.dp)
+        assertEquals(32.dp, hideBounds.left - favoriteBounds.right)
         assertEquals(width, hideBounds.right)
-        assertEquals(72.dp, hideCenter - favoriteCenter)
-        assertEquals(96.dp, width - favoriteCenter)
+        assertEquals(80.dp, hideCenter - favoriteCenter)
+        assertEquals(104.dp, width - favoriteCenter)
 
         favorite.performSemanticsAction(SemanticsActions.OnClick) { it() }
         compose.onNodeWithContentDescription(

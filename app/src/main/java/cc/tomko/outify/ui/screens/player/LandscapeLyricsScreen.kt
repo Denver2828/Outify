@@ -14,20 +14,10 @@ import androidx.compose.foundation.layout.statusBarsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
-import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.Pause
-import androidx.compose.material.icons.filled.PlayArrow
-import androidx.compose.material.icons.filled.SkipNext
-import androidx.compose.material.icons.filled.SkipPrevious
-import androidx.compose.material.icons.rounded.RemoveCircle
-import androidx.compose.material.icons.rounded.RemoveCircleOutline
-import androidx.compose.material3.FilledIconButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
-import androidx.compose.material3.IconButtonDefaults
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
-import cc.tomko.outify.ui.components.bottomsheet.LyricsShuffleButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
@@ -40,12 +30,12 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.hilt.lifecycle.viewmodel.compose.hiltViewModel
-import cc.tomko.outify.MyIcons
 import cc.tomko.outify.R
 import cc.tomko.outify.core.model.Track
-import cc.tomko.outify.ui.components.SpotyBrand
 import cc.tomko.outify.ui.components.bottomsheet.LyricsList
+import cc.tomko.outify.ui.components.bottomsheet.LyricsPlaybackFooter
 import cc.tomko.outify.ui.components.bottomsheet.LyricsSourceBadge
+import cc.tomko.outify.ui.components.bottomsheet.LyricsTrackActions
 import cc.tomko.outify.ui.components.player.LyricsFontFamily
 import cc.tomko.outify.ui.components.bottomsheet.LyricsStatusMessage
 import cc.tomko.outify.ui.viewmodel.bottomsheet.LyricsViewModel
@@ -66,6 +56,7 @@ fun LandscapeLyricsScreen(
     }
 
     val lyrics by viewModel.lyrics.collectAsState()
+    val positionMs by viewModel.positionMs.collectAsState()
     val effectivePositionMs by viewModel.effectivePositionMs.collectAsState()
     val lyricsFontScale by viewModel.lyricsFontScale.collectAsState()
     val lyricsFontBold by viewModel.lyricsFontBold.collectAsState()
@@ -81,8 +72,9 @@ fun LandscapeLyricsScreen(
     val lyricsError by viewModel.hasError.collectAsState()
     val isLiked by viewModel.isLiked.collectAsState()
     val isShuffling by viewModel.isShuffling.collectAsState()
+    val durationMs by viewModel.durationMs.collectAsState()
     val hiddenUris by viewModel.hiddenUris.collectAsState()
-    val isHidden = track.uri in hiddenUris
+    val isHidden = displayedTrack?.uri in hiddenUris
 
     val isSynced = lyricsSynced && hasSyncedContent && isCurrentTrack
 
@@ -135,41 +127,13 @@ fun LandscapeLyricsScreen(
             }
 
             if (!isEpisode) {
-                IconButton(
-                    onClick = { viewModel.toggleLiked() },
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.Favorite,
-                        contentDescription = stringResource(
-                            if (isLiked) R.string.sys_gesture_action_remove_from_favorites
-                            else R.string.sys_gesture_action_add_to_favorites
-                        ),
-                        tint = if (isLiked) MaterialTheme.colorScheme.primary
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-
-                IconButton(
-                    onClick = { viewModel.toggleHideTrack() },
-                    modifier = Modifier
-                        .background(MaterialTheme.colorScheme.surfaceVariant, CircleShape)
-                        .size(48.dp)
-                ) {
-                    Icon(
-                        imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
-                        contentDescription = stringResource(
-                            if (isHidden) R.string.unhide_item else R.string.hide_track
-                        ),
-                        tint = if (isHidden) MaterialTheme.colorScheme.error
-                        else MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
+                LyricsTrackActions(
+                    isLiked = isLiked,
+                    isHidden = isHidden,
+                    onToggleLiked = viewModel::toggleLiked,
+                    onToggleHidden = viewModel::toggleHideTrack,
+                )
             }
-
-            SpotyBrand()
         }
 
         Box(
@@ -214,62 +178,21 @@ fun LandscapeLyricsScreen(
             }
         }
 
-        // Car-sized transport: large targets, shuffle pinned to the left edge, playback centered.
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .navigationBarsPadding()
-                .padding(vertical = 8.dp)
-        ) {
-            LyricsShuffleButton(
-                checked = isShuffling,
-                onClick = viewModel::toggleShuffle,
-                modifier = Modifier.align(Alignment.CenterStart).padding(start = 24.dp),
+        if (isCurrentTrack) {
+            LyricsPlaybackFooter(
+                isPlaying = isPlaying,
+                isShuffling = isShuffling,
+                positionMs = positionMs,
+                durationMs = durationMs,
+                onShuffle = viewModel::toggleShuffle,
+                onPrevious = viewModel::skipPrevious,
+                onPlayPause = viewModel::playPause,
+                onNext = viewModel::skipNext,
+                onSeek = viewModel::seekTo,
+                modifier = Modifier
+                    .navigationBarsPadding()
+                    .padding(horizontal = 16.dp, vertical = 4.dp),
             )
-
-            Row(
-                modifier = Modifier.align(Alignment.Center),
-                horizontalArrangement = Arrangement.spacedBy(32.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                IconButton(
-                    onClick = { viewModel.skipPrevious() },
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipPrevious,
-                        contentDescription = stringResource(R.string.sheet_previous_cd),
-                        modifier = Modifier.size(44.dp)
-                    )
-                }
-
-                FilledIconButton(
-                    onClick = { viewModel.playPause() },
-                    modifier = Modifier.size(80.dp),
-                    colors = IconButtonDefaults.filledIconButtonColors(
-                        containerColor = MaterialTheme.colorScheme.primaryContainer,
-                        contentColor = MaterialTheme.colorScheme.onPrimaryContainer
-                    )
-                ) {
-                    Icon(
-                        imageVector = if (isPlaying) Icons.Default.Pause else Icons.Default.PlayArrow,
-                        contentDescription = if (isPlaying) stringResource(R.string.sheet_pause_cd)
-                        else stringResource(R.string.sheet_play_cd),
-                        modifier = Modifier.size(52.dp)
-                    )
-                }
-
-                IconButton(
-                    onClick = { viewModel.skipNext() },
-                    modifier = Modifier.size(64.dp)
-                ) {
-                    Icon(
-                        imageVector = Icons.Default.SkipNext,
-                        contentDescription = stringResource(R.string.sheet_next_cd),
-                        modifier = Modifier.size(44.dp)
-                    )
-                }
-            }
         }
     }
 }

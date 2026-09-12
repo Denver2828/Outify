@@ -40,10 +40,6 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableFloatStateOf
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.remember
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -114,20 +110,6 @@ fun LyricsBottomSheet(
     val inactiveTextColor = MaterialTheme.colorScheme.onSurfaceVariant
 
     val isSynced = isSyncedMode && canSeekLines
-
-    fun formatTime(ms: Long): String {
-        val s = (ms / 1000).coerceAtLeast(0L)
-        return "%01d:%02d".format(s / 60, s % 60)
-    }
-
-    var sliderPosition by remember { mutableFloatStateOf(0f) }
-    var isDragging by remember { mutableStateOf(false) }
-
-    LaunchedEffect(positionMs, durationMs, isDragging) {
-        if (!isDragging && durationMs > 0) {
-            sliderPosition = (positionMs.toFloat() / durationMs).coerceIn(0f, 1f)
-        }
-    }
 
     ModalBottomSheet(
         onDismissRequest = onDismissRequest,
@@ -251,24 +233,16 @@ fun LyricsBottomSheet(
 
             // Keep transport, progress, and timing on one compact row in every orientation.
             if (showPlaybackControls) {
-                CompactLyricsPlaybackControls(
+                LyricsPlaybackFooter(
                     isPlaying = isPlaying,
                     isShuffling = isShuffling,
-                    position = sliderPosition,
-                    elapsed = formatTime(positionMs),
-                    duration = formatTime(durationMs),
+                    positionMs = positionMs,
+                    durationMs = durationMs,
                     onShuffle = viewModel::toggleShuffle,
                     onPrevious = onSkipPrevious,
                     onPlayPause = onPlayPause,
                     onNext = onSkipNext,
-                    onPositionChange = {
-                        isDragging = true
-                        sliderPosition = it.coerceIn(0f, 1f)
-                    },
-                    onSeekFinished = {
-                        onSeek((sliderPosition * durationMs).toLong().coerceIn(0L, durationMs))
-                        isDragging = false
-                    },
+                    onSeek = onSeek,
                     modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
@@ -292,7 +266,7 @@ internal fun LyricsTrackActions(
 
     Row(
         modifier = modifier,
-        horizontalArrangement = Arrangement.spacedBy(24.dp),
+        horizontalArrangement = Arrangement.spacedBy(32.dp),
     ) {
         IconButton(
             onClick = onToggleLiked,
