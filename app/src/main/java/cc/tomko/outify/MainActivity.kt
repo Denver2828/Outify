@@ -78,6 +78,7 @@ import cc.tomko.outify.data.setting.LocalEpisodeSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeActionHandler
 import cc.tomko.outify.data.setting.LocalSwipeGestureSettings
 import cc.tomko.outify.data.setting.LocalUiSettings
+import cc.tomko.outify.updates.UpdateHost
 import cc.tomko.outify.ui.OutifyTheme
 import cc.tomko.outify.ui.ThemeMode
 import cc.tomko.outify.ui.resolveDarkTheme
@@ -315,6 +316,7 @@ class MainActivity : ComponentActivity() {
             pureBlack = interfaceSettings.pureBlack,
             highContrastCompat = interfaceSettings.highContrastCompat,
             content = {
+                UpdateHost()
                 CompositionLocalProvider(
                     LocalDensity provides fixedDensity
                 ) {

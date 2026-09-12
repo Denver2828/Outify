@@ -48,4 +48,20 @@
 Vence: %2$s</string>
     <string name="cloud_copy_id">Copiar ID del informe</string>
     <string name="cloud_not_configured">La subida a la nube no está configurada en esta versión. Contacte al responsable de la aplicación.</string>
+    <string name="update_title">Actualización de Spoty</string>
+    <string name="update_version">Versión %1$s · %2$.1f MiB</string>
+    <string name="update_download_notice">Hay una versión más reciente. Descárguela cuando sea conveniente; la reproducción puede continuar.</string>
+    <string name="update_install_notice">La descarga fue verificada. Android solicitará confirmar la instalación y podría pedir permiso para instalar desde esta aplicación. Actualizar cierra Spoty e interrumpe la reproducción.</string>
+    <string name="update_progress">Descargado: %1$d%%</string>
+    <string name="update_storage_error">No se pudo guardar la actualización. Revise el espacio disponible e inténtelo nuevamente.</string>
+    <string name="update_invalid_error">La verificación falló. No se instaló nada. Reintente o contacte al responsable.</string>
+    <string name="update_install_error">Android no pudo abrir el instalador o el archivo ya no es válido. Revise los permisos de instalación y reintente.</string>
+    <string name="update_rate_error">Las consultas de actualización están limitadas temporalmente. Espere hasta la hora indicada antes de reintentar.</string>
+    <string name="update_network_error">El servicio de actualización o la conexión no está disponible. Revise la conexión y reintente.</string>
+    <string name="update_retry_time">Reintentar después de: %1$s</string>
+    <string name="update_download">Descargar</string>
+    <string name="update_install">Instalar</string>
+    <string name="update_retry">Reintentar</string>
+    <string name="update_cancel">Cancelar descarga</string>
+    <string name="update_later">Más tarde</string>
 </resources>

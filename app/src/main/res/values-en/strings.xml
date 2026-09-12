@@ -41,4 +41,20 @@
 Expires: %2$s</string>
     <string name="cloud_copy_id">Copy report ID</string>
     <string name="cloud_not_configured">Cloud upload is not configured in this build. Contact the app maintainer.</string>
+    <string name="update_title">Spoty update</string>
+    <string name="update_version">Version %1$s · %2$.1f MiB</string>
+    <string name="update_download_notice">A newer version is available. Download only when convenient; playback can continue.</string>
+    <string name="update_install_notice">The download was verified. Android will ask you to confirm installation and may request permission to install from this app. Updating closes Spoty and interrupts playback.</string>
+    <string name="update_progress">Downloaded: %1$d%%</string>
+    <string name="update_storage_error">Could not save the update. Check available storage and try again.</string>
+    <string name="update_invalid_error">Update verification failed. Nothing was installed. Retry or contact the maintainer.</string>
+    <string name="update_install_error">Android could not open the installer, or the file is no longer valid. Check installation permissions and retry.</string>
+    <string name="update_rate_error">Update checks are temporarily limited. Wait until the time below before retrying.</string>
+    <string name="update_network_error">The update service or connection is unavailable. Check connectivity and retry.</string>
+    <string name="update_retry_time">Retry after: %1$s</string>
+    <string name="update_download">Download</string>
+    <string name="update_install">Install</string>
+    <string name="update_retry">Retry</string>
+    <string name="update_cancel">Cancel download</string>
+    <string name="update_later">Later</string>
 </resources>
