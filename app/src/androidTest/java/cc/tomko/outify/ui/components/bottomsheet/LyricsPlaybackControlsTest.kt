@@ -4,6 +4,7 @@ import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.requiredWidth
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.SemanticsActions
 import androidx.compose.ui.test.*
@@ -32,6 +33,64 @@ class LyricsPlaybackControlsTest {
 
     @Test
     fun compactPortraitKeepsButtonsAndSeekBarOnOneLine() = checkCompactControls(288.dp)
+
+    @Test
+    fun portraitFavoriteAndHideActionsHaveSeparatedTouchTargets() = checkTrackActions(288.dp)
+
+    @Test
+    fun landscapeFavoriteAndHideActionsHaveSeparatedTouchTargets() = checkTrackActions(600.dp)
+
+    private fun checkTrackActions(width: Dp) {
+        val context = InstrumentationRegistry.getInstrumentation().targetContext
+        val liked = mutableStateOf(false)
+        val hidden = mutableStateOf(false)
+        val calls = mutableListOf<String>()
+        compose.setContent {
+            MaterialTheme {
+                Box(Modifier.requiredWidth(width)) {
+                    LyricsTrackActions(
+                        isLiked = liked.value,
+                        isHidden = hidden.value,
+                        onToggleLiked = {
+                            liked.value = !liked.value
+                            calls.add("favorite")
+                        },
+                        onToggleHidden = {
+                            hidden.value = !hidden.value
+                            calls.add("hide")
+                        },
+                        modifier = Modifier.align(Alignment.CenterEnd),
+                    )
+                }
+            }
+        }
+
+        val favorite = compose.onNodeWithContentDescription(
+            context.getString(R.string.sys_gesture_action_add_to_favorites),
+        )
+        val hide = compose.onNodeWithContentDescription(context.getString(R.string.hide_track))
+        val favoriteBounds = favorite.getUnclippedBoundsInRoot()
+        val hideBounds = hide.getUnclippedBoundsInRoot()
+        val favoriteCenter = favoriteBounds.left + (favoriteBounds.right - favoriteBounds.left) / 2
+        val hideCenter = hideBounds.left + (hideBounds.right - hideBounds.left) / 2
+
+        assertEquals(48.dp, favoriteBounds.right - favoriteBounds.left)
+        assertEquals(48.dp, favoriteBounds.bottom - favoriteBounds.top)
+        assertEquals(48.dp, hideBounds.right - hideBounds.left)
+        assertEquals(48.dp, hideBounds.bottom - hideBounds.top)
+        assertTrue(hideBounds.left - favoriteBounds.right >= 16.dp)
+        assertEquals(width, hideBounds.right)
+        assertEquals(72.dp, hideCenter - favoriteCenter)
+        assertEquals(96.dp, width - favoriteCenter)
+
+        favorite.performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithContentDescription(
+            context.getString(R.string.sys_gesture_action_remove_from_favorites),
+        ).assertExists()
+        hide.performSemanticsAction(SemanticsActions.OnClick) { it() }
+        compose.onNodeWithContentDescription(context.getString(R.string.unhide_item)).assertExists()
+        compose.runOnIdle { assertEquals(listOf("favorite", "hide"), calls) }
+    }
 
     private fun checkCompactControls(width: Dp) {
         val context = InstrumentationRegistry.getInstrumentation().targetContext

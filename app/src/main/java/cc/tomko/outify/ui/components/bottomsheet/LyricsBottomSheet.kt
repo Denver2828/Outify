@@ -187,43 +187,13 @@ fun LyricsBottomSheet(
                 }
 
                 if (!isEpisode) {
-                    Row(
+                    LyricsTrackActions(
+                        isLiked = isLiked,
+                        isHidden = isHidden,
+                        onToggleLiked = viewModel::toggleLiked,
+                        onToggleHidden = viewModel::toggleHideTrack,
                         modifier = Modifier.align(Alignment.CenterEnd),
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        IconButton(
-                            onClick = { viewModel.toggleLiked() },
-                            modifier = Modifier
-                                .background(surfaceVariant, CircleShape)
-                                .size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Favorite,
-                                contentDescription = stringResource(
-                                    if (isLiked) R.string.sys_gesture_action_remove_from_favorites
-                                    else R.string.sys_gesture_action_add_to_favorites
-                                ),
-                                tint = if (isLiked) MaterialTheme.colorScheme.primary
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-
-                        IconButton(
-                            onClick = { viewModel.toggleHideTrack() },
-                            modifier = Modifier
-                                .background(surfaceVariant, CircleShape)
-                                .size(40.dp)
-                        ) {
-                            Icon(
-                                imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
-                                contentDescription = stringResource(
-                                    if (isHidden) R.string.unhide_item else R.string.hide_track
-                                ),
-                                tint = if (isHidden) MaterialTheme.colorScheme.error
-                                else MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                    }
+                    )
                 }
             }
 
@@ -302,6 +272,59 @@ fun LyricsBottomSheet(
                     modifier = Modifier.navigationBarsPadding().padding(horizontal = 16.dp, vertical = 4.dp),
                 )
             }
+        }
+    }
+}
+
+/**
+ * Keeps the destructive track action at the trailing edge while moving the favorite action
+ * toward the center. The generous gap separates both 48 dp touch targets in every orientation.
+ */
+@Composable
+internal fun LyricsTrackActions(
+    isLiked: Boolean,
+    isHidden: Boolean,
+    onToggleLiked: () -> Unit,
+    onToggleHidden: () -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val surfaceVariant = MaterialTheme.colorScheme.surfaceVariant
+
+    Row(
+        modifier = modifier,
+        horizontalArrangement = Arrangement.spacedBy(24.dp),
+    ) {
+        IconButton(
+            onClick = onToggleLiked,
+            modifier = Modifier
+                .background(surfaceVariant, CircleShape)
+                .size(48.dp),
+        ) {
+            Icon(
+                imageVector = Icons.Default.Favorite,
+                contentDescription = stringResource(
+                    if (isLiked) R.string.sys_gesture_action_remove_from_favorites
+                    else R.string.sys_gesture_action_add_to_favorites
+                ),
+                tint = if (isLiked) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
+        }
+
+        IconButton(
+            onClick = onToggleHidden,
+            modifier = Modifier
+                .background(surfaceVariant, CircleShape)
+                .size(48.dp),
+        ) {
+            Icon(
+                imageVector = if (isHidden) Icons.Rounded.RemoveCircle else Icons.Rounded.RemoveCircleOutline,
+                contentDescription = stringResource(
+                    if (isHidden) R.string.unhide_item else R.string.hide_track
+                ),
+                tint = if (isHidden) MaterialTheme.colorScheme.error
+                else MaterialTheme.colorScheme.onSurfaceVariant,
+            )
         }
     }
 }
