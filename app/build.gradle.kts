@@ -26,7 +26,7 @@ ksp {
 
 val majorVersion = 1
 val minorVersion = 7
-val patchVersion = 19
+val patchVersion = 20
 val diagnosticsUploadToken = providers.environmentVariable("SPOTY_DIAGNOSTICS_UPLOAD_TOKEN").orElse("").get()
 require(diagnosticsUploadToken.isEmpty() || Regex("[0-9a-fA-F]{64}").matches(diagnosticsUploadToken)) {
     "SPOTY_DIAGNOSTICS_UPLOAD_TOKEN must be empty or exactly 64 hexadecimal characters"
